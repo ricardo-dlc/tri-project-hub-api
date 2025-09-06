@@ -118,6 +118,28 @@ export class TriProjectHubApiStack extends Stack {
 
     eventsTable.grantReadData(eventsLambda);
 
+    const getEventBySlugLambda = new NodejsFunction(
+      this,
+      'GetEventBySlugLambda',
+      {
+        runtime: Runtime.NODEJS_22_X,
+        entry: path.join(__dirname, '../lambdas/events/getEventBySlug.ts'),
+        environment: {
+          EVENTS_TABLE_NAME: eventsTable.tableName,
+        },
+        bundling: {
+          minify: false,
+          sourceMap: true,
+          sourcesContent: false,
+          format: OutputFormat.ESM,
+          target: 'esnext',
+        },
+        handler: 'handler',
+      }
+    );
+
+    eventsTable.grantReadData(getEventBySlugLambda);
+
     const httpApi = new HttpApi(this, 'TriProjectHubApi', {
       apiName: 'TriProjectHubApi',
     });
@@ -131,6 +153,17 @@ export class TriProjectHubApiStack extends Stack {
       path: '/events',
       methods: [HttpMethod.GET],
       integration: eventsIntegration,
+    });
+
+    const getEventBySlugIntegration = new HttpLambdaIntegration(
+      'GetEventBySlugIntegration',
+      getEventBySlugLambda
+    );
+
+    httpApi.addRoutes({
+      path: '/events/{slug}',
+      methods: [HttpMethod.GET],
+      integration: getEventBySlugIntegration,
     });
   }
 }
