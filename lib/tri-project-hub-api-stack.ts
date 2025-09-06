@@ -7,9 +7,10 @@ import {
   ProjectionType,
   Table,
 } from 'aws-cdk-lib/aws-dynamodb';
-import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
+import path from 'path';
 
 export class TriProjectHubApiStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -89,8 +90,8 @@ export class TriProjectHubApiStack extends Stack {
     eventsTable.addGlobalSecondaryIndex({
       indexName: 'EnabledIndex',
       partitionKey: {
-        name: 'isEnabled',
-        type: AttributeType.NUMBER,
+        name: 'enabledStatus',
+        type: AttributeType.STRING,
       },
       sortKey: {
         name: 'date',
@@ -101,7 +102,17 @@ export class TriProjectHubApiStack extends Stack {
 
     const eventsLambda = new NodejsFunction(this, 'EventsLambda', {
       runtime: Runtime.NODEJS_22_X,
-      code: Code.fromAsset('lambdas/events/getEvents.ts'),
+      entry: path.join(__dirname, '../lambdas/events/getEvents.ts'),
+      environment: {
+        EVENTS_TABLE_NAME: eventsTable.tableName,
+      },
+      bundling: {
+        minify: false,
+        sourceMap: true,
+        sourcesContent: false,
+        format: OutputFormat.ESM,
+        target: 'esnext',
+      },
       handler: 'handler',
     });
 
