@@ -1,169 +1,57 @@
-import { RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
-import { HttpApi, HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
-import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
-import {
-  AttributeType,
-  BillingMode,
-  ProjectionType,
-  Table,
-} from 'aws-cdk-lib/aws-dynamodb';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import { NodejsFunction, OutputFormat } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import path from 'path';
+import { HttpApiConstruct } from './constructs/api/http-api';
+import { StageConfiguration } from './constructs/config/stage-config';
+import { EventsTable } from './constructs/database/events-table';
+import { EventsApi } from './constructs/lambda/events-api';
+import { LambdaFactory } from './constructs/lambda/lambda-factory';
+import { StackConfiguration } from './types/infrastructure';
+
+export interface TriProjectHubApiStackProps extends StackProps {
+  /** Stack configuration including stage and project settings */
+  config?: StackConfiguration;
+}
 
 export class TriProjectHubApiStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(
+    scope: Construct,
+    id: string,
+    props?: TriProjectHubApiStackProps
+  ) {
     super(scope, id, props);
 
-    const eventsTable = new Table(this, 'EventsTable', {
-      tableName: 'tri-project-hub-api-events',
-      partitionKey: {
-        name: 'id',
-        type: AttributeType.STRING,
-      },
-      billingMode: BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.DESTROY,
+    // Extract configuration from props
+    const config = props?.config || {};
+
+    // 1. Create StageConfiguration - foundation for all stage-aware naming
+    const stageConfig = new StageConfiguration({
+      stage: config.stage,
+      projectName: config.projectName,
     });
 
-    eventsTable.addGlobalSecondaryIndex({
-      indexName: 'SlugIndex',
-      partitionKey: {
-        name: 'slug',
-        type: AttributeType.STRING,
-      },
-      projectionType: ProjectionType.ALL,
+    // 2. Create EventsTable construct with stage configuration
+    const eventsTable = new EventsTable(this, 'EventsTable', {
+      stageConfig,
+      tableName: config.tableName || 'events',
     });
 
-    eventsTable.addGlobalSecondaryIndex({
-      indexName: 'TypeIndex',
-      partitionKey: {
-        name: 'typeEnabled',
-        type: AttributeType.STRING,
-      },
-      sortKey: {
-        name: 'date',
-        type: AttributeType.STRING,
-      },
-      projectionType: ProjectionType.ALL,
+    // 3. Create LambdaFactory with stage configuration
+    const lambdaFactory = new LambdaFactory(this, {
+      stageConfig,
     });
 
-    eventsTable.addGlobalSecondaryIndex({
-      indexName: 'FeaturedIndex',
-      partitionKey: {
-        name: 'isFeaturedEnabled',
-        type: AttributeType.STRING,
-      },
-      sortKey: {
-        name: 'date',
-        type: AttributeType.STRING,
-      },
-      projectionType: ProjectionType.ALL,
+    // 4. Create EventsApi construct with dependencies (table, factory, stage config)
+    const eventsApi = new EventsApi(this, 'EventsApi', {
+      eventsTable: eventsTable.table, // Pass the actual Table instance, not the construct
+      lambdaFactory,
+      stageConfig: stageConfig.config, // Pass the StageConfig, not the StageConfiguration construct
     });
 
-    eventsTable.addGlobalSecondaryIndex({
-      indexName: 'DifficultyIndex',
-      partitionKey: {
-        name: 'difficultyEnabled',
-        type: AttributeType.STRING,
-      },
-      sortKey: {
-        name: 'date',
-        type: AttributeType.STRING,
-      },
-      projectionType: ProjectionType.ALL,
-    });
-
-    eventsTable.addGlobalSecondaryIndex({
-      indexName: 'LocationIndex',
-      partitionKey: {
-        name: 'locationEnabled',
-        type: AttributeType.STRING,
-      },
-      sortKey: {
-        name: 'date',
-        type: AttributeType.STRING,
-      },
-      projectionType: ProjectionType.ALL,
-    });
-
-    eventsTable.addGlobalSecondaryIndex({
-      indexName: 'EnabledIndex',
-      partitionKey: {
-        name: 'enabledStatus',
-        type: AttributeType.STRING,
-      },
-      sortKey: {
-        name: 'date',
-        type: AttributeType.STRING,
-      },
-      projectionType: ProjectionType.ALL,
-    });
-
-    const eventsLambda = new NodejsFunction(this, 'EventsLambda', {
-      runtime: Runtime.NODEJS_22_X,
-      entry: path.join(__dirname, '../lambdas/events/getEvents.ts'),
-      environment: {
-        EVENTS_TABLE_NAME: eventsTable.tableName,
-      },
-      bundling: {
-        minify: false,
-        sourceMap: true,
-        sourcesContent: false,
-        format: OutputFormat.ESM,
-        target: 'esnext',
-      },
-      handler: 'handler',
-    });
-
-    eventsTable.grantReadData(eventsLambda);
-
-    const getEventBySlugLambda = new NodejsFunction(
-      this,
-      'GetEventBySlugLambda',
-      {
-        runtime: Runtime.NODEJS_22_X,
-        entry: path.join(__dirname, '../lambdas/events/getEventBySlug.ts'),
-        environment: {
-          EVENTS_TABLE_NAME: eventsTable.tableName,
-        },
-        bundling: {
-          minify: false,
-          sourceMap: true,
-          sourcesContent: false,
-          format: OutputFormat.ESM,
-          target: 'esnext',
-        },
-        handler: 'handler',
-      }
-    );
-
-    eventsTable.grantReadData(getEventBySlugLambda);
-
-    const httpApi = new HttpApi(this, 'TriProjectHubApi', {
-      apiName: 'TriProjectHubApi',
-    });
-
-    const eventsIntegration = new HttpLambdaIntegration(
-      'EventsIntegration',
-      eventsLambda
-    );
-
-    httpApi.addRoutes({
-      path: '/events',
-      methods: [HttpMethod.GET],
-      integration: eventsIntegration,
-    });
-
-    const getEventBySlugIntegration = new HttpLambdaIntegration(
-      'GetEventBySlugIntegration',
-      getEventBySlugLambda
-    );
-
-    httpApi.addRoutes({
-      path: '/events/{slug}',
-      methods: [HttpMethod.GET],
-      integration: getEventBySlugIntegration,
+    // 5. Create HttpApiConstruct with routes from EventsApi and stage config
+    new HttpApiConstruct(this, 'HttpApi', {
+      stageConfig: stageConfig.config,
+      apiName: config.apiName || 'api',
+      routes: eventsApi.getRoutes(),
     });
   }
 }

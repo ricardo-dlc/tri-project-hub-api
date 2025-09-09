@@ -3,18 +3,32 @@ import * as cdk from 'aws-cdk-lib';
 import { TriProjectHubApiStack } from '../lib/tri-project-hub-api-stack';
 
 const app = new cdk.App();
-new TriProjectHubApiStack(app, 'TriProjectHubApiStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
 
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+// Get stage from multiple sources (in order of precedence):
+// 1. CDK context (-c stage=prod)
+// 2. Environment variable (STAGE=prod)
+// 3. Default to 'dev'
+const stage = app.node.tryGetContext('stage') || process.env.STAGE || 'dev';
 
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
+// Get project name (optional override)
+const projectName =
+  app.node.tryGetContext('projectName') || process.env.PROJECT_NAME;
 
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+// Create stage-aware stack ID to allow multiple stages in same account
+const stackId = `TriProjectHubApiStack-${stage}`;
+
+new TriProjectHubApiStack(app, stackId, {
+  config: {
+    stage,
+    projectName,
+  },
+
+  // Environment configuration
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
+  },
+
+  // Add stage as stack description
+  description: `Tri Project Hub API Stack for ${stage} environment`,
 });
