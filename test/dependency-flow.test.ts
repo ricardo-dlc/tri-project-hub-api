@@ -65,7 +65,7 @@ describe('Dependency Flow Validation', () => {
     });
 
     template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
-      RouteKey: 'GET /events/{slug}',
+      RouteKey: 'GET /events/slug/{slug}',
     });
   });
 
