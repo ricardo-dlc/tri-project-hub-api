@@ -165,10 +165,10 @@ export class EventsApi extends Construct {
         integrationName: 'EventsIntegration',
       },
       {
-        path: '/events/{slug}',
+        path: '/events/slug/{slug}',
         method: HttpMethod.GET,
         lambda: this.functions.getEventBySlug,
-        integrationName: 'GetEventBySlugIntegration',
+        integrationName: 'EventsSlugIntegration',
       },
     ];
   }
