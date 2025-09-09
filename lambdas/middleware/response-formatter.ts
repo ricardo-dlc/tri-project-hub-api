@@ -12,10 +12,7 @@ export const formatSuccessResponse = <T>(
 });
 
 // Error response formatting using template literals and spread operator
-export const formatErrorResponse = (
-  error: Error,
-  statusCode: number
-): ErrorResponse => ({
+export const formatErrorResponse = (error: Error): ErrorResponse => ({
   success: false,
   error: {
     message: error.message,
@@ -27,7 +24,9 @@ export const formatErrorResponse = (
 });
 
 // Helper to check if result is a HandlerResponse
-export const isHandlerResponse = <T>(result: T | HandlerResponse<T>): result is HandlerResponse<T> => {
+export const isHandlerResponse = <T>(
+  result: T | HandlerResponse<T>
+): result is HandlerResponse<T> => {
   return typeof result === 'object' && result !== null && 'data' in result;
 };
 

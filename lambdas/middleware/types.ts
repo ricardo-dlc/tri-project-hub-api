@@ -61,6 +61,14 @@ export interface ProcessingResult<T> {
   error?: Error;
   statusCode: number;
   headers: Record<string, string>;
+  metadata?: {
+    errorType?: string;
+    classification?: string;
+    requestId?: string;
+    path?: string;
+    method?: string;
+    executionTime?: number;
+  };
 }
 
 // Error mapping configuration

@@ -33,3 +33,14 @@ export {
   generateCorsHeaders,
   isHandlerResponse,
 } from './response-formatter';
+
+// Error handling utilities
+export {
+  classifyError,
+  getErrorStatusCode,
+  logError,
+  handleError,
+  sanitizeError,
+  aggregateErrors,
+  shouldRetryError,
+} from './error-handler';

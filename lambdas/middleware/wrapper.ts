@@ -1,5 +1,4 @@
 import { APIGatewayProxyHandlerV2 } from 'aws-lambda';
-import { HttpError } from './errors';
 import {
   formatErrorResponse,
   formatSuccessResponse,
@@ -9,40 +8,8 @@ import {
 import {
   MiddlewareHandler,
   MiddlewareOptions,
-  ProcessingResult,
 } from './types';
-
-// Error handling using ES6+ features: arrow functions, optional chaining, destructuring
-const handleError = (
-  error: Error,
-  options: MiddlewareOptions
-): ProcessingResult<never> => {
-  // Check if it's a known HttpError using instanceof
-  if (error instanceof HttpError) {
-    return {
-      statusCode: error.statusCode,
-      error,
-      headers: {},
-    };
-  }
-
-  // Check custom error mappings using optional chaining and nullish coalescing
-  const customMapping = options.customErrorMap?.[error.constructor.name];
-  if (customMapping) {
-    return {
-      statusCode: customMapping,
-      error,
-      headers: {},
-    };
-  }
-
-  // Default to 500 for unknown errors using object shorthand
-  return {
-    statusCode: 500,
-    error: new Error('Internal server error'),
-    headers: {},
-  };
-};
+import { handleError, sanitizeError } from './error-handler';
 
 // Main middleware function signature using ES6+ arrow function and async/await
 export const withMiddleware =
@@ -58,7 +25,9 @@ export const withMiddleware =
       const result = await handler(event, context);
 
       // Check if result includes status code
-      const statusCode = isHandlerResponse(result) ? (result.statusCode ?? 200) : 200;
+      const statusCode = isHandlerResponse(result)
+        ? result.statusCode ?? 200
+        : 200;
       const data = isHandlerResponse(result) ? result.data : result;
 
       // Generate CORS headers if configured
@@ -83,17 +52,24 @@ export const withMiddleware =
         body: JSON.stringify(response),
       };
     } catch (error) {
-      // Handle errors using the error handler
-      const errorResult = handleError(error as Error, options);
+      const executionTime = Date.now() - startTime;
+      
+      // Extract request context using destructuring and optional chaining
+      const requestContext = {
+        requestId: context.awsRequestId,
+        path: event.routeKey ?? event.rawPath,
+        method: event.requestContext?.http?.method,
+        executionTime
+      };
 
-      // Log error if enabled
-      if (options.errorLogging !== false) {
-        console.error('Lambda middleware error:', {
-          error: errorResult.error?.message,
-          statusCode: errorResult.statusCode,
-          executionTime: Date.now() - startTime,
-        });
-      }
+      // Handle errors using the enhanced error handler
+      const errorResult = handleError(error as Error, options, requestContext);
+
+      // Sanitize error for production if needed
+      const sanitizedError = sanitizeError(
+        errorResult.error!,
+        process.env.NODE_ENV === 'production'
+      );
 
       // Generate CORS headers for error responses too
       const corsHeaders = options.cors
@@ -106,10 +82,7 @@ export const withMiddleware =
         : {};
 
       // Format error response
-      const response = formatErrorResponse(
-        errorResult.error!,
-        errorResult.statusCode
-      );
+      const response = formatErrorResponse(sanitizedError);
 
       return {
         statusCode: errorResult.statusCode,
