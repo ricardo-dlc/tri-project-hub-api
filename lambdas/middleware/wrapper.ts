@@ -63,7 +63,7 @@ export const withMiddleware =
       };
 
       // Handle errors using the enhanced error handler
-      const errorResult = handleError(error as Error, options, requestContext);
+      const errorResult = handleError(error, options, requestContext);
 
       // Sanitize error for production if needed
       const sanitizedError = sanitizeError(
