@@ -17,6 +17,9 @@ importers:
       constructs:
         specifier: ^10.0.0
         version: 10.4.2
+      electrodb:
+        specifier: ^3.4.5
+        version: 3.4.5(@aws-sdk/client-dynamodb@3.883.0)
       esbuild:
         specifier: ^0.25.9
         version: 0.25.9
@@ -1063,6 +1066,9 @@ packages:
     resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
     engines: {node: '>=0.3.1'}
 
+  electrodb@3.4.5:
+    resolution: {integrity: sha512-VkYGnvq7N7fVxA9BFlgyLrIfTXO1aLOXNdVAW35zJyd9scKu6P/yk4iIDyiGTH7u6pCNvMIQ21Plm09ftmodag==}
+
   electron-to-chromium@1.5.212:
     resolution: {integrity: sha512-gE7ErIzSW+d8jALWMcOIgf+IB6lpfsg6NwOhPVwKzDtN2qcBix47vlin4yzSregYDxTCXOUqAZjVY/Z3naS7ww==}
 
@@ -1397,6 +1403,9 @@ packages:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
     engines: {node: '>=6'}
     hasBin: true
+
+  jsonschema@1.2.7:
+    resolution: {integrity: sha512-3dFMg9hmI9LdHag/BRIhMefCfbq1hicvYMy8YhZQorAdzOzWz7NjniSpn39yjpzUAMIWtGyyZuH2KNBloH7ZLw==}
 
   kleur@3.0.3:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
@@ -3203,6 +3212,14 @@ snapshots:
 
   diff@4.0.2: {}
 
+  electrodb@3.4.5(@aws-sdk/client-dynamodb@3.883.0):
+    dependencies:
+      '@aws-sdk/lib-dynamodb': 3.883.0(@aws-sdk/client-dynamodb@3.883.0)
+      '@aws-sdk/util-dynamodb': 3.883.0(@aws-sdk/client-dynamodb@3.883.0)
+      jsonschema: 1.2.7
+    transitivePeerDependencies:
+      - '@aws-sdk/client-dynamodb'
+
   electron-to-chromium@1.5.212: {}
 
   emittery@0.13.1: {}
@@ -3729,6 +3746,8 @@ snapshots:
   json-parse-even-better-errors@2.3.1: {}
 
   json5@2.2.3: {}
+
+  jsonschema@1.2.7: {}
 
   kleur@3.0.3: {}
 

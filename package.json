@@ -10,7 +10,7 @@
     "test": "jest",
     "cdk": "cdk",
     "deploy": "cdk deploy",
-    "deploy:dev": "cdk deploy -c stage=dev",
+    "deploy:dev": "cdk deploy -c stage=dev --require-approval never",
     "deploy:prod": "cdk deploy -c stage=prod",
     "synth": "cdk synth",
     "synth:dev": "cdk synth -c stage=dev",
@@ -34,6 +34,7 @@
     "@types/aws-lambda": "^8.10.152",
     "aws-cdk-lib": "2.200.1",
     "constructs": "^10.0.0",
+    "electrodb": "^3.4.5",
     "esbuild": "^0.25.9"
   }
 }

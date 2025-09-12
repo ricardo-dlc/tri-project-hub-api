@@ -72,6 +72,10 @@ export class EventsTable extends Construct {
         name: 'slug',
         type: AttributeType.STRING,
       },
+      sortKey: {
+        name: 'slugDate',
+        type: AttributeType.STRING,
+      },
       projectionType: ProjectionType.ALL,
     });
 
@@ -79,25 +83,11 @@ export class EventsTable extends Construct {
     this.table.addGlobalSecondaryIndex({
       indexName: 'TypeIndex',
       partitionKey: {
-        name: 'typeEnabled',
+        name: 'type',
         type: AttributeType.STRING,
       },
       sortKey: {
-        name: 'date',
-        type: AttributeType.STRING,
-      },
-      projectionType: ProjectionType.ALL,
-    });
-
-    // FeaturedIndex - for querying featured events with date sorting
-    this.table.addGlobalSecondaryIndex({
-      indexName: 'FeaturedIndex',
-      partitionKey: {
-        name: 'isFeaturedEnabled',
-        type: AttributeType.STRING,
-      },
-      sortKey: {
-        name: 'date',
+        name: 'typeDate',
         type: AttributeType.STRING,
       },
       projectionType: ProjectionType.ALL,
@@ -107,39 +97,39 @@ export class EventsTable extends Construct {
     this.table.addGlobalSecondaryIndex({
       indexName: 'DifficultyIndex',
       partitionKey: {
-        name: 'difficultyEnabled',
+        name: 'difficulty',
         type: AttributeType.STRING,
       },
       sortKey: {
-        name: 'date',
+        name: 'difficultyDate',
         type: AttributeType.STRING,
       },
       projectionType: ProjectionType.ALL,
     });
 
-    // LocationIndex - for querying events by location with date sorting
+    // FeaturedIndex - for querying featured events, sorted by date
     this.table.addGlobalSecondaryIndex({
-      indexName: 'LocationIndex',
+      indexName: 'FeaturedIndex',
       partitionKey: {
-        name: 'locationEnabled',
+        name: 'featuredStatus', // Must match the new attribute
         type: AttributeType.STRING,
       },
       sortKey: {
-        name: 'date',
+        name: 'date', // Must match the attribute used for the SK
         type: AttributeType.STRING,
       },
       projectionType: ProjectionType.ALL,
     });
 
-    // EnabledIndex - for querying enabled/disabled events with date sorting
+    // EnabledIndex - for querying all enabled events, sorted by date
     this.table.addGlobalSecondaryIndex({
       indexName: 'EnabledIndex',
       partitionKey: {
-        name: 'enabledStatus',
+        name: 'enabledStatus', // Must match the new attribute
         type: AttributeType.STRING,
       },
       sortKey: {
-        name: 'date',
+        name: 'date', // Use the event date for sorting
         type: AttributeType.STRING,
       },
       projectionType: ProjectionType.ALL,

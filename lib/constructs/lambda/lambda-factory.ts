@@ -86,7 +86,7 @@ export class LambdaFactory {
       memorySize: config.memorySize || this.defaultMemorySize,
       environment,
       bundling: {
-        format: OutputFormat.ESM,
+        format: OutputFormat.CJS,
         target: 'node22',
         sourceMap: true,
         minify: this.stageConfig.config.isProduction,
