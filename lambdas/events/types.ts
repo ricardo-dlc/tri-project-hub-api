@@ -27,3 +27,8 @@ export interface EventItem {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface PaginationQueryParams {
+  limit?: string;
+  nextToken?: string;
+}

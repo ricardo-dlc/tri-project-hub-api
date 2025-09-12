@@ -1,16 +1,34 @@
-import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
+import type {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyHandlerV2,
+} from 'aws-lambda';
 import { withMiddleware } from '../middleware';
+import { executeWithPagination } from '../utils/pagination';
 import { EventEntity } from './model';
+import { PaginationQueryParams } from './types';
 
-const getFeaturedEventsHandler = async () => {
-  const events = await EventEntity.query
+const getFeaturedEventsHandler = async (event: APIGatewayProxyEventV2) => {
+  const queryParams: PaginationQueryParams = event.queryStringParameters ?? {};
+  const { limit, nextToken } = queryParams;
+
+  console.log(`Featured events query parameters:`, queryParams);
+
+  const query = EventEntity.query
     .FeaturedIndex({
       featuredStatus: 'featured',
     })
-    .where(({ isEnabled }, { eq }) => eq(isEnabled, true))
-    .go();
+    .where(({ isEnabled }, { eq }) => eq(isEnabled, true));
 
-  return { events: events.data };
+  const result = await executeWithPagination(query, {
+    limit: limit ? parseInt(limit, 10) : undefined,
+    nextToken,
+    defaultLimit: 10, // Smaller default for featured events
+  });
+
+  return {
+    events: result.data,
+    pagination: result.pagination,
+  };
 };
 
 export const handler: APIGatewayProxyHandlerV2 = withMiddleware(
