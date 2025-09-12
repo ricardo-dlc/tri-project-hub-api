@@ -8,15 +8,19 @@ import { EventEntity } from './model';
 interface EventQueryParams {
   type?: string;
   difficulty?: string;
+  limit?: string;
+  nextToken?: string;
 }
 
 const getEventsHandler = async (event: APIGatewayProxyEventV2) => {
   const queryParams: EventQueryParams = event.queryStringParameters ?? {};
-  const { type, difficulty } = queryParams;
+  const { type, difficulty, limit, nextToken } = queryParams;
+
+  const pageLimit = limit ? parseInt(limit, 10) : 20; // default 20 items
 
   console.log(`Query parameters:`, queryParams);
   let query;
-  // Determine query priority: isFeatured > type > difficulty > default
+  // Determine query priority: type > difficulty > default
   if (type) {
     console.log(`Querying events by type: ${type}`);
     query = EventEntity.query
@@ -36,9 +40,27 @@ const getEventsHandler = async (event: APIGatewayProxyEventV2) => {
     query = EventEntity.query.EnabledIndex({ enabledStatus: 'enabled' });
   }
 
-  const events = await query.go();
+  // Fetch one extra item to check if there's a next page
+  const events = await query.go({
+    limit: pageLimit + 1,
+    ...(nextToken ? { cursor: nextToken } : {}),
+  });
 
-  return { events: events.data };
+  // Check if we got more items than requested
+  const hasNextPage = events.data.length > pageLimit;
+  const itemsToReturn = hasNextPage
+    ? events.data.slice(0, pageLimit)
+    : events.data;
+
+  return {
+    events: itemsToReturn,
+    pagination: {
+      hasNextPage,
+      nextToken: hasNextPage ? events.cursor : null,
+      limit: pageLimit,
+      count: itemsToReturn.length,
+    },
+  };
 };
 
 export const handler: APIGatewayProxyHandlerV2 =
