@@ -1,9 +1,13 @@
-import { Table } from 'aws-cdk-lib/aws-dynamodb';
 import { HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
+import { Table } from 'aws-cdk-lib/aws-dynamodb';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import * as path from 'path';
-import { ApiRoute, StageConfig, LambdaFactory } from '../../types/infrastructure';
+import {
+  ApiRoute,
+  LambdaFactory,
+  StageConfig,
+} from '../../types/infrastructure';
 
 /**
  * Properties for EventsApi construct
@@ -26,6 +30,7 @@ export class EventsApi extends Construct {
   public readonly functions: {
     getEvents: NodejsFunction;
     getEventBySlug: NodejsFunction;
+    getFeaturedEvents: NodejsFunction;
   };
 
   constructor(scope: Construct, id: string, props: EventsApiProps) {
@@ -59,12 +64,18 @@ export class EventsApi extends Construct {
           lambdaFactory,
           stageConfig
         ),
+        getFeaturedEvents: this.createGetFeaturedEventsFunction(
+          eventsTable,
+          lambdaFactory,
+          stageConfig
+        ),
       };
 
       // Grant read permissions to the events table directly
       // Since we now receive the Table instance directly, we grant permissions here
       eventsTable.grantReadData(this.functions.getEvents);
       eventsTable.grantReadData(this.functions.getEventBySlug);
+      eventsTable.grantReadData(this.functions.getFeaturedEvents);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -153,6 +164,46 @@ export class EventsApi extends Construct {
   }
 
   /**
+   * Create the getFeaturedEvents Lambda function using the factory with stage-aware configuration
+   * @param eventsTable The DynamoDB Table instance
+   * @param lambdaFactory The Lambda factory instance
+   * @param stageConfig The stage configuration for naming and environment setup
+   * @returns NodejsFunction for getFeaturedEvents
+   */
+  private createGetFeaturedEventsFunction(
+    eventsTable: Table,
+    lambdaFactory: LambdaFactory,
+    stageConfig: StageConfig
+  ): NodejsFunction {
+    // Validate entry point exists
+    const entryPath = path.join(
+      __dirname,
+      '../../../lambdas/events/getFeaturedEvents.ts'
+    );
+
+    try {
+      // Create stage-aware environment variables
+      const stageAwareEnvironment = {
+        EVENTS_TABLE_NAME: eventsTable.tableName,
+        STAGE: stageConfig.stageName,
+        IS_PRODUCTION: stageConfig.isProduction.toString(),
+      };
+
+      return lambdaFactory.createApiFunction({
+        functionName: 'getFeaturedEvents',
+        entry: entryPath,
+        environment: stageAwareEnvironment,
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Failed to create getFeaturedEvents Lambda function: ${errorMessage}`
+      );
+    }
+  }
+
+  /**
    * Get API route configurations for the events endpoints
    * @returns Array of ApiRoute configurations
    */
@@ -169,6 +220,12 @@ export class EventsApi extends Construct {
         method: HttpMethod.GET,
         lambda: this.functions.getEventBySlug,
         integrationName: 'EventsSlugIntegration',
+      },
+      {
+        path: '/events/featured',
+        method: HttpMethod.GET,
+        lambda: this.functions.getFeaturedEvents,
+        integrationName: 'EventsFeaturedIntegration',
       },
     ];
   }
