@@ -105,7 +105,7 @@ export class EventsApi extends Construct {
     // Validate entry point exists
     const entryPath = path.join(
       __dirname,
-      '../../../lambdas/events/getEvents.ts'
+      '../../../lambdas/features/events/handlers/getEvents.ts'
     );
 
     try {
@@ -145,7 +145,7 @@ export class EventsApi extends Construct {
     // Validate entry point exists
     const entryPath = path.join(
       __dirname,
-      '../../../lambdas/events/getEventById.ts'
+      '../../../lambdas/features/events/handlers/getEventById.ts'
     );
 
     try {
@@ -185,7 +185,7 @@ export class EventsApi extends Construct {
     // Validate entry point exists
     const entryPath = path.join(
       __dirname,
-      '../../../lambdas/events/getEventBySlug.ts'
+      '../../../lambdas/features/events/handlers/getEventBySlug.ts'
     );
 
     try {
@@ -225,7 +225,7 @@ export class EventsApi extends Construct {
     // Validate entry point exists
     const entryPath = path.join(
       __dirname,
-      '../../../lambdas/events/getFeaturedEvents.ts'
+      '../../../lambdas/features/events/handlers/getFeaturedEvents.ts'
     );
 
     try {

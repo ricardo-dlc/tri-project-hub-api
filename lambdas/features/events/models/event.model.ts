@@ -1,5 +1,5 @@
 import { Entity } from 'electrodb';
-import { ddbDocClient } from '../utils/dynamo';
+import { ddbDocClient } from '../../../shared/utils/dynamo';
 
 export const EventEntity = new Entity(
   {

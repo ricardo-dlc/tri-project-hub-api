@@ -2,10 +2,10 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
-import { withMiddleware } from '../middleware';
-import { EventEntity } from './model';
-import { executeWithPagination } from '../utils/pagination';
-import { PaginationQueryParams } from './types';
+import { executeWithPagination } from '../../../shared/utils/pagination';
+import { withMiddleware } from '../../../shared/wrapper';
+import { EventEntity } from '../models/event.model';
+import { PaginationQueryParams } from '../types/event.types';
 
 interface EventQueryParams extends PaginationQueryParams {
   type?: string;

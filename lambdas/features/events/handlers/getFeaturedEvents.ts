@@ -2,10 +2,10 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
-import { withMiddleware } from '../middleware';
-import { executeWithPagination } from '../utils/pagination';
-import { EventEntity } from './model';
-import { PaginationQueryParams } from './types';
+import { withMiddleware } from '../../../shared';
+import { executeWithPagination } from '../../../shared/utils/pagination';
+import { EventEntity } from '../models/event.model';
+import { PaginationQueryParams } from '../types/event.types';
 
 const getFeaturedEventsHandler = async (event: APIGatewayProxyEventV2) => {
   const queryParams: PaginationQueryParams = event.queryStringParameters ?? {};
