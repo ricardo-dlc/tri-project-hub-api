@@ -44,3 +44,20 @@ export {
   aggregateErrors,
   shouldRetryError,
 } from './error-handler';
+
+// Auth and database utilities
+export {
+  db,
+  client,
+  checkDatabaseConnection,
+  closeDatabaseConnection,
+  config,
+  authConfig,
+  databaseConfig,
+} from './auth';
+
+export type {
+  DatabaseConfig,
+  AuthConfig,
+  AppConfig,
+} from './auth';
