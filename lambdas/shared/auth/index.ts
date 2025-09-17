@@ -30,6 +30,17 @@ export type {
   SafeUser,
 } from './schema';
 
+// Better-Auth configuration and utilities
+export {
+  auth,
+  validateSessionToken,
+  extractTokenFromHeader,
+  createAuthContext,
+  authConfig as betterAuthConfig,
+} from './better-auth';
+
+export type { Auth } from './better-auth';
+
 // Migration utilities
 export {
   runMigrations,
