@@ -19,7 +19,7 @@ export type {
   Permission,
   RBACConfig,
   RateLimitConfig,
-  AuthMiddlewareOptions,
+
   AuthContext,
   AuthErrorResponse,
   TokenValidationResult,

@@ -9,6 +9,14 @@ const DEFAULT_ERROR_MAPPINGS: ErrorMapping[] = [
   { errorClass: 'BadRequestError', statusCode: 400 },
   { errorClass: 'ValidationError', statusCode: 422 },
   { errorClass: 'ConflictError', statusCode: 409 },
+  // Auth-specific error mappings
+  { errorClass: 'AuthenticationError', statusCode: 401 },
+  { errorClass: 'AuthorizationError', statusCode: 403 },
+  { errorClass: 'InvalidTokenError', statusCode: 401 },
+  { errorClass: 'TooManyRequestsError', statusCode: 429 },
+  { errorClass: 'UserExistsError', statusCode: 409 },
+  { errorClass: 'UserNotFoundError', statusCode: 404 },
+  { errorClass: 'SessionExpiredError', statusCode: 401 },
 ];
 
 // Error classification logic using arrow functions and instanceof checks

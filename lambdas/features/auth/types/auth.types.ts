@@ -135,12 +135,7 @@ export interface RateLimitConfig {
   windowMs: number;
 }
 
-// Authentication middleware options
-export interface AuthMiddlewareOptions {
-  required?: boolean;
-  rbac?: RBACConfig;
-  rateLimiting?: RateLimitConfig;
-}
+
 
 // Context attached to authenticated requests
 export interface AuthContext {
