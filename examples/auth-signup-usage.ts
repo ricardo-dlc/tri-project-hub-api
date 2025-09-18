@@ -3,12 +3,13 @@
  * Demonstrates how to integrate the signUp handler in a Lambda function
  * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5
  * 
- * IMPORTANT: This implementation has been completely refactored to remove Better-Auth
- * dependency. We now use our own robust authentication system with:
- * - User repository for secure password hashing with bcrypt (12 rounds)
- * - Session repository for secure token generation using crypto.randomBytes
- * - Full control over authentication flow and error handling
- * - No external authentication library dependencies
+ * IMPORTANT: This handler uses Better-Auth for authentication with hybrid session handling.
+ * Key implementation details:
+ * - Better-Auth handles user creation, validation, and password hashing
+ * - Schema corrected to match Better-Auth expectations (password in accounts table)
+ * - Session objects created from Better-Auth tokens for API compatibility
+ * - Full Better-Auth JWT tokens work with frontend clients
+ * - Combines Better-Auth security with custom session representation
  */
 
 import { signUpHandler } from '../lambdas/features/auth/handlers/signUp';
@@ -41,7 +42,7 @@ export const handler = signUpHandler;
  *       "createdAt": "2023-01-01T00:00:00.000Z",
  *       "updatedAt": "2023-01-01T00:00:00.000Z"
  *     },
- *     "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+ *     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", // Better-Auth JWT token
  *     "expiresAt": "2023-01-08T00:00:00.000Z"
  *   }
  * }
@@ -75,10 +76,10 @@ export const handler = signUpHandler;
  * 
  * Security Features:
  * - Duplicate email checking
- * - Password strength validation (bcrypt with 12 rounds)
- * - Secure session token generation (crypto.randomBytes)
+ * - Better-Auth password hashing and validation
+ * - JWT token generation with proper signing
  * - Input sanitization and validation
  * - CORS support for frontend integration
- * - Comprehensive error handling
- * - Session expiration and cleanup
+ * - Better-Auth built-in security features (CSRF, rate limiting)
+ * - Session management compatible with frontend clients
  */

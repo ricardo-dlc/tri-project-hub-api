@@ -19,14 +19,13 @@ export const generateId = (): string => ulid();
  */
 export const users = pgTable('users', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
+  name: text('name').notNull(),
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').default(false).notNull(),
-  name: text('name'),
   image: text('image'),
-  role: text('role').default('user').notNull(), // 'user', 'organizer', 'admin'
-  password: text('password_hash').notNull(), // Better-Auth expects 'password' field name
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  role: text('role').default('user'), // 'user', 'organizer', 'admin'
 }, (table) => ([
   // Indexes for performance
   index('users_email_idx').on(table.email),
@@ -40,24 +39,23 @@ export const users = pgTable('users', {
  */
 export const accounts = pgTable('accounts', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
+  accountId: text("account_id").notNull(),
+  providerId: text('provider_account_id').notNull(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: text('type').notNull(), // 'email', 'oauth'
-  provider: text('provider').notNull(), // 'credentials', 'google', 'github', etc.
-  providerAccountId: text('provider_account_id').notNull(),
-  refreshToken: text('refresh_token'),
   accessToken: text('access_token'),
-  expiresAt: integer('expires_at'),
-  tokenType: text('token_type'),
-  scope: text('scope'),
+  refreshToken: text('refresh_token'),
   idToken: text('id_token'),
-  sessionState: text('session_state'),
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: text('scope'),
+  password: text("password"),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ([
   // Indexes for performance and uniqueness
   index('accounts_user_id_idx').on(table.userId),
-  index('accounts_provider_idx').on(table.provider),
-  index('accounts_provider_account_idx').on(table.provider, table.providerAccountId),
+  index('accounts_provider_idx').on(table.providerId),
+  index('accounts_provider_account_idx').on(table.providerId, table.accountId),
 ]));
 
 /**
@@ -66,16 +64,18 @@ export const accounts = pgTable('accounts', {
  */
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
-  sessionToken: text('session_token').notNull().unique(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  expires: timestamp('expires', { withTimezone: true }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  token: text("token").notNull().unique(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
 }, (table) => ([
   // Indexes for performance
-  index('sessions_session_token_idx').on(table.sessionToken),
+  index('sessions_token_idx').on(table.token),
   index('sessions_user_id_idx').on(table.userId),
-  index('sessions_expires_idx').on(table.expires),
+  index('sessions_expires_idx').on(table.expiresAt),
 ]));
 
 /**
@@ -83,16 +83,16 @@ export const sessions = pgTable('sessions', {
  * Requirements: 6.4, 6.5 - proper constraints and compound primary key
  */
 export const verificationTokens = pgTable('verification_tokens', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
   identifier: text('identifier').notNull(), // email or user ID
-  token: text('token').notNull(),
-  expires: timestamp('expires', { withTimezone: true }).notNull(),
+  value: text('value').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ([
-  // Compound primary key as per better-auth requirements
-  primaryKey({ columns: [table.identifier, table.token] }),
   // Indexes for performance
   index('verification_tokens_identifier_idx').on(table.identifier),
-  index('verification_tokens_expires_idx').on(table.expires),
+  index('verification_tokens_expires_idx').on(table.expiresAt),
 ]));
 
 /**

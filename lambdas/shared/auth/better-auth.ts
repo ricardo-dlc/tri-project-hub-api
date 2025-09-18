@@ -8,6 +8,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from './database';
 import { users, accounts, sessions, verificationTokens, generateId } from './schema';
 import { config } from './config';
+import { compare, hash } from 'bcryptjs';
 
 /**
  * Better-Auth instance configured with Drizzle adapter
@@ -31,6 +32,12 @@ export const auth = betterAuth({
     requireEmailVerification: false, // Simplified for initial implementation
     minPasswordLength: config.auth.passwordMinLength,
     maxPasswordLength: config.auth.passwordMaxLength,
+    // Ensure password hashing is enabled
+    autoSignIn: true, // Automatically sign in after registration
+    // password: {
+    //   hash: async (password) => await hash(password, 10),
+    //   verify: async (data) => await compare(data.password, data.hash)
+    // }
   },
 
   // Session management configuration
@@ -79,6 +86,17 @@ export const auth = betterAuth({
 
   // Plugins configuration (can be extended later)
   plugins: [],
+  user: {
+    additionalFields: {
+      role: {
+        type: 'string',
+        required: false,
+        defaultValue: 'user',
+        input: true,
+        // enum: ['user', 'organizer', 'admin'],
+      },
+    },
+  }
 });
 
 /**
