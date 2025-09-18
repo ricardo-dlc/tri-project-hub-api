@@ -59,6 +59,7 @@ export const auth = betterAuth({
     crossSubDomainCookies: {
       enabled: false, // Disabled for API-only usage
     },
+    cookiePrefix: 'auth', // Simplified for initial implementation
   },
 
   // Security configuration
@@ -96,7 +97,7 @@ export const auth = betterAuth({
         // enum: ['user', 'organizer', 'admin'],
       },
     },
-  }
+  },
 });
 
 /**
