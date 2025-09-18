@@ -52,6 +52,7 @@ export class UserRepository {
      * Requirements: 1.1, 1.2, 6.1
      */
     async createUser(userData: CreateUserData): Promise<SafeUser> {
+        console.log('-> Creating user:', userData);
         // Validate email format
         this.validateEmail(userData.email);
 
@@ -66,6 +67,7 @@ export class UserRepository {
 
         // Hash password
         const passwordHash = await this.hashPassword(userData.password);
+        console.log('Password hash:', passwordHash);
 
         // Prepare user data
         const newUser: NewUser = {
@@ -73,18 +75,19 @@ export class UserRepository {
             email: userData.email.toLowerCase().trim(),
             name: userData.name?.trim(),
             role: userData.role || 'user',
-            passwordHash,
+            password: passwordHash, // Store hashed password in 'password' field
             emailVerified: false,
             createdAt: new Date(),
             updatedAt: new Date(),
         };
+        console.log('New user data:', newUser);
 
         // Insert user into database
         const [createdUser] = await db
             .insert(users)
             .values(newUser)
             .returning();
-
+        console.log('Created user:', createdUser);
         if (!createdUser) {
             throw new Error('Failed to create user');
         }
@@ -183,7 +186,7 @@ export class UserRepository {
         const result = await db
             .update(users)
             .set({
-                passwordHash,
+                password: passwordHash, // Store hashed password in 'password' field
                 updatedAt: new Date(),
             })
             .where(eq(users.id, id));
@@ -205,7 +208,7 @@ export class UserRepository {
             return { isValid: false };
         }
 
-        const isValid = await compare(password, user.passwordHash);
+        const isValid = await compare(password, user.password);
 
         return {
             isValid,
@@ -337,7 +340,7 @@ export class UserRepository {
      * Requirements: 6.6
      */
     private toSafeUser(user: User): SafeUser {
-        const { passwordHash, ...safeUser } = user;
+        const { password, ...safeUser } = user;
         return safeUser;
     }
 

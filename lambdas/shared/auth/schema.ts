@@ -15,6 +15,7 @@ export const generateId = (): string => ulid();
 /**
  * Users table - stores core user information
  * Requirements: 6.4, 6.5 - ULID primary keys and proper constraints
+ * Note: Field names must match Better-Auth expectations
  */
 export const users = pgTable('users', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
@@ -23,7 +24,7 @@ export const users = pgTable('users', {
   name: text('name'),
   image: text('image'),
   role: text('role').default('user').notNull(), // 'user', 'organizer', 'admin'
-  passwordHash: text('password_hash').notNull(),
+  password: text('password_hash').notNull(), // Better-Auth expects 'password' field name
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ([
@@ -116,7 +117,7 @@ export type UserRole = 'user' | 'organizer' | 'admin';
  * Sanitized user type (without password hash)
  * Used for API responses and client-side operations
  */
-export type SafeUser = Omit<User, 'passwordHash'>;
+export type SafeUser = Omit<User, 'password'>;
 
 /**
  * Export all tables for use with Drizzle ORM

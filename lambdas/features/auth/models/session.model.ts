@@ -187,8 +187,14 @@ export class SessionRepository {
       return {
         valid: true,
         user: {
-          ...user,
-          role: user.role as UserRole, // normalize null → undefined
+          id: user.id,
+          email: user.email,
+          emailVerified: user.emailVerified,
+          name: user.name || undefined, // Convert null to undefined for User interface compatibility
+          image: user.image || undefined, // Convert null to undefined for User interface compatibility
+          role: user.role as UserRole,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
         },
         session
       };

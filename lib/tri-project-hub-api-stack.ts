@@ -1,4 +1,4 @@
-import { Stack, StackProps } from 'aws-cdk-lib';
+import { Environment, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { HttpApiConstruct } from './constructs/api/http-api';
 import { StageConfiguration } from './constructs/config/stage-config';
@@ -6,10 +6,16 @@ import { EventsTable } from './constructs/database/events-table';
 import { EventsApi } from './constructs/lambda/events-api';
 import { LambdaFactory } from './constructs/lambda/lambda-factory';
 import { StackConfiguration } from './types/infrastructure';
+import { AuthApi } from './constructs/lambda/auth-api';
+
+export interface TriProjectHubApiStackEnvironment extends Environment {
+  databaseUrl: string;
+}
 
 export interface TriProjectHubApiStackProps extends StackProps {
   /** Stack configuration including stage and project settings */
   config?: StackConfiguration;
+  env: TriProjectHubApiStackEnvironment
 }
 
 export class TriProjectHubApiStack extends Stack {
@@ -46,12 +52,18 @@ export class TriProjectHubApiStack extends Stack {
       lambdaFactory,
       stageConfig: stageConfig.config, // Pass the StageConfig, not the StageConfiguration construct
     });
+    
+    const authApi = new AuthApi(this, 'AuthApi', {
+      lambdaFactory,
+      stageConfig: stageConfig.config,
+      environment: props?.env
+    });
 
     // 5. Create HttpApiConstruct with routes from EventsApi and stage config
     new HttpApiConstruct(this, 'HttpApi', {
       stageConfig: stageConfig.config,
       apiName: config.apiName || 'api',
-      routes: eventsApi.getRoutes(),
+      routes: [...eventsApi.getRoutes(), ...authApi.getRoutes()],
     });
   }
 }

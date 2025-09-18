@@ -9,6 +9,9 @@ const app = new cdk.App();
 // 2. Environment variable (STAGE=prod)
 // 3. Default to 'dev'
 const stage = app.node.tryGetContext('stage') || process.env.STAGE || 'dev';
+const databaseUrl = app.node.tryGetContext('databaseUrl') || process.env.DATABASE_URL || '';
+console.log(`Stage: ${stage}`);
+console.log(`Database URL: ${databaseUrl}`);
 
 // Get project name (optional override)
 const projectName =
@@ -27,6 +30,7 @@ new TriProjectHubApiStack(app, stackId, {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION,
+    databaseUrl: databaseUrl,
   },
 
   // Add stage as stack description
