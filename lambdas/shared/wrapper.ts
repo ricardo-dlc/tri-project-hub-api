@@ -24,11 +24,12 @@ export const withMiddleware =
       // Execute the wrapped handler
       const result = await handler(event, context);
 
-      // Check if result includes status code
+      // Check if result includes status code and headers
       const statusCode = isHandlerResponse(result)
         ? result.statusCode ?? 200
         : 200;
       const data = isHandlerResponse(result) ? result.data : result;
+      const customHeaders = isHandlerResponse(result) ? result.headers || {} : {};
 
       // Generate CORS headers if configured
       const corsHeaders = options.cors
@@ -48,6 +49,7 @@ export const withMiddleware =
         headers: {
           'Content-Type': 'application/json',
           ...corsHeaders,
+          ...customHeaders, // Custom headers from handler (e.g., set-cookie)
         },
         body: JSON.stringify(response),
       };

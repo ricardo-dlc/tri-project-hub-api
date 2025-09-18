@@ -15,6 +15,7 @@ import {
   type User,
   type UserRole,
 } from '../types/auth.types';
+import { type HandlerResponse } from '../../../shared/types';
 import {
   validateSessionToken,
   validateSignInRequest,
@@ -71,7 +72,7 @@ export class AuthService {
    * User registration with email and password
    * Requirements: 1.1, 1.3, 1.4
    */
-  async signUp(signUpData: SignUpRequest): Promise<AuthResult> {
+  async signUp(signUpData: SignUpRequest): Promise<HandlerResponse<AuthResult>> {
     try {
       // Validate input data
       const validatedData = validateSignUpRequest(signUpData);
@@ -98,10 +99,22 @@ export class AuthService {
       // We'll create a session representation from the available data
       const sessionInfo = this.createSessionFromToken(result.response.token, result.response.user);
 
+      // Extract set-cookie headers from Better-Auth response for auto-login
+      const authHeaders: Record<string, string> = {};
+      if (result.headers) {
+        const setCookieHeader = result.headers.get('set-cookie');
+        if (setCookieHeader) {
+          authHeaders['set-cookie'] = setCookieHeader;
+        }
+      }
+
       return {
-        user: this.formatUser(result.response.user),
-        session: sessionInfo,
-        token: result.response.token
+        data: {
+          user: this.formatUser(result.response.user),
+          session: sessionInfo,
+          token: result.response.token
+        },
+        headers: authHeaders
       };
     } catch (error) {
       console.error('Registration error:', error);
@@ -124,7 +137,7 @@ export class AuthService {
    * User authentication with email and password
    * Requirements: 2.1, 2.2
    */
-  async signIn(signInData: SignInRequest): Promise<AuthResult> {
+  async signIn(signInData: SignInRequest): Promise<HandlerResponse<AuthResult>> {
     try {
       // Validate input data
       const validatedData = validateSignInRequest(signInData);
@@ -135,19 +148,32 @@ export class AuthService {
           email: validatedData.email,
           password: validatedData.password,
         },
+        returnHeaders: true,
       });
 
-      if (!result.user || !result.token) {
+      if (!result.response.user || !result.response.token) {
         throw new AuthenticationError('Invalid email or password');
       }
 
       // Better-Auth signInEmail returns user and token, create session representation
-      const sessionInfo = this.createSessionFromToken(result.token, result.user);
+      const sessionInfo = this.createSessionFromToken(result.response.token, result.response.user);
+
+      // Extract set-cookie headers from Better-Auth response for auto-login
+      const authHeaders: Record<string, string> = {};
+      if (result.headers) {
+        const setCookieHeader = result.headers.get('set-cookie');
+        if (setCookieHeader) {
+          authHeaders['set-cookie'] = setCookieHeader;
+        }
+      }
 
       return {
-        user: this.formatUser(result.user),
-        session: sessionInfo,
-        token: result.token
+        data: {
+          user: this.formatUser(result.response.user),
+          session: sessionInfo,
+          token: result.response.token
+        },
+        headers: authHeaders
       };
     } catch (error) {
       if (error instanceof AuthenticationError) {

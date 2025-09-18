@@ -70,8 +70,7 @@ export interface ProfileUpdateRequest {
 // Authentication response
 export interface AuthResponse {
   user: PublicUser;
-  token: string;
-  expiresAt: string;
+  [key: string]: any;
 }
 
 // Profile response

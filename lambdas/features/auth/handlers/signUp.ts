@@ -45,25 +45,25 @@ export const signUpHandler = withMiddleware<AuthResponse>(
 
     // Perform user registration (Requirements 1.1, 1.4)
     console.log('Signing up user...');
-    const authResult = await authService.signUp(validatedData);
-    console.log('User signed up successfully:', authResult.user);
+    return await authService.signUp(validatedData);
+    // console.log('User signed up successfully:', authResult.user);
 
-    // Format response according to AuthResponse interface (Requirement 1.5)
-    const response: AuthResponse = {
-      user: {
-        id: authResult.user.id,
-        email: authResult.user.email,
-        name: authResult.user.name,
-        image: authResult.user.image,
-        role: authResult.user.role,
-        createdAt: authResult.user.createdAt,
-        updatedAt: authResult.user.updatedAt,
-      },
-      token: authResult.token,
-      expiresAt: authResult.session.expires.toISOString(),
-    };
+    // // Format response according to AuthResponse interface (Requirement 1.5)
+    // const response: AuthResponse = {
+    //   user: {
+    //     id: authResult.user.id,
+    //     email: authResult.user.email,
+    //     name: authResult.user.name,
+    //     image: authResult.user.image,
+    //     role: authResult.user.role,
+    //     createdAt: authResult.user.createdAt,
+    //     updatedAt: authResult.user.updatedAt,
+    //   },
+    //   token: authResult.token,
+    //   expiresAt: authResult.session.expires.toISOString(),
+    // };
 
-    return response;
+    // return response;
   },
   {
     // CORS configuration for auth endpoints

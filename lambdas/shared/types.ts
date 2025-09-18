@@ -1,9 +1,10 @@
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 
-// Handler response with optional status code
+// Handler response with optional status code and headers
 export interface HandlerResponse<T = any> {
   data: T;
   statusCode?: number;
+  headers?: Record<string, string>;
 }
 
 // Handler type that returns plain objects or response objects

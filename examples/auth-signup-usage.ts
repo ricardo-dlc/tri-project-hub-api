@@ -3,13 +3,13 @@
  * Demonstrates how to integrate the signUp handler in a Lambda function
  * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5
  * 
- * IMPORTANT: This handler uses Better-Auth for authentication with hybrid session handling.
+ * IMPORTANT: This handler uses Better-Auth with full auto-login support.
  * Key implementation details:
  * - Better-Auth handles user creation, validation, and password hashing
- * - Schema corrected to match Better-Auth expectations (password in accounts table)
- * - Session objects created from Better-Auth tokens for API compatibility
+ * - Auto-login enabled: set-cookie headers returned for immediate session
+ * - Middleware enhanced to support custom headers (set-cookie for sessions)
  * - Full Better-Auth JWT tokens work with frontend clients
- * - Combines Better-Auth security with custom session representation
+ * - Session cookies automatically set for seamless frontend integration
  */
 
 import { signUpHandler } from '../lambdas/features/auth/handlers/signUp';
@@ -30,6 +30,10 @@ export const handler = signUpHandler;
  * }
  * 
  * Expected successful response (200):
+ * Headers:
+ *   set-cookie: better-auth.session_token=eyJ...; Path=/; HttpOnly; Secure; SameSite=Lax
+ * 
+ * Body:
  * {
  *   "success": true,
  *   "data": {
@@ -78,8 +82,9 @@ export const handler = signUpHandler;
  * - Duplicate email checking
  * - Better-Auth password hashing and validation
  * - JWT token generation with proper signing
+ * - Auto-login with secure session cookies (HttpOnly, Secure, SameSite)
  * - Input sanitization and validation
  * - CORS support for frontend integration
  * - Better-Auth built-in security features (CSRF, rate limiting)
- * - Session management compatible with frontend clients
+ * - Seamless session management with frontend clients
  */
