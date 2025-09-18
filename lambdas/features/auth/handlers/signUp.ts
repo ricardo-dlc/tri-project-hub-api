@@ -8,14 +8,14 @@ import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { withMiddleware } from '../../../shared/wrapper';
 import { authService } from '../services/auth.service';
 import { validateSignUpRequest } from '../types/validation.schemas';
-import { AuthResponse, SignUpRequest } from '../types/auth.types';
+import { AuthResult, SignUpRequest } from '../types/auth.types';
 import { ValidationError } from '../../../shared/errors';
 
 /**
  * User registration handler
  * Processes sign up requests with comprehensive validation and error handling
  */
-export const signUpHandler = withMiddleware<AuthResponse>(
+export const signUpHandler = withMiddleware<AuthResult>(
   async (event: APIGatewayProxyEventV2, context: Context) => {
     // Parse request body
     if (!event.body) {
@@ -43,27 +43,13 @@ export const signUpHandler = withMiddleware<AuthResponse>(
       throw new ValidationError('An account with this email already exists');
     }
 
-    // Perform user registration (Requirements 1.1, 1.4)
+    // Perform user registration (Requirements 1.1, 1.4, 1.5)
     console.log('Signing up user...');
-    return await authService.signUp(validatedData);
-    // console.log('User signed up successfully:', authResult.user);
+    const authResult = await authService.signUp(validatedData);
+    console.log('User signed up successfully:', authResult.data.user);
 
-    // // Format response according to AuthResponse interface (Requirement 1.5)
-    // const response: AuthResponse = {
-    //   user: {
-    //     id: authResult.user.id,
-    //     email: authResult.user.email,
-    //     name: authResult.user.name,
-    //     image: authResult.user.image,
-    //     role: authResult.user.role,
-    //     createdAt: authResult.user.createdAt,
-    //     updatedAt: authResult.user.updatedAt,
-    //   },
-    //   token: authResult.token,
-    //   expiresAt: authResult.session.expires.toISOString(),
-    // };
-
-    // return response;
+    // Auth service already returns HandlerResponse<AuthResult> with proper format and headers
+    return authResult;
   },
   {
     // CORS configuration for auth endpoints

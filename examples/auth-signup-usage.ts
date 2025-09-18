@@ -46,8 +46,15 @@ export const handler = signUpHandler;
  *       "createdAt": "2023-01-01T00:00:00.000Z",
  *       "updatedAt": "2023-01-01T00:00:00.000Z"
  *     },
- *     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", // Better-Auth JWT token
- *     "expiresAt": "2023-01-08T00:00:00.000Z"
+ *     "session": {
+ *       "id": "ba_user_01234567890123456789012345_1672531200000",
+ *       "sessionToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+ *       "userId": "user_01234567890123456789012345",
+ *       "expires": "2023-01-08T00:00:00.000Z",
+ *       "createdAt": "2023-01-01T00:00:00.000Z",
+ *       "updatedAt": "2023-01-01T00:00:00.000Z"
+ *     },
+ *     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // Better-Auth JWT token
  *   }
  * }
  * 

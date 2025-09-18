@@ -67,10 +67,14 @@ export interface ProfileUpdateRequest {
   image?: string;
 }
 
-// Authentication response
+// Authentication response with Better-Auth integration
 export interface AuthResponse {
-  user: PublicUser;
-  [key: string]: any;
+  data: {
+    user: PublicUser;
+    session: Session;
+    token: string;
+  };
+  headers?: Record<string, string>;
 }
 
 // Profile response
