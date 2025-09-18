@@ -1,6 +1,6 @@
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { withMiddleware } from '../lambdas/middleware/wrapper';
+import { withMiddleware } from '../lambdas/shared/wrapper';
 import {
   NotFoundError,
   BadRequestError,
@@ -8,18 +8,18 @@ import {
   NotAuthorizedError,
   ForbiddenError,
   ConflictError,
-} from '../lambdas/middleware/errors';
-import { MiddlewareOptions } from '../lambdas/middleware/types';
+} from '../lambdas/shared/errors';
+import { MiddlewareOptions } from '../lambdas/shared/types';
 
 // Mock DynamoDB client
 const mockSend = jest.fn();
-jest.mock('../lambdas/utils/dynamo', () => ({
+jest.mock('../lambdas/shared/utils/dynamo', () => ({
   ddbDocClient: {
     send: mockSend,
   },
 }));
 
-import { ddbDocClient } from '../lambdas/utils/dynamo';
+import { ddbDocClient } from '../lambdas/shared/utils/dynamo';
 
 // Type for API Gateway v2 response
 interface APIGatewayProxyResultV2 {

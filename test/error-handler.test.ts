@@ -6,15 +6,15 @@ import {
   sanitizeError,
   aggregateErrors,
   shouldRetryError,
-} from '../lambdas/middleware/error-handler';
+} from '../lambdas/shared/error-handler';
 import {
   HttpError,
   NotFoundError,
   NotAuthorizedError,
   BadRequestError,
   ValidationError,
-} from '../lambdas/middleware/errors';
-import { MiddlewareOptions } from '../lambdas/middleware/types';
+} from '../lambdas/shared/errors';
+import { MiddlewareOptions } from '../lambdas/shared/types';
 
 // Mock console methods for testing logging
 const mockConsoleError = jest.spyOn(console, 'error').mockImplementation();

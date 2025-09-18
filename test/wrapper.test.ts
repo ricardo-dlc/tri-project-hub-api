@@ -1,15 +1,15 @@
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
-import { withMiddleware } from '../lambdas/middleware/wrapper';
+import { withMiddleware } from '../lambdas/shared/wrapper';
 import {
   NotFoundError,
   BadRequestError,
   ValidationError,
   HttpError,
-} from '../lambdas/middleware/errors';
+} from '../lambdas/shared/errors';
 import {
   MiddlewareOptions,
   HandlerResponse,
-} from '../lambdas/middleware/types';
+} from '../lambdas/shared/types';
 
 // Type for API Gateway v2 response
 interface APIGatewayProxyResultV2 {

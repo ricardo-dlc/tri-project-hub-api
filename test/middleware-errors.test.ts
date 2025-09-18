@@ -6,7 +6,7 @@ import {
   BadRequestError,
   ValidationError,
   ConflictError,
-} from '../lambdas/middleware/errors';
+} from '../lambdas/shared/errors';
 
 describe('HttpError Base Class', () => {
   // Create a concrete implementation for testing the abstract base class

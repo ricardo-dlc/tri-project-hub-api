@@ -3,8 +3,8 @@ import {
   formatErrorResponse,
   generateCorsHeaders,
   isHandlerResponse,
-} from '../lambdas/middleware/response-formatter';
-import { HttpError, NotFoundError, ValidationError } from '../lambdas/middleware/errors';
+} from '../lambdas/shared/response-formatter';
+import { HttpError, NotFoundError, ValidationError } from '../lambdas/shared/errors';
 
 describe('Response Formatter Utilities', () => {
   describe('formatSuccessResponse', () => {
