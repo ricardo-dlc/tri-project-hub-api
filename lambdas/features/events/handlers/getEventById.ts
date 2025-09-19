@@ -2,7 +2,8 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
-import { BadRequestError, NotFoundError, withMiddleware } from '../../../shared';
+import { BadRequestError, NotFoundError } from '../../../shared/errors';
+import { withMiddleware } from '../../../shared/wrapper';
 import { EventEntity } from '../models/event.model';
 
 // Refactored handler using arrow function, async/await, and destructuring
