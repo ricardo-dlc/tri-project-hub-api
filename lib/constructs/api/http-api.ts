@@ -35,11 +35,11 @@ export class HttpApiConstruct extends Construct {
     this.api = new HttpApi(this, 'HttpApi', {
       apiName: this.stageConfig.apiName || this.generateApiName(apiName),
       description: `HTTP API for ${this.stageConfig.stageName} stage`,
-      // Enable CORS for browser-based applications
+      // Enable CORS for browser-based applications with Better-Auth support
       corsPreflight: {
         allowOrigins: this.stageConfig.isProduction
           ? ['https://your-production-domain.com'] // Configure production domains
-          : ['*'], // Allow all origins in non-production
+          : ['http://localhost:3000'], // Specific origin for development (required for credentials)
         allowMethods: [
           CorsHttpMethod.GET,
           CorsHttpMethod.POST,
@@ -54,7 +54,9 @@ export class HttpApiConstruct extends Construct {
           'X-Amz-Date',
           'X-Api-Key',
           'X-Amz-Security-Token',
+          'X-Requested-With', // Required for Better-Auth
         ],
+        allowCredentials: true, // Required for Better-Auth cookie handling
         maxAge: Duration.seconds(this.stageConfig.isProduction ? 86400 : 300), // 24 hours for prod, 5 minutes for dev
       },
     });

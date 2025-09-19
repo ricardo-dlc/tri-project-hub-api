@@ -101,17 +101,18 @@ export class AuthApi extends Construct {
   }
 
   /**
-   * Get API route configurations for the events endpoints
+   * Get API route configurations for the auth endpoints
    * @returns Array of ApiRoute configurations
    */
   getRoutes(): ApiRoute[] {
     return [
       {
-        path: '/auth/signup',
+        path: '/api/auth/sign-up/email',
         method: HttpMethod.POST,
         lambda: this.functions.signup,
-        integrationName: 'SignUpIntegration',
+        integrationName: 'EmailSignUpIntegration',
       },
+      // OPTIONS requests are handled automatically by API Gateway CORS
     ];
   }
 }
