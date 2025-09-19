@@ -72,7 +72,7 @@ export class AuthService {
    * User registration with email and password
    * Requirements: 1.1, 1.3, 1.4
    */
-  async signUp(signUpData: SignUpRequest): Promise<HandlerResponse<AuthResult>> {
+  async signUp(signUpData: SignUpRequest): Promise<any> {
     try {
       // Validate input data
       const validatedData = validateSignUpRequest(signUpData);
@@ -94,10 +94,11 @@ export class AuthService {
       if (!result.response.user || !result.response.token) {
         throw new AuthenticationError('Failed to create user account');
       }
+      // return result;
 
       // Better-Auth signUpEmail returns user and token, but not session object
       // We'll create a session representation from the available data
-      const sessionInfo = this.createSessionFromToken(result.response.token, result.response.user);
+      // const sessionInfo = this.createSessionFromToken(result.response.token, result.response.user);
 
       // Extract set-cookie headers from Better-Auth response for auto-login
       const authHeaders: Record<string, string> = {};
@@ -109,12 +110,14 @@ export class AuthService {
       }
 
       return {
-        data: {
-          user: this.formatUser(result.response.user),
-          session: sessionInfo,
-          token: result.response.token
-        },
+        ...result,
         headers: authHeaders
+        //   data: {
+        //     user: this.formatUser(result.response.user),
+        //     session: sessionInfo,
+        //     token: result.response.token
+        //   },
+        //   headers: authHeaders
       };
     } catch (error) {
       console.error('Registration error:', error);

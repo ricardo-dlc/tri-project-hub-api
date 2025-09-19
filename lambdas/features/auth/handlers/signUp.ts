@@ -15,8 +15,10 @@ import { ValidationError } from '../../../shared/errors';
  * User registration handler
  * Processes sign up requests with comprehensive validation and error handling
  */
-export const signUpHandler = withMiddleware<AuthResult>(
+export const signUpHandler = withMiddleware<any>(
   async (event: APIGatewayProxyEventV2, context: Context) => {
+    // OPTIONS preflight requests are handled automatically by API Gateway CORS
+
     // Parse request body
     if (!event.body) {
       throw new ValidationError('Request body is required');
@@ -46,21 +48,22 @@ export const signUpHandler = withMiddleware<AuthResult>(
     // Perform user registration (Requirements 1.1, 1.4, 1.5)
     console.log('Signing up user...');
     const authResult = await authService.signUp(validatedData);
-    console.log('User signed up successfully:', authResult.data.user);
+    console.log('User signed up successfully:', authResult);
 
     // Auth service already returns HandlerResponse<AuthResult> with proper format and headers
-    return authResult;
+    return { data: authResult.response, headers: authResult.headers };
   },
   {
-    // CORS configuration for auth endpoints
+    // CORS configuration matching API Gateway settings
     cors: {
-      origin: process.env.FRONTEND_URL || '*',
+      origin: 'http://localhost:3000', // Must match API Gateway allowOrigins
       methods: ['POST', 'OPTIONS'],
-      headers: ['Content-Type', 'Authorization'],
-      credentials: false,
+      headers: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      credentials: true, // Must match API Gateway allowCredentials
     },
     // Enable error logging for debugging
     errorLogging: true,
+    formatResponse: false
   }
 );
 
