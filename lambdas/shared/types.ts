@@ -18,6 +18,7 @@ export interface MiddlewareOptions {
   cors?: CorsOptions;
   errorLogging?: boolean;
   customErrorMap?: Record<string, number>;
+  formatResponse?: boolean;
 }
 
 // CORS configuration interface
