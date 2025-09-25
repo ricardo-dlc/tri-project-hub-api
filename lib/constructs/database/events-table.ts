@@ -65,6 +65,20 @@ export class EventsTable extends Construct {
    * These GSIs support various query patterns for the events API
    */
   private addGlobalSecondaryIndexes(): void {
+    // CreatorIndex - for querying events by creator with date sorting
+    this.table.addGlobalSecondaryIndex({
+      indexName: 'CreatorIndex',
+      partitionKey: {
+        name: 'creatorId',
+        type: AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'date',
+        type: AttributeType.STRING,
+      },
+      projectionType: ProjectionType.ALL,
+    });
+
     // SlugIndex - for querying events by slug
     this.table.addGlobalSecondaryIndex({
       indexName: 'SlugIndex',
