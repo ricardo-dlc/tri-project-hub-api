@@ -10,6 +10,7 @@ export const EventEntity = new Entity(
     },
     attributes: {
       id: { type: 'string', required: true },
+      creatorId: { type: 'string', required: true },
       title: { type: 'string', required: true },
       type: { type: 'string', required: true },
       date: { type: 'string', required: true }, // ISO string
@@ -47,6 +48,12 @@ export const EventEntity = new Entity(
         watch: ['slug', 'date'],
         set: (val, item) => `${item.slug}#${item.date}`,
       },
+      creatorDate: {
+        type: 'string',
+        required: true,
+        watch: ['creatorId', 'date'],
+        set: (val, item) => `${item.creatorId}#${item.date}`,
+      },
       typeDate: {
         type: 'string',
         required: true,
@@ -79,6 +86,11 @@ export const EventEntity = new Entity(
     indexes: {
       EventPrimaryIndex: {
         pk: { field: 'id', composite: ['id'] },
+      },
+      CreatorIndex: {
+        index: 'CreatorIndex',
+        pk: { field: 'creatorId', composite: ['creatorId'] },
+        sk: { field: 'date', composite: ['date'] },
       },
       SlugIndex: {
         index: 'SlugIndex',

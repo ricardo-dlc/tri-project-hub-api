@@ -32,6 +32,7 @@ export class EventsApi extends Construct {
     getEventById: NodejsFunction;
     getEventBySlug: NodejsFunction;
     getFeaturedEvents: NodejsFunction;
+    getEventsByCreatorId: NodejsFunction;
   };
 
   constructor(scope: Construct, id: string, props: EventsApiProps) {
@@ -60,6 +61,11 @@ export class EventsApi extends Construct {
           lambdaFactory,
           stageConfig
         ),
+        getEventsByCreatorId: this.createGetEventsByCreatorIdFunction(
+          eventsTable,
+          lambdaFactory,
+          stageConfig
+        ),
         getEventBySlug: this.createGetEventBySlugFunction(
           eventsTable,
           lambdaFactory,
@@ -83,6 +89,7 @@ export class EventsApi extends Construct {
       eventsTable.grantReadData(this.functions.getEventBySlug);
       eventsTable.grantReadData(this.functions.getFeaturedEvents);
       eventsTable.grantReadData(this.functions.getEventById);
+      eventsTable.grantReadData(this.functions.getEventsByCreatorId);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -126,6 +133,46 @@ export class EventsApi extends Construct {
         error instanceof Error ? error.message : String(error);
       throw new Error(
         `Failed to create getEvents Lambda function: ${errorMessage}`
+      );
+    }
+  }
+
+  /**
+   * Create the getEventsByCreatorId Lambda function using the factory with stage-aware configuration
+   * @param eventsTable The DynamoDB Table instance
+   * @param lambdaFactory The Lambda factory instance
+   * @param stageConfig The stage configuration for naming and environment setup
+   * @returns NodejsFunction for getEventsByCreatorId
+   */
+  private createGetEventsByCreatorIdFunction(
+    eventsTable: Table,
+    lambdaFactory: LambdaFactory,
+    stageConfig: StageConfig
+  ): NodejsFunction {
+    // Validate entry point exists
+    const entryPath = path.join(
+      __dirname,
+      '../../../lambdas/features/events/handlers/getEventsByCreatorId.ts'
+    );
+
+    try {
+      // Create stage-aware environment variables
+      const stageAwareEnvironment = {
+        EVENTS_TABLE_NAME: eventsTable.tableName,
+        STAGE: stageConfig.stageName,
+        IS_PRODUCTION: stageConfig.isProduction.toString(),
+      };
+
+      return lambdaFactory.createApiFunction({
+        functionName: 'getEventsByCreatorId',
+        entry: entryPath,
+        environment: stageAwareEnvironment,
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Failed to create getEventsByCreatorId Lambda function: ${errorMessage}`
       );
     }
   }
@@ -261,6 +308,13 @@ export class EventsApi extends Construct {
         method: HttpMethod.GET,
         lambda: this.functions.getEvents,
         integrationName: 'EventsIntegration',
+      },
+      {
+        path: '/events/user/{creatorId}',
+        method: HttpMethod.GET,
+        lambda: this.functions.getEventsByCreatorId,
+        integrationName: 'EventsCreatorIntegration',
+
       },
       {
         path: '/events/{id}',
