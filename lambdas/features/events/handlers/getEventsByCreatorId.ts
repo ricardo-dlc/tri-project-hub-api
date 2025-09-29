@@ -1,23 +1,18 @@
-import type {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyHandlerV2,
-} from 'aws-lambda';
-import { BadRequestError, NotFoundError } from '../../../shared/errors';
+import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
+import type { AuthenticatedEvent } from '../../../shared';
+import { withAuth, withMiddleware } from '../../../shared';
 import { executeWithPagination } from '../../../shared/utils/pagination';
-import { withMiddleware } from '../../../shared/wrapper';
 import { EventEntity } from '../models/event.model';
 import { PaginationQueryParams } from '../types/event.types';
 
 
 
-const getEventsByCreatorIdHandler = async (event: APIGatewayProxyEventV2) => {
-  const { creatorId } = event.pathParameters ?? {};
+const getEventsByCreatorIdHandler = async (event: AuthenticatedEvent) => {
+  // Get the creator ID from the authenticated user
+  const creatorId = event.user.id;
 
-  if (!creatorId) {
-    throw new BadRequestError('Missing creatorId parameter');
-  }
-
-  console.log('creatorId', creatorId);
+  console.log('Authenticated user creatorId:', creatorId);
+  console.log('User role:', event.user.role);
 
   const queryParams: PaginationQueryParams = event.queryStringParameters ?? {};
   const { limit, nextToken } = queryParams;
@@ -40,5 +35,8 @@ const getEventsByCreatorIdHandler = async (event: APIGatewayProxyEventV2) => {
   };
 };
 
-export const handler: APIGatewayProxyHandlerV2 =
-  withMiddleware(getEventsByCreatorIdHandler);
+export const handler: APIGatewayProxyHandlerV2 = withMiddleware(
+  withAuth(getEventsByCreatorIdHandler, {
+    requiredRoles: ['organizer', 'admin'],
+  })
+);

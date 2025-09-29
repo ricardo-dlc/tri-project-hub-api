@@ -310,7 +310,7 @@ export class EventsApi extends Construct {
         integrationName: 'EventsIntegration',
       },
       {
-        path: '/events/user/{creatorId}',
+        path: '/events/user',
         method: HttpMethod.GET,
         lambda: this.functions.getEventsByCreatorId,
         integrationName: 'EventsCreatorIntegration',
