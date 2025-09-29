@@ -12,7 +12,7 @@ export type {
   ProcessingResult,
   RequestContext,
   StandardResponse,
-  SuccessResponse,
+  SuccessResponse
 } from './types';
 
 // Error classes
@@ -23,7 +23,7 @@ export {
   HttpError,
   NotAuthorizedError,
   NotFoundError,
-  ValidationError,
+  ValidationError
 } from './errors';
 
 // Response formatting utilities
@@ -31,16 +31,22 @@ export {
   formatErrorResponse,
   formatSuccessResponse,
   generateCorsHeaders,
-  isHandlerResponse,
+  isHandlerResponse
 } from './response-formatter';
 
 // Error handling utilities
 export {
-  classifyError,
-  getErrorStatusCode,
-  logError,
-  handleError,
-  sanitizeError,
-  aggregateErrors,
-  shouldRetryError,
+  aggregateErrors, classifyError,
+  getErrorStatusCode, handleError, logError, sanitizeError, shouldRetryError
 } from './error-handler';
+
+// Authentication utilities
+export {
+  authenticateUser,
+  extractTokenFromEvent, requireRole, verifyClerkToken
+} from './auth/clerk';
+
+export type { ClerkUser } from './auth/clerk';
+export type { AuthenticatedEvent, AuthenticatedHandler } from './auth/middleware';
+
+export { withAuth } from './auth/middleware';
