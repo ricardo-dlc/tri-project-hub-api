@@ -1,6 +1,5 @@
 import { HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
-import { LambdaCreationConfig } from '../../types/infrastructure';
-
+import type { LambdaCreationConfig } from '../../../types/infrastructure';
 
 export const eventsApiLambdaConfigs: Record<string, LambdaCreationConfig> = {
   getEvents: {

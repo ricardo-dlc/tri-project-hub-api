@@ -32,7 +32,7 @@ export class TriProjectHubApiStack extends Stack {
     // 2. Create EventsTable construct with stage configuration
     const eventsTable = new EventsTable(this, 'EventsTable', {
       stageConfig,
-      tableName: config.tableName || 'events-1',
+      tableName: config.tableName || 'events',
     });
 
     // 3. Create LambdaFactory with stage configuration
