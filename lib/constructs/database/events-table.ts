@@ -148,6 +148,71 @@ export class EventsTable extends Construct {
       },
       projectionType: ProjectionType.ALL,
     });
+
+    // Registration System GSIs
+    this.addRegistrationSystemIndexes();
+  }
+
+  /**
+   * Add Global Secondary Indexes specifically for the registration system
+   * These GSIs support registration, participant, and payment tracking queries
+   */
+  private addRegistrationSystemIndexes(): void {
+    // EventRegistrationIndex - for querying all registrations for an event, sorted by registration time
+    this.table.addGlobalSecondaryIndex({
+      indexName: 'EventRegistrationIndex',
+      partitionKey: {
+        name: 'eventRegistrationId',
+        type: AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'registrationDate',
+        type: AttributeType.STRING,
+      },
+      projectionType: ProjectionType.ALL,
+    });
+
+    // EventParticipantIndex - for querying participants by event and validating email uniqueness per event
+    this.table.addGlobalSecondaryIndex({
+      indexName: 'EventParticipantIndex',
+      partitionKey: {
+        name: 'eventParticipantId',
+        type: AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'participantEmail',
+        type: AttributeType.STRING,
+      },
+      projectionType: ProjectionType.ALL,
+    });
+
+    // ReservationParticipantIndex - for querying all participants belonging to a specific reservation
+    this.table.addGlobalSecondaryIndex({
+      indexName: 'ReservationParticipantIndex',
+      partitionKey: {
+        name: 'reservationParticipantId',
+        type: AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'participantSequence',
+        type: AttributeType.STRING,
+      },
+      projectionType: ProjectionType.ALL,
+    });
+
+    // PaymentStatusIndex - for querying paid/unpaid registrations for an event
+    this.table.addGlobalSecondaryIndex({
+      indexName: 'PaymentStatusIndex',
+      partitionKey: {
+        name: 'eventPaymentStatus',
+        type: AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'paymentDate',
+        type: AttributeType.STRING,
+      },
+      projectionType: ProjectionType.ALL,
+    });
   }
 
   /**

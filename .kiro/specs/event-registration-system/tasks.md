@@ -1,18 +1,18 @@
 # Implementation Plan
 
-- [ ] 1. Update DynamoDB table infrastructure with new GSIs
+- [x] 1. Update DynamoDB table infrastructure with new GSIs
   - Modify EventsTable construct to add 4 new GSIs for registration system
   - Update table permissions to include new GSI access patterns
   - _Requirements: 6.1, 6.2, 6.3_
 
-- [ ] 2. Create registration and participant data models
-- [ ] 2.1 Create registration entity model with ElectroDB
+- [x] 2. Create registration and participant data models
+- [x] 2.1 Create registration entity model with ElectroDB
   - Define Registration entity with proper attributes and GSI mappings
   - Implement validation for required fields (reservationId, eventId, registrationType)
   - Write unit tests for registration entity validation and GSI attribute generation
   - _Requirements: 1.3, 2.5, 4.1, 6.1_
 
-- [ ] 2.2 Create participant entity model with ElectroDB
+- [x] 2.2 Create participant entity model with ElectroDB
   - Define Participant entity with personal information, emergency contacts, and preferences
   - Implement email validation and required field validation (firstName, lastName, email)
   - Write unit tests for participant entity validation and optional field handling
