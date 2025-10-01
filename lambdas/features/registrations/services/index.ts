@@ -6,3 +6,6 @@ export type { CapacityValidationResult } from './capacity-validation.service';
 
 export { ReservationIdService, reservationIdService } from './reservation-id.service';
 export type { ReservationIdResult } from './reservation-id.service';
+
+export { IndividualRegistrationService, individualRegistrationService } from './individual-registration.service';
+export type { IndividualRegistrationData, IndividualRegistrationResult } from './individual-registration.service';

@@ -38,14 +38,14 @@
   - _Requirements: 1.5, 2.5, 4.4, 6.1, 6.2, 6.3, 8.1, 8.2, 8.3, 8.4, 8.5_
 
 - [ ] 4. Implement individual registration functionality
-- [ ] 4.1 Create individual registration service with ULID support
+- [x] 4.1 Create individual registration service with ULID support
   - Implement service to process single participant registrations using ULID IDs
   - Validate email uniqueness, event capacity, required fields, and ULID format
   - Create registration and participant entities with ULID-based linking
   - Write unit tests for successful registration and error scenarios with ULID validation
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 4.2 Create individual registration API handler with ULID support
+- [x] 4.2 Create individual registration API handler with ULID support
   - Implement Lambda handler for POST /events/{eventId}/registrations (individual)
   - Parse and validate request body, validate eventId as ULID format
   - Handle error responses for validation failures, capacity issues, and invalid ULID format
