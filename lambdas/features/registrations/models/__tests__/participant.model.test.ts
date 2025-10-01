@@ -1,4 +1,5 @@
-import { ParticipantEntity, CreateParticipantData } from '../participant.model';
+import { generateULID, isValidULID } from '../../../../shared/utils/ulid';
+import { CreateParticipantData, ParticipantEntity } from '../participant.model';
 
 // Mock the DynamoDB client
 jest.mock('../../../../shared/utils/dynamo', () => ({
@@ -9,9 +10,9 @@ jest.mock('../../../../shared/utils/dynamo', () => ({
 
 describe('ParticipantEntity', () => {
   const mockParticipantData: CreateParticipantData = {
-    participantId: 'part_123456789',
-    reservationId: 'res_123456789',
-    eventId: 'event_123',
+    participantId: generateULID(),
+    reservationId: generateULID(),
+    eventId: generateULID(),
     email: 'test@example.com',
     firstName: 'John',
     lastName: 'Doe',
@@ -227,9 +228,9 @@ describe('ParticipantEntity', () => {
 
     it('should allow optional fields in CreateParticipantData type', () => {
       const createDataWithOptionals: CreateParticipantData = {
-        participantId: 'part_123',
-        reservationId: 'res_123',
-        eventId: 'event_123',
+        participantId: generateULID(),
+        reservationId: generateULID(),
+        eventId: generateULID(),
         email: 'test@example.com',
         firstName: 'John',
         lastName: 'Doe',
@@ -245,6 +246,53 @@ describe('ParticipantEntity', () => {
       expect(createDataWithOptionals.emergencyName).toBe('Jane Doe');
       expect(createDataWithOptionals.dietaryRestrictions).toBe('Vegetarian');
       expect(createDataWithOptionals.role).toBe('swimmer');
+    });
+  });
+
+  describe('ULID Validation', () => {
+    it('should validate participantId as ULID format', () => {
+      const participantIdAttr = ParticipantEntity.schema.attributes.participantId;
+      const validULID = generateULID();
+
+      expect(() => participantIdAttr.validate(validULID)).not.toThrow();
+      expect(() => participantIdAttr.validate('invalid-id')).toThrow('participantId must be a valid ULID format');
+      expect(() => participantIdAttr.validate('part_123')).toThrow('participantId must be a valid ULID format');
+      expect(() => participantIdAttr.validate('')).toThrow('participantId must be a valid ULID format');
+    });
+
+    it('should validate reservationId as ULID format', () => {
+      const reservationIdAttr = ParticipantEntity.schema.attributes.reservationId;
+      const validULID = generateULID();
+
+      expect(() => reservationIdAttr.validate(validULID)).not.toThrow();
+      expect(() => reservationIdAttr.validate('invalid-id')).toThrow('reservationId must be a valid ULID format');
+      expect(() => reservationIdAttr.validate('res_123')).toThrow('reservationId must be a valid ULID format');
+      expect(() => reservationIdAttr.validate('')).toThrow('reservationId must be a valid ULID format');
+    });
+
+    it('should validate eventId as ULID format', () => {
+      const eventIdAttr = ParticipantEntity.schema.attributes.eventId;
+      const validULID = generateULID();
+
+      expect(() => eventIdAttr.validate(validULID)).not.toThrow();
+      expect(() => eventIdAttr.validate('invalid-id')).toThrow('eventId must be a valid ULID format');
+      expect(() => eventIdAttr.validate('event_123')).toThrow('eventId must be a valid ULID format');
+      expect(() => eventIdAttr.validate('')).toThrow('eventId must be a valid ULID format');
+    });
+
+    it('should generate and validate ULID consistency', () => {
+      const participantId = generateULID();
+      const reservationId = generateULID();
+      const eventId = generateULID();
+
+      expect(isValidULID(participantId)).toBe(true);
+      expect(isValidULID(reservationId)).toBe(true);
+      expect(isValidULID(eventId)).toBe(true);
+
+      // Test that generated ULIDs are different
+      expect(participantId).not.toBe(reservationId);
+      expect(participantId).not.toBe(eventId);
+      expect(reservationId).not.toBe(eventId);
     });
   });
 });

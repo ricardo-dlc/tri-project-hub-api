@@ -1,5 +1,6 @@
 import { Entity } from 'electrodb';
 import { ddbDocClient } from '../../../shared/utils/dynamo';
+import { isValidULID } from '../../../shared/utils/ulid';
 
 export const RegistrationEntity = new Entity(
   {
@@ -9,10 +10,28 @@ export const RegistrationEntity = new Entity(
       service: 'registrations',
     },
     attributes: {
-      reservationId: { type: 'string', required: true },
-      eventId: { type: 'string', required: true },
-      registrationType: { 
-        type: 'string', 
+      reservationId: {
+        type: 'string',
+        required: true,
+        validate: (value: string) => {
+          if (!isValidULID(value)) {
+            throw new Error('reservationId must be a valid ULID format');
+          }
+          return true;
+        }
+      },
+      eventId: {
+        type: 'string',
+        required: true,
+        validate: (value: string) => {
+          if (!isValidULID(value)) {
+            throw new Error('eventId must be a valid ULID format');
+          }
+          return true;
+        }
+      },
+      registrationType: {
+        type: 'string',
         required: true,
         validate: /^(individual|team)$/
       },
@@ -78,7 +97,10 @@ export interface RegistrationItem {
   updatedAt: string;
 }
 
-export type CreateRegistrationData = Pick<
-  RegistrationItem,
-  'reservationId' | 'eventId' | 'registrationType' | 'totalParticipants' | 'registrationFee'
->;
+export interface CreateRegistrationData {
+  reservationId: string; // ULID format
+  eventId: string; // ULID format
+  registrationType: 'individual' | 'team';
+  totalParticipants: number;
+  registrationFee: number;
+}

@@ -1,5 +1,6 @@
 import { Entity } from 'electrodb';
 import { ddbDocClient } from '../../../shared/utils/dynamo';
+import { isValidULID } from '../../../shared/utils/ulid';
 
 export const ParticipantEntity = new Entity(
   {
@@ -9,11 +10,38 @@ export const ParticipantEntity = new Entity(
       service: 'registrations',
     },
     attributes: {
-      participantId: { type: 'string', required: true },
-      reservationId: { type: 'string', required: true },
-      eventId: { type: 'string', required: true },
-      email: { 
-        type: 'string', 
+      participantId: {
+        type: 'string',
+        required: true,
+        validate: (value: string) => {
+          if (!isValidULID(value)) {
+            throw new Error('participantId must be a valid ULID format');
+          }
+          return true;
+        }
+      },
+      reservationId: {
+        type: 'string',
+        required: true,
+        validate: (value: string) => {
+          if (!isValidULID(value)) {
+            throw new Error('reservationId must be a valid ULID format');
+          }
+          return true;
+        }
+      },
+      eventId: {
+        type: 'string',
+        required: true,
+        validate: (value: string) => {
+          if (!isValidULID(value)) {
+            throw new Error('eventId must be a valid ULID format');
+          }
+          return true;
+        }
+      },
+      email: {
+        type: 'string',
         required: true,
         validate: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       },
@@ -21,7 +49,7 @@ export const ParticipantEntity = new Entity(
       // Personal information (required)
       firstName: { type: 'string', required: true },
       lastName: { type: 'string', required: true },
-      
+
       // Personal information (optional)
       phone: { type: 'string' },
       dateOfBirth: { type: 'string' },
@@ -134,36 +162,32 @@ export interface ParticipantItem {
   updatedAt: string;
 }
 
-export type CreateParticipantData = Pick<
-  ParticipantItem,
-  | 'participantId'
-  | 'reservationId'
-  | 'eventId'
-  | 'email'
-  | 'firstName'
-  | 'lastName'
-  | 'waiver'
-  | 'newsletter'
-> & Partial<
-  Pick<
-    ParticipantItem,
-    | 'phone'
-    | 'dateOfBirth'
-    | 'gender'
-    | 'address'
-    | 'city'
-    | 'state'
-    | 'zipCode'
-    | 'country'
-    | 'emergencyName'
-    | 'emergencyRelationship'
-    | 'emergencyPhone'
-    | 'emergencyEmail'
-    | 'shirtSize'
-    | 'dietaryRestrictions'
-    | 'medicalConditions'
-    | 'medications'
-    | 'allergies'
-    | 'role'
-  >
->;
+export interface CreateParticipantData {
+  participantId: string; // ULID format
+  reservationId: string; // ULID format
+  eventId: string; // ULID format
+  email: string;
+  firstName: string;
+  lastName: string;
+  waiver: boolean;
+  newsletter: boolean;
+  // Optional fields
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  emergencyName?: string;
+  emergencyRelationship?: string;
+  emergencyPhone?: string;
+  emergencyEmail?: string;
+  shirtSize?: string;
+  dietaryRestrictions?: string;
+  medicalConditions?: string;
+  medications?: string;
+  allergies?: string;
+  role?: string;
+}
