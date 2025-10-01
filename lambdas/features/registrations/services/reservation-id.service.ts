@@ -1,4 +1,4 @@
-import { ulid } from 'ulid';
+import { generateReservationId as generateReservationULID, isValidReservationId, generateULID } from '../../../shared/utils/ulid';
 
 export interface ReservationIdResult {
   reservationId: string;
@@ -11,7 +11,7 @@ export class ReservationIdService {
    * @returns ReservationIdResult containing the reservation ID and timestamp
    */
   generateReservationId(): ReservationIdResult {
-    const reservationId = ulid();
+    const reservationId = generateReservationULID();
     const timestamp = new Date().toISOString();
 
     return {
@@ -26,7 +26,7 @@ export class ReservationIdService {
    * @returns ReservationIdResult containing the prefixed reservation ID and timestamp
    */
   generateReservationIdWithPrefix(prefix: string = 'RES'): ReservationIdResult {
-    const ulidId = ulid();
+    const ulidId = generateULID();
     const reservationId = `${prefix}-${ulidId}`;
     const timestamp = new Date().toISOString();
 
@@ -42,11 +42,8 @@ export class ReservationIdService {
    * @returns boolean indicating if the format is valid
    */
   validateReservationIdFormat(reservationId: string): boolean {
-    // ULID format: 26 characters using Crockford's Base32 (0123456789ABCDEFGHJKMNPQRSTVWXYZ)
-    const ulidRegex = /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}$/i;
-
     // Check if it's a plain ULID
-    if (ulidRegex.test(reservationId)) {
+    if (isValidReservationId(reservationId)) {
       return true;
     }
 
