@@ -19,19 +19,19 @@
   - _Requirements: 1.1, 2.1, 5.1, 5.2, 7.1, 7.2_
 
 - [ ] 3. Implement core registration services
-- [ ] 3.1 Create email uniqueness validation service
+- [x] 3.1 Create email uniqueness validation service
   - Implement function to check email uniqueness per event using EventParticipantIndex
   - Handle both individual and team registration email validation
   - Write unit tests for email validation scenarios including edge cases
   - _Requirements: 1.2, 2.2, 2.3, 5.4_
 
-- [ ] 3.2 Create event capacity validation service
+- [x] 3.2 Create event capacity validation service
   - Implement function to validate event capacity against current participants
   - Check maxParticipants vs currentParticipants + new registration count
   - Write unit tests for capacity validation including boundary conditions
   - _Requirements: 1.4, 2.4, 5.5_
 
-- [ ] 3.3 Create reservation ID generation service
+- [x] 3.3 Create reservation ID generation service
   - Implement unique reservation ID generator using UUID or timestamp-based approach
   - Ensure reservation IDs are unique across the system
   - Write unit tests for ID generation and uniqueness
