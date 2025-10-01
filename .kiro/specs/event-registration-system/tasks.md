@@ -6,17 +6,17 @@
   - _Requirements: 6.1, 6.2, 6.3_
 
 - [x] 2. Create registration and participant data models
-- [x] 2.1 Create registration entity model with ElectroDB
-  - Define Registration entity with proper attributes and GSI mappings
-  - Implement validation for required fields (reservationId, eventId, registrationType)
-  - Write unit tests for registration entity validation and GSI attribute generation
-  - _Requirements: 1.3, 2.5, 4.1, 6.1_
+- [x] 2.1 Create registration entity model with ElectroDB and ULID support
+  - Define Registration entity with ULID-based reservationId and proper GSI mappings
+  - Implement validation for required fields including ULID format validation
+  - Write unit tests for registration entity validation and ULID ID generation
+  - _Requirements: 1.3, 2.5, 4.1, 6.1, 8.1, 8.2, 8.3_
 
-- [x] 2.2 Create participant entity model with ElectroDB
-  - Define Participant entity with personal information, emergency contacts, and preferences
-  - Implement email validation and required field validation (firstName, lastName, email)
-  - Write unit tests for participant entity validation and optional field handling
-  - _Requirements: 1.1, 2.1, 5.1, 5.2, 7.1, 7.2_
+- [x] 2.2 Create participant entity model with ElectroDB and ULID support
+  - Define Participant entity with ULID-based participantId and reservationId references
+  - Implement email validation, required field validation, and ULID format validation
+  - Write unit tests for participant entity validation and ULID ID handling
+  - _Requirements: 1.1, 2.1, 5.1, 5.2, 7.1, 7.2, 8.1, 8.4, 8.5_
 
 - [ ] 3. Implement core registration services
 - [x] 3.1 Create email uniqueness validation service
@@ -31,41 +31,41 @@
   - Write unit tests for capacity validation including boundary conditions
   - _Requirements: 1.4, 2.4, 5.5_
 
-- [x] 3.3 Create reservation ID generation service
-  - Implement unique reservation ID generator using UUID or timestamp-based approach
-  - Ensure reservation IDs are unique across the system
-  - Write unit tests for ID generation and uniqueness
-  - _Requirements: 1.5, 2.5, 4.4, 6.1, 6.2, 6.3_
+- [x] 3.3 Create ULID-based ID generation service
+  - Implement ULID-based reservation ID and participant ID generator
+  - Ensure all IDs follow ULID format for consistency and sortability
+  - Write unit tests for ULID generation, validation, and uniqueness
+  - _Requirements: 1.5, 2.5, 4.4, 6.1, 6.2, 6.3, 8.1, 8.2, 8.3, 8.4, 8.5_
 
 - [ ] 4. Implement individual registration functionality
-- [ ] 4.1 Create individual registration service
-  - Implement service to process single participant registrations
-  - Validate email uniqueness, event capacity, and required fields
-  - Create registration and participant entities with proper linking
-  - Write unit tests for successful registration and error scenarios
-  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+- [ ] 4.1 Create individual registration service with ULID support
+  - Implement service to process single participant registrations using ULID IDs
+  - Validate email uniqueness, event capacity, required fields, and ULID format
+  - Create registration and participant entities with ULID-based linking
+  - Write unit tests for successful registration and error scenarios with ULID validation
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 4.2 Create individual registration API handler
+- [ ] 4.2 Create individual registration API handler with ULID support
   - Implement Lambda handler for POST /events/{eventId}/registrations (individual)
-  - Parse and validate request body against single.json schema
-  - Handle error responses for validation failures and capacity issues
-  - Write integration tests for API endpoint with various input scenarios
-  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+  - Parse and validate request body, validate eventId as ULID format
+  - Handle error responses for validation failures, capacity issues, and invalid ULID format
+  - Write integration tests for API endpoint with ULID validation scenarios
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 8.4, 8.5_
 
 - [ ] 5. Implement team registration functionality
-- [ ] 5.1 Create team registration service
-  - Implement service to process team participant registrations
+- [ ] 5.1 Create team registration service with ULID support
+  - Implement service to process team participant registrations using ULID IDs
   - Validate no duplicate emails within team and against existing event participants
-  - Create single registration entity with multiple linked participant entities
-  - Write unit tests for team registration validation and creation
-  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
+  - Create single ULID-based registration entity with multiple ULID-based participant entities
+  - Write unit tests for team registration validation and ULID-based creation
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 5.2 Create team registration API handler
+- [ ] 5.2 Create team registration API handler with ULID support
   - Implement Lambda handler for POST /events/{eventId}/registrations (team)
-  - Parse and validate request body against team.json schema
-  - Handle team-specific validation errors and capacity checks
-  - Write integration tests for team registration API with various team sizes
-  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
+  - Parse and validate request body, validate eventId as ULID format
+  - Handle team-specific validation errors, capacity checks, and ULID format validation
+  - Write integration tests for team registration API with ULID validation scenarios
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 8.4, 8.5_
 
 - [ ] 6. Implement participant query functionality
 - [ ] 6.1 Create participant query service
@@ -83,19 +83,19 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
 - [ ] 7. Implement payment status management
-- [ ] 7.1 Create payment status update service
-  - Implement service to update payment status for entire registrations
-  - Use reservation ID to identify all participants covered by payment
-  - Update registration entity payment status and track payment date
-  - Write unit tests for payment status updates and validation
-  - _Requirements: 4.1, 4.2, 4.4, 4.5_
+- [ ] 7.1 Create payment status update service with ULID support
+  - Implement service to update payment status for entire registrations using ULID-based reservation IDs
+  - Use ULID-based reservation ID to identify all participants covered by payment
+  - Update registration entity payment status and track payment date with ULID validation
+  - Write unit tests for payment status updates and ULID validation
+  - _Requirements: 4.1, 4.2, 4.4, 4.5, 8.4, 8.5_
 
-- [ ] 7.2 Create payment status API handler
-  - Implement Lambda handler for PATCH /registrations/{reservationId}/payment
-  - Validate payment status transitions (unpaid to paid)
-  - Handle authorization for payment status updates
-  - Write integration tests for payment status update scenarios
-  - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
+- [ ] 7.2 Create payment status API handler with ULID support
+  - Implement Lambda handler for PATCH /registrations/{reservationId}/payment with ULID validation
+  - Validate payment status transitions (unpaid to paid) and ULID format for reservationId
+  - Handle authorization for payment status updates and invalid ULID errors
+  - Write integration tests for payment status update scenarios with ULID validation
+  - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 8.4, 8.5_
 
 - [ ] 8. Implement event participant count updates
 - [ ] 8.1 Create participant count update service

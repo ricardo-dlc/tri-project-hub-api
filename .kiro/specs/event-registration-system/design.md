@@ -33,13 +33,40 @@ graph TB
 
 #### Registration Entity
 - **Purpose**: Tracks registration metadata and payment status
-- **Primary Key**: reservationId
+- **Primary Key**: reservationId (ULID)
 - **Attributes**: eventId, registrationType, paymentStatus, totalParticipants, createdAt, updatedAt
 
 #### Participant Entity  
 - **Purpose**: Stores individual participant information
-- **Primary Key**: participantId
-- **Attributes**: reservationId, eventId, email, personalInfo, emergencyContact, preferences
+- **Primary Key**: participantId (ULID)
+- **Attributes**: reservationId (ULID), eventId, email, personalInfo, emergencyContact, preferences
+
+### ULID Implementation
+
+#### ULID Benefits
+- **Sortable**: ULIDs are lexicographically sortable by creation time
+- **Compact**: 26 characters vs 36 for UUIDs
+- **URL-safe**: Uses Crockford's Base32 encoding
+- **Collision-resistant**: 128-bit random component provides strong uniqueness
+
+#### ULID Usage Pattern
+```typescript
+import { ulid } from 'ulid';
+
+// Generate new IDs
+const reservationId = ulid(); // e.g., "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+const participantId = ulid(); // e.g., "01ARZ3NDEKTSV4RRFFQ69G5FBW"
+
+// ID validation
+const isValidULID = (id: string): boolean => {
+  return /^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}$/.test(id);
+};
+```
+
+#### Entity ID Patterns
+- **Registration IDs**: `reservationId = ulid()` - Used for payment tracking and participant grouping
+- **Participant IDs**: `participantId = ulid()` - Unique identifier for each individual participant
+- **Event IDs**: Existing ULID format maintained for consistency
 
 ### Service Layer
 
@@ -79,14 +106,14 @@ The system will extend the existing Events table by adding new entity types (reg
 ```typescript
 {
   // Primary Key with entity prefix for clarity
-  id: "REGISTRATION#{reservationId}",
+  id: "REGISTRATION#{reservationId}", // reservationId is ULID
   
   // Entity identification
   entity: "registration",
   
   // Core attributes
-  reservationId: string,
-  eventId: string,
+  reservationId: string, // ULID format
+  eventId: string, // References existing event ULID
   registrationType: "individual" | "team",
   paymentStatus: boolean,
   totalParticipants: number,
@@ -108,15 +135,15 @@ The system will extend the existing Events table by adding new entity types (reg
 ```typescript
 {
   // Primary Key with entity prefix for clarity
-  id: "PARTICIPANT#{participantId}",
+  id: "PARTICIPANT#{participantId}", // participantId is ULID
   
   // Entity identification
   entity: "participant",
   
   // Core attributes
-  participantId: string,
-  reservationId: string,
-  eventId: string,
+  participantId: string, // ULID format
+  reservationId: string, // ULID format - references registration
+  eventId: string, // References existing event ULID
   email: string,
   
   // Personal information
