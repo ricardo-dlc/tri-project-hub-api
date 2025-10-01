@@ -1,4 +1,5 @@
-import { RegistrationEntity, CreateRegistrationData } from '../registration.model';
+import { generateULID, isValidULID } from '../../../../shared/utils/ulid';
+import { CreateRegistrationData, RegistrationEntity } from '../registration.model';
 
 // Mock the DynamoDB client
 jest.mock('../../../../shared/utils/dynamo', () => ({
@@ -9,8 +10,8 @@ jest.mock('../../../../shared/utils/dynamo', () => ({
 
 describe('RegistrationEntity', () => {
   const mockRegistrationData: CreateRegistrationData = {
-    reservationId: 'res_123456789',
-    eventId: 'event_123',
+    reservationId: generateULID(),
+    eventId: generateULID(),
     registrationType: 'individual',
     totalParticipants: 1,
     registrationFee: 50.00,
@@ -72,10 +73,10 @@ describe('RegistrationEntity', () => {
     it('should generate eventRegistrationId from eventId', () => {
       const attributes = RegistrationEntity.schema.attributes;
       const eventRegistrationId = attributes.eventRegistrationId;
-      
+
       expect(eventRegistrationId.required).toBe(true);
       expect(eventRegistrationId.watch).toEqual(['eventId']);
-      
+
       const result = eventRegistrationId.set(undefined, { eventId: 'event_123' });
       expect(result).toBe('event_123');
     });
@@ -83,10 +84,10 @@ describe('RegistrationEntity', () => {
     it('should generate registrationDate from createdAt', () => {
       const attributes = RegistrationEntity.schema.attributes;
       const registrationDate = attributes.registrationDate;
-      
+
       expect(registrationDate.required).toBe(true);
       expect(registrationDate.watch).toEqual(['createdAt']);
-      
+
       const result = registrationDate.set(undefined, { createdAt: '2024-01-01T00:00:00Z' });
       expect(result).toBe('2024-01-01T00:00:00Z');
     });
@@ -94,13 +95,13 @@ describe('RegistrationEntity', () => {
     it('should generate eventPaymentStatus from eventId and paymentStatus', () => {
       const attributes = RegistrationEntity.schema.attributes;
       const eventPaymentStatus = attributes.eventPaymentStatus;
-      
+
       expect(eventPaymentStatus.required).toBe(true);
       expect(eventPaymentStatus.watch).toEqual(['eventId', 'paymentStatus']);
-      
-      const result = eventPaymentStatus.set(undefined, { 
-        eventId: 'event_123', 
-        paymentStatus: false 
+
+      const result = eventPaymentStatus.set(undefined, {
+        eventId: 'event_123',
+        paymentStatus: false
       });
       expect(result).toBe('event_123#false');
     });
@@ -108,10 +109,10 @@ describe('RegistrationEntity', () => {
     it('should generate paymentDate from createdAt', () => {
       const attributes = RegistrationEntity.schema.attributes;
       const paymentDate = attributes.paymentDate;
-      
+
       expect(paymentDate.required).toBe(true);
       expect(paymentDate.watch).toEqual(['createdAt']);
-      
+
       const result = paymentDate.set(undefined, { createdAt: '2024-01-01T00:00:00Z' });
       expect(result).toBe('2024-01-01T00:00:00Z');
     });
@@ -121,7 +122,7 @@ describe('RegistrationEntity', () => {
     it('should have correct primary index configuration', () => {
       const indexes = RegistrationEntity.schema.indexes;
       const primaryIndex = indexes.RegistrationPrimaryIndex;
-      
+
       expect(primaryIndex.pk.field).toBe('id');
       expect(primaryIndex.pk.composite).toEqual(['reservationId']);
     });
@@ -129,7 +130,7 @@ describe('RegistrationEntity', () => {
     it('should have correct EventRegistrationIndex configuration', () => {
       const indexes = RegistrationEntity.schema.indexes;
       const eventRegistrationIndex = indexes.EventRegistrationIndex;
-      
+
       expect(eventRegistrationIndex.index).toBe('EventRegistrationIndex');
       expect(eventRegistrationIndex.pk.field).toBe('eventRegistrationId');
       expect(eventRegistrationIndex.pk.composite).toEqual(['eventRegistrationId']);
@@ -140,7 +141,7 @@ describe('RegistrationEntity', () => {
     it('should have correct PaymentStatusIndex configuration', () => {
       const indexes = RegistrationEntity.schema.indexes;
       const paymentStatusIndex = indexes.PaymentStatusIndex;
-      
+
       expect(paymentStatusIndex.index).toBe('PaymentStatusIndex');
       expect(paymentStatusIndex.pk.field).toBe('eventPaymentStatus');
       expect(paymentStatusIndex.pk.composite).toEqual(['eventPaymentStatus']);
@@ -153,7 +154,7 @@ describe('RegistrationEntity', () => {
     it('should accept valid registration types', () => {
       const registrationTypeAttr = RegistrationEntity.schema.attributes.registrationType;
       const regex = registrationTypeAttr.validate as RegExp;
-      
+
       expect(regex.test('individual')).toBe(true);
       expect(regex.test('team')).toBe(true);
     });
@@ -161,11 +162,62 @@ describe('RegistrationEntity', () => {
     it('should reject invalid registration types', () => {
       const registrationTypeAttr = RegistrationEntity.schema.attributes.registrationType;
       const regex = registrationTypeAttr.validate as RegExp;
-      
+
       expect(regex.test('group')).toBe(false);
       expect(regex.test('solo')).toBe(false);
       expect(regex.test('')).toBe(false);
       expect(regex.test('INDIVIDUAL')).toBe(false);
+    });
+  });
+
+  describe('ULID Validation', () => {
+    it('should validate reservationId as ULID format', () => {
+      const reservationIdAttr = RegistrationEntity.schema.attributes.reservationId;
+      const validULID = generateULID();
+
+      expect(() => reservationIdAttr.validate(validULID)).not.toThrow();
+      expect(() => reservationIdAttr.validate('invalid-id')).toThrow('reservationId must be a valid ULID format');
+      expect(() => reservationIdAttr.validate('123')).toThrow('reservationId must be a valid ULID format');
+      expect(() => reservationIdAttr.validate('')).toThrow('reservationId must be a valid ULID format');
+    });
+
+    it('should validate eventId as ULID format', () => {
+      const eventIdAttr = RegistrationEntity.schema.attributes.eventId;
+      const validULID = generateULID();
+
+      expect(() => eventIdAttr.validate(validULID)).not.toThrow();
+      expect(() => eventIdAttr.validate('invalid-id')).toThrow('eventId must be a valid ULID format');
+      expect(() => eventIdAttr.validate('event_123')).toThrow('eventId must be a valid ULID format');
+      expect(() => eventIdAttr.validate('')).toThrow('eventId must be a valid ULID format');
+    });
+
+    it('should accept valid ULID formats', () => {
+      const validULIDs = [
+        generateULID(),
+        generateULID(),
+        '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+        '01BX5ZZKBKACTAV9WEVGEMMVRZ'
+      ];
+
+      validULIDs.forEach(ulid => {
+        expect(isValidULID(ulid)).toBe(true);
+      });
+    });
+
+    it('should reject invalid ULID formats', () => {
+      const invalidULIDs = [
+        'invalid-id',
+        '123',
+        '',
+        'too-short',
+        '01ARZ3NDEKTSV4RRFFQ69G5FAV-too-long',
+        '01arz3ndektsv4rrffq69g5fav', // lowercase
+        '01ARZ3NDEKTSV4RRFFQ69G5FA!', // invalid character
+      ];
+
+      invalidULIDs.forEach(invalidId => {
+        expect(isValidULID(invalidId)).toBe(false);
+      });
     });
   });
 
@@ -179,7 +231,7 @@ describe('RegistrationEntity', () => {
         totalParticipants: 1,
         registrationFee: 50.00,
       };
-      
+
       expect(createData.reservationId).toBe('res_123');
       expect(createData.eventId).toBe('event_123');
       expect(createData.registrationType).toBe('individual');
