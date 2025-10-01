@@ -1,4 +1,3 @@
-import { HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
 import { Table } from 'aws-cdk-lib/aws-dynamodb';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
@@ -8,13 +7,16 @@ import {
   LambdaFactory,
   StageConfig,
 } from '../../types/infrastructure';
+import {
+  eventsApiLambdaConfigs
+} from './events-api-config';
 
 /**
  * Properties for EventsApi construct
  */
 export interface EventsApiProps {
-  /** DynamoDB table for events data */
-  eventsTable: Table;
+  /** DynamoDB tables available for lambda functions */
+  tables: Record<string, Table>;
   /** Lambda factory for creating functions */
   lambdaFactory: LambdaFactory;
   /** Stage configuration for naming and environment setup */
@@ -27,22 +29,17 @@ export interface EventsApiProps {
  * route configurations for the HTTP API construct.
  */
 export class EventsApi extends Construct {
-  public readonly functions: {
-    getEvents: NodejsFunction;
-    getEventById: NodejsFunction;
-    getEventBySlug: NodejsFunction;
-    getFeaturedEvents: NodejsFunction;
-    getEventsByCreatorId: NodejsFunction;
-  };
+  public readonly functions: Record<string, NodejsFunction>;
+  private readonly lambdaConfigs = eventsApiLambdaConfigs;
 
   constructor(scope: Construct, id: string, props: EventsApiProps) {
     super(scope, id);
 
-    const { eventsTable, lambdaFactory, stageConfig } = props;
+    const { tables, lambdaFactory, stageConfig } = props;
 
     // Validate required props with detailed error messages
-    if (!eventsTable) {
-      throw new Error('EventsTable is required for EventsApi construct');
+    if (!tables || Object.keys(tables).length === 0) {
+      throw new Error('At least one table is required for EventsApi construct');
     }
 
     if (!lambdaFactory) {
@@ -54,42 +51,12 @@ export class EventsApi extends Construct {
     }
 
     try {
-      // Create Lambda functions using the factory with stage-aware configuration
-      this.functions = {
-        getEvents: this.createGetEventsFunction(
-          eventsTable,
-          lambdaFactory,
-          stageConfig
-        ),
-        getEventsByCreatorId: this.createGetEventsByCreatorIdFunction(
-          eventsTable,
-          lambdaFactory,
-          stageConfig
-        ),
-        getEventBySlug: this.createGetEventBySlugFunction(
-          eventsTable,
-          lambdaFactory,
-          stageConfig
-        ),
-        getFeaturedEvents: this.createGetFeaturedEventsFunction(
-          eventsTable,
-          lambdaFactory,
-          stageConfig
-        ),
-        getEventById: this.createGetEventByIdFunction(
-          eventsTable,
-          lambdaFactory,
-          stageConfig
-        ),
-      };
-
-      // Grant read permissions to the events table directly
-      // Since we now receive the Table instance directly, we grant permissions here
-      eventsTable.grantReadData(this.functions.getEvents);
-      eventsTable.grantReadData(this.functions.getEventBySlug);
-      eventsTable.grantReadData(this.functions.getFeaturedEvents);
-      eventsTable.grantReadData(this.functions.getEventById);
-      eventsTable.grantReadData(this.functions.getEventsByCreatorId);
+      // Create all Lambda functions using generic creation method
+      this.functions = this.createLambdaFunctions(
+        tables,
+        lambdaFactory,
+        stageConfig
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -98,203 +65,87 @@ export class EventsApi extends Construct {
   }
 
   /**
-   * Create the getEvents Lambda function using the factory with stage-aware configuration
-   * @param eventsTable The DynamoDB Table instance
+   * Create all Lambda functions using the configuration object
+   * @param tables Available DynamoDB tables
    * @param lambdaFactory The Lambda factory instance
    * @param stageConfig The stage configuration for naming and environment setup
-   * @returns NodejsFunction for getEvents
+   * @returns Record of function names to NodejsFunction instances
    */
-  private createGetEventsFunction(
-    eventsTable: Table,
+  private createLambdaFunctions(
+    tables: Record<string, Table>,
     lambdaFactory: LambdaFactory,
     stageConfig: StageConfig
-  ): NodejsFunction {
-    // Validate entry point exists
-    const entryPath = path.join(
-      __dirname,
-      '../../../lambdas/features/events/handlers/getEvents.ts'
-    );
+  ): Record<string, NodejsFunction> {
+    const functions: Record<string, NodejsFunction> = {};
 
-    try {
-      // Create stage-aware environment variables
-      const stageAwareEnvironment = {
-        EVENTS_TABLE_NAME: eventsTable.tableName,
-        STAGE: stageConfig.stageName,
-        IS_PRODUCTION: stageConfig.isProduction.toString(),
-      };
+    // Create base stage-aware environment variables (shared by all functions)
+    const baseEnvironment = {
+      STAGE: stageConfig.stageName,
+      IS_PRODUCTION: stageConfig.isProduction.toString(),
+    };
 
-      return lambdaFactory.createApiFunction({
-        functionName: 'getEvents',
-        entry: entryPath,
-        environment: stageAwareEnvironment,
-      });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `Failed to create getEvents Lambda function: ${errorMessage}`
-      );
-    }
-  }
+    // Create each function based on configuration
+    Object.entries(this.lambdaConfigs).forEach(([key, config]) => {
+      try {
+        const entryPath = path.join(
+          __dirname,
+          `../../../lambdas/features/events/handlers/${config.handlerPath}`
+        );
 
-  /**
-   * Create the getEventsByCreatorId Lambda function using the factory with stage-aware configuration
-   * @param eventsTable The DynamoDB Table instance
-   * @param lambdaFactory The Lambda factory instance
-   * @param stageConfig The stage configuration for naming and environment setup
-   * @returns NodejsFunction for getEventsByCreatorId
-   */
-  private createGetEventsByCreatorIdFunction(
-    eventsTable: Table,
-    lambdaFactory: LambdaFactory,
-    stageConfig: StageConfig
-  ): NodejsFunction {
-    // Validate entry point exists
-    const entryPath = path.join(
-      __dirname,
-      '../../../lambdas/features/events/handlers/getEventsByCreatorId.ts'
-    );
+        // Create table-specific environment variables based on permissions
+        const tableEnvironment: Record<string, string> = {};
+        config.tables?.forEach(tableAccess => {
+          const table = tables[tableAccess.tableName];
+          if (!table) {
+            throw new Error(
+              `Table '${tableAccess.tableName}' not found for function '${config.functionName}'`
+            );
+          }
+          tableEnvironment[tableAccess.environmentVariable] = table.tableName;
+        });
 
-    try {
-      // Create stage-aware environment variables
-      const stageAwareEnvironment = {
-        EVENTS_TABLE_NAME: eventsTable.tableName,
-        STAGE: stageConfig.stageName,
-        IS_PRODUCTION: stageConfig.isProduction.toString(),
-      };
+        // Merge all environment variables
+        const functionEnvironment = {
+          ...baseEnvironment,
+          ...tableEnvironment,
+          ...config.environment,
+        };
 
-      return lambdaFactory.createApiFunction({
-        functionName: 'getEventsByCreatorId',
-        entry: entryPath,
-        environment: stageAwareEnvironment,
-      });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `Failed to create getEventsByCreatorId Lambda function: ${errorMessage}`
-      );
-    }
-  }
+        const lambdaFunction = lambdaFactory.createApiFunction({
+          functionName: config.functionName,
+          entry: entryPath,
+          environment: functionEnvironment,
+        });
 
-  /**
-   * Create the getEventById Lambda function using the factory with stage-aware configuration
-   * @param eventsTable The DynamoDB Table instance
-   * @param lambdaFactory The Lambda factory instance
-   * @param stageConfig The stage configuration for naming and environment setup
-   * @returns NodejsFunction for getEventById
-   */
-  private createGetEventByIdFunction(
-    eventsTable: Table,
-    lambdaFactory: LambdaFactory,
-    stageConfig: StageConfig
-  ): NodejsFunction {
-    // Validate entry point exists
-    const entryPath = path.join(
-      __dirname,
-      '../../../lambdas/features/events/handlers/getEventById.ts'
-    );
+        // Grant table permissions based on configuration
+        config.tables?.forEach(tableAccess => {
+          const table = tables[tableAccess.tableName];
+          const permission = tableAccess.permission || 'read'; // Default to 'read' if not specified
 
-    try {
-      // Create stage-aware environment variables
-      const stageAwareEnvironment = {
-        EVENTS_TABLE_NAME: eventsTable.tableName,
-        STAGE: stageConfig.stageName,
-        IS_PRODUCTION: stageConfig.isProduction.toString(),
-      };
+          switch (permission) {
+            case 'read':
+              table.grantReadData(lambdaFunction);
+              break;
+            case 'write':
+              table.grantWriteData(lambdaFunction);
+              break;
+            case 'readWrite':
+              table.grantReadWriteData(lambdaFunction);
+              break;
+          }
+        });
 
-      return lambdaFactory.createApiFunction({
-        functionName: 'getEventById',
-        entry: entryPath,
-        environment: stageAwareEnvironment,
-      });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `Failed to create getEventById Lambda function: ${errorMessage}`
-      );
-    }
-  }
+        functions[key] = lambdaFunction;
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Failed to create ${config.functionName} Lambda function: ${errorMessage}`
+        );
+      }
+    });
 
-  /**
-   * Create the getEventBySlug Lambda function using the factory with stage-aware configuration
-   * @param eventsTable The DynamoDB Table instance
-   * @param lambdaFactory The Lambda factory instance
-   * @param stageConfig The stage configuration for naming and environment setup
-   * @returns NodejsFunction for getEventBySlug
-   */
-  private createGetEventBySlugFunction(
-    eventsTable: Table,
-    lambdaFactory: LambdaFactory,
-    stageConfig: StageConfig
-  ): NodejsFunction {
-    // Validate entry point exists
-    const entryPath = path.join(
-      __dirname,
-      '../../../lambdas/features/events/handlers/getEventBySlug.ts'
-    );
-
-    try {
-      // Create stage-aware environment variables
-      const stageAwareEnvironment = {
-        EVENTS_TABLE_NAME: eventsTable.tableName,
-        STAGE: stageConfig.stageName,
-        IS_PRODUCTION: stageConfig.isProduction.toString(),
-      };
-
-      return lambdaFactory.createApiFunction({
-        functionName: 'getEventBySlug',
-        entry: entryPath,
-        environment: stageAwareEnvironment,
-      });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `Failed to create getEventBySlug Lambda function: ${errorMessage}`
-      );
-    }
-  }
-
-  /**
-   * Create the getFeaturedEvents Lambda function using the factory with stage-aware configuration
-   * @param eventsTable The DynamoDB Table instance
-   * @param lambdaFactory The Lambda factory instance
-   * @param stageConfig The stage configuration for naming and environment setup
-   * @returns NodejsFunction for getFeaturedEvents
-   */
-  private createGetFeaturedEventsFunction(
-    eventsTable: Table,
-    lambdaFactory: LambdaFactory,
-    stageConfig: StageConfig
-  ): NodejsFunction {
-    // Validate entry point exists
-    const entryPath = path.join(
-      __dirname,
-      '../../../lambdas/features/events/handlers/getFeaturedEvents.ts'
-    );
-
-    try {
-      // Create stage-aware environment variables
-      const stageAwareEnvironment = {
-        EVENTS_TABLE_NAME: eventsTable.tableName,
-        STAGE: stageConfig.stageName,
-        IS_PRODUCTION: stageConfig.isProduction.toString(),
-      };
-
-      return lambdaFactory.createApiFunction({
-        functionName: 'getFeaturedEvents',
-        entry: entryPath,
-        environment: stageAwareEnvironment,
-      });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `Failed to create getFeaturedEvents Lambda function: ${errorMessage}`
-      );
-    }
+    return functions;
   }
 
   /**
@@ -302,38 +153,11 @@ export class EventsApi extends Construct {
    * @returns Array of ApiRoute configurations
    */
   getRoutes(): ApiRoute[] {
-    return [
-      {
-        path: '/events',
-        method: HttpMethod.GET,
-        lambda: this.functions.getEvents,
-        integrationName: 'EventsIntegration',
-      },
-      {
-        path: '/events/user',
-        method: HttpMethod.GET,
-        lambda: this.functions.getEventsByCreatorId,
-        integrationName: 'EventsCreatorIntegration',
-
-      },
-      {
-        path: '/events/{id}',
-        method: HttpMethod.GET,
-        lambda: this.functions.getEventById,
-        integrationName: 'EventsIdIntegration',
-      },
-      {
-        path: '/events/slug/{slug}',
-        method: HttpMethod.GET,
-        lambda: this.functions.getEventBySlug,
-        integrationName: 'EventsSlugIntegration',
-      },
-      {
-        path: '/events/featured',
-        method: HttpMethod.GET,
-        lambda: this.functions.getFeaturedEvents,
-        integrationName: 'EventsFeaturedIntegration',
-      },
-    ];
+    return Object.entries(this.lambdaConfigs).map(([key, config]) => ({
+      path: config.route.path,
+      method: config.route.method,
+      lambda: this.functions[key],
+      integrationName: config.route.integrationName,
+    }));
   }
 }

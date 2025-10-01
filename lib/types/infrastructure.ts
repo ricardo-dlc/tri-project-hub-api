@@ -131,10 +131,31 @@ export interface HttpApiProps {
  * Properties for EventsApi construct
  */
 export interface EventsApiProps {
-  /** DynamoDB table for events data */
-  eventsTable: Table;
+  /** DynamoDB tables available for lambda functions */
+  tables: Record<string, Table>;
   /** Lambda factory for creating functions */
   lambdaFactory: LambdaFactory;
   /** Stage configuration for naming and environment setup */
   stageConfig: StageConfig;
 }
+
+export type TablePermission = 'read' | 'write' | 'readWrite';
+
+export interface TableAccess {
+  tableName: string;
+  permission?: TablePermission;
+  environmentVariable: string;
+}
+
+export interface LambdaCreationConfig {
+  functionName: string;
+  handlerPath: string;
+  route: {
+    path: string;
+    method: HttpMethod;
+    integrationName: string;
+  };
+  environment?: Record<string, string>;
+  tables?: TableAccess[];
+}
+
