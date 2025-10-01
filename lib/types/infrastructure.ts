@@ -1,9 +1,8 @@
-import { Duration, RemovalPolicy } from 'aws-cdk-lib';
-import { HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
-import { Table } from 'aws-cdk-lib/aws-dynamodb';
-import { IFunction } from 'aws-cdk-lib/aws-lambda';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { StageConfiguration } from '../constructs/config/stage-config';
+import type { Duration, RemovalPolicy } from 'aws-cdk-lib';
+import type { HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
+import type { IFunction } from 'aws-cdk-lib/aws-lambda';
+import type { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import type { StageConfiguration } from '../constructs/config/stage-config';
 
 /**
  * Configuration for Lambda function creation
@@ -125,18 +124,6 @@ export interface HttpApiProps {
   apiName?: string;
   /** Initial routes to add to the API */
   routes?: ApiRoute[];
-}
-
-/**
- * Properties for EventsApi construct
- */
-export interface EventsApiProps {
-  /** DynamoDB tables available for lambda functions */
-  tables: Record<string, Table>;
-  /** Lambda factory for creating functions */
-  lambdaFactory: LambdaFactory;
-  /** Stage configuration for naming and environment setup */
-  stageConfig: StageConfig;
 }
 
 export type TablePermission = 'read' | 'write' | 'readWrite';
