@@ -26,6 +26,9 @@ importers:
       esbuild:
         specifier: ^0.25.9
         version: 0.25.9
+      ulid:
+        specifier: ^3.0.1
+        version: 3.0.1
     devDependencies:
       '@aws-sdk/client-dynamodb':
         specifier: ^3.883.0
@@ -1841,6 +1844,10 @@ packages:
   uglify-js@3.19.3:
     resolution: {integrity: sha512-v3Xu+yuwBXisp6QYTcH4UbH+xYJXqnq2m/LtQVWKWzYc1iehYnLixoQDN9FH6/j9/oybfd6W9Ghwkl8+UMKTKQ==}
     engines: {node: '>=0.8.0'}
+    hasBin: true
+
+  ulid@3.0.1:
+    resolution: {integrity: sha512-dPJyqPzx8preQhqq24bBG1YNkvigm87K8kVEHCD+ruZg24t6IFEFv00xMWfxcC4djmFtiTLdFuADn4+DOz6R7Q==}
     hasBin: true
 
   undici-types@6.19.8:
@@ -4229,6 +4236,8 @@ snapshots:
 
   uglify-js@3.19.3:
     optional: true
+
+  ulid@3.0.1: {}
 
   undici-types@6.19.8: {}
 
