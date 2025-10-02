@@ -1,5 +1,5 @@
 import { Duration } from 'aws-cdk-lib';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { ILayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
 import {
   NodejsFunction,
   NodejsFunctionProps,
@@ -19,6 +19,7 @@ export class LambdaFactory {
   private readonly defaultEnvironment: Record<string, string>;
   private readonly defaultTimeout: Duration;
   private readonly defaultMemorySize: number;
+  private readonly sharedLayer: ILayerVersion;
 
   // Default configurations for Lambda functions
   private static readonly DEFAULT_TIMEOUT = Duration.seconds(30);
@@ -48,6 +49,7 @@ export class LambdaFactory {
 
     this.scope = scope;
     this.stageConfig = props.stageConfig;
+    this.sharedLayer = props.sharedLayer;
 
     // Set defaults with validation
     this.defaultEnvironment = this.validateEnvironmentVariables(
@@ -85,12 +87,13 @@ export class LambdaFactory {
       timeout: config.timeout || this.defaultTimeout,
       memorySize: config.memorySize || this.defaultMemorySize,
       environment,
+      layers: [this.sharedLayer],
       bundling: {
-        format: OutputFormat.CJS,
+        format: OutputFormat.ESM,
         target: 'node22',
         sourceMap: true,
         minify: this.stageConfig.config.isProduction,
-        externalModules: ['@aws-sdk/*'],
+        externalModules: ['@aws-sdk/*', '@clerk/*', 'electrodb', 'ulid'],
       },
     };
 

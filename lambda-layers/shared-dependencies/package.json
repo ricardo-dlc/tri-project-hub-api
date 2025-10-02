@@ -1,0 +1,13 @@
+{
+  "name": "shared-dependencies-layer",
+  "version": "1.0.0",
+  "description": "Shared dependencies layer for Lambda functions",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.883.0",
+    "@aws-sdk/lib-dynamodb": "^3.883.0",
+    "@clerk/backend": "^2.15.0",
+    "electrodb": "^3.4.5",
+    "pino": "^9.12.0",
+    "ulid": "^3.0.1"
+  }
+}

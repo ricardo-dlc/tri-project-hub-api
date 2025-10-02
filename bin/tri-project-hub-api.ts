@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
+import { LayerStack } from '../lib/layer-stack';
 import { TriProjectHubApiStack } from '../lib/tri-project-hub-api-stack';
 
 const app = new cdk.App();
@@ -14,21 +15,28 @@ const stage = app.node.tryGetContext('stage') || process.env.STAGE || 'dev';
 const projectName =
   app.node.tryGetContext('projectName') || process.env.PROJECT_NAME;
 
-// Create stage-aware stack ID to allow multiple stages in same account
-const stackId = `TriProjectHubApiStack-${stage}`;
+// Shared configuration
+const config = {
+  stage,
+  projectName,
+};
 
-new TriProjectHubApiStack(app, stackId, {
-  config: {
-    stage,
-    projectName,
-  },
+const envConfig = {
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+  region: process.env.CDK_DEFAULT_REGION,
+};
 
-  // Environment configuration
-  env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION,
-  },
+// Create LayerStack
+const layerStack = new LayerStack(app, `LayerStack-${stage}`, {
+  config,
+  env: envConfig,
+  description: `Lambda Layers Stack for ${stage} environment`,
+});
 
-  // Add stage as stack description
+// Create API stack with layer reference
+new TriProjectHubApiStack(app, `TriProjectHubApiStack-${stage}`, {
+  config,
+  env: envConfig,
   description: `Tri Project Hub API Stack for ${stage} environment`,
+  layerStack,
 });
