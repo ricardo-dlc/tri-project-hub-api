@@ -2,10 +2,11 @@ import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { HttpApiConstruct } from './constructs/api/http-api';
 import { StageConfiguration } from './constructs/config/stage-config';
-import { SharedDependenciesLayer } from './constructs/layer/shared-dependencies-layer';
 import { EventsTable } from './constructs/database/events-table';
 import { EventsApi } from './constructs/lambda/events-api';
 import { LambdaFactory } from './constructs/lambda/lambda-factory';
+import { RegistrationsApi } from './constructs/lambda/registrations-api';
+import { SharedDependenciesLayer } from './constructs/layer/shared-dependencies-layer';
 import { StackConfiguration } from './types/infrastructure';
 
 export interface TriProjectHubApiStackProps extends StackProps {
@@ -56,11 +57,19 @@ export class TriProjectHubApiStack extends Stack {
       stageConfig: stageConfig.config, // Pass the StageConfig, not the StageConfiguration construct
     });
 
+    const registrationsApi = new RegistrationsApi(this, 'RegistrationsApi', {
+      tables: {
+        events: eventsTable.table, // Pass the actual Table instance, not the construct
+      },
+      lambdaFactory,
+      stageConfig: stageConfig.config, // Pass the StageConfig, not the StageConfiguration construct
+    });
+
     // 6. Create HttpApiConstruct with routes from EventsApi and stage config
     new HttpApiConstruct(this, 'HttpApi', {
       stageConfig: stageConfig.config,
       apiName: config.apiName || 'api',
-      routes: eventsApi.getRoutes(),
+      routes: [...eventsApi.getRoutes(), ...registrationsApi.getRoutes()],
     });
   }
 }
