@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { LayerStack } from '../lib/layer-stack';
 import { TriProjectHubApiStack } from '../lib/tri-project-hub-api-stack';
 
 const app = new cdk.App();
@@ -26,17 +25,9 @@ const envConfig = {
   region: process.env.CDK_DEFAULT_REGION,
 };
 
-// Create LayerStack
-const layerStack = new LayerStack(app, `LayerStack-${stage}`, {
-  config,
-  env: envConfig,
-  description: `Lambda Layers Stack for ${stage} environment`,
-});
-
-// Create API stack with layer reference
+// Create unified stack with layer and API
 new TriProjectHubApiStack(app, `TriProjectHubApiStack-${stage}`, {
   config,
   env: envConfig,
   description: `Tri Project Hub API Stack for ${stage} environment`,
-  layerStack,
 });
