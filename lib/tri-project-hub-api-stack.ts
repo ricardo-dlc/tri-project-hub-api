@@ -5,23 +5,26 @@ import { StageConfiguration } from './constructs/config/stage-config';
 import { EventsTable } from './constructs/database/events-table';
 import { EventsApi } from './constructs/lambda/events-api';
 import { LambdaFactory } from './constructs/lambda/lambda-factory';
+import { LayerStack } from './layer-stack';
 import { StackConfiguration } from './types/infrastructure';
 
 export interface TriProjectHubApiStackProps extends StackProps {
   /** Stack configuration including stage and project settings */
   config?: StackConfiguration;
+  /** LayerStack reference for shared dependencies layer */
+  readonly layerStack: LayerStack;
 }
 
 export class TriProjectHubApiStack extends Stack {
   constructor(
     scope: Construct,
     id: string,
-    props?: TriProjectHubApiStackProps
+    props: TriProjectHubApiStackProps
   ) {
     super(scope, id, props);
 
     // Extract configuration from props
-    const config = props?.config || {};
+    const config = props.config || {};
 
     // 1. Create StageConfiguration - foundation for all stage-aware naming
     const stageConfig = new StageConfiguration({
@@ -35,9 +38,10 @@ export class TriProjectHubApiStack extends Stack {
       tableName: config.tableName || 'events',
     });
 
-    // 3. Create LambdaFactory with stage configuration
+    // 3. Create LambdaFactory with stage configuration and shared layer
     const lambdaFactory = new LambdaFactory(this, {
       stageConfig,
+      sharedLayer: props.layerStack.sharedDependenciesLayer.layer,
     });
 
     // 4. Create EventsApi construct with dependencies (tables, factory, stage config)

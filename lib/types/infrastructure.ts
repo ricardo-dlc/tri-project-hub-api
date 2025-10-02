@@ -1,6 +1,6 @@
 import type { Duration, RemovalPolicy } from 'aws-cdk-lib';
 import type { HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
-import type { IFunction } from 'aws-cdk-lib/aws-lambda';
+import type { IFunction, ILayerVersion } from 'aws-cdk-lib/aws-lambda';
 import type { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import type { StageConfiguration } from '../constructs/config/stage-config';
 
@@ -100,6 +100,8 @@ export interface LambdaFactoryProps {
   defaultTimeout?: Duration;
   /** Default memory size for Lambda functions */
   defaultMemorySize?: number;
+  /** Shared Lambda layer for common dependencies */
+  readonly sharedLayer: ILayerVersion;
 }
 
 /**
@@ -145,4 +147,3 @@ export interface LambdaCreationConfig {
   environment?: Record<string, string>;
   tables?: TableAccess[];
 }
-
