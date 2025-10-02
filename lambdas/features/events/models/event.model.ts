@@ -85,7 +85,7 @@ export const EventEntity = new Entity(
     },
     indexes: {
       EventPrimaryIndex: {
-        pk: { field: 'id', composite: ['id'] },
+        pk: { field: 'id', composite: ['id'], casing: 'upper' },
       },
       CreatorIndex: {
         index: 'CreatorIndex',
