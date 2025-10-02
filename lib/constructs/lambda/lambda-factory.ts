@@ -1,4 +1,4 @@
-import { Duration } from 'aws-cdk-lib';
+import { Duration, RemovalPolicy } from 'aws-cdk-lib';
 import { ILayerVersion, Runtime } from 'aws-cdk-lib/aws-lambda';
 import {
   NodejsFunction,
@@ -128,6 +128,8 @@ export class LambdaFactory {
     // Add API-specific environment variables
     lambda.addEnvironment('FUNCTION_TYPE', 'API');
     lambda.addEnvironment('API_TIMEOUT', apiTimeout.toSeconds().toString());
+
+    lambda.logGroup.applyRemovalPolicy(this.stageConfig.config.isProduction ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY);
 
     return lambda;
   }
