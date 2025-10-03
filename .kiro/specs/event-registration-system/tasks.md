@@ -60,7 +60,7 @@
   - Write unit tests for team registration validation and ULID-based creation
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 5.2 Create team registration API handler with ULID support
+- [x] 5.2 Create team registration API handler with ULID support
   - Implement Lambda handler for POST /events/{eventId}/registrations (team)
   - Parse and validate request body, validate eventId as ULID format
   - Handle team-specific validation errors, capacity checks, and ULID format validation

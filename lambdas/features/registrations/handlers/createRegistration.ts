@@ -57,6 +57,18 @@ interface IndividualRegistrationRequest {
  */
 interface TeamRegistrationRequest {
   participants: TeamParticipantData[];
+  // Team-level fields that apply to all participants
+  waiver?: boolean;
+  newsletter?: boolean;
+  // Fields that belong to the first participant (captain)
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  medicalConditions?: string;
+  medications?: string;
+  allergies?: string;
 }
 
 /**
@@ -135,29 +147,29 @@ const isIndividualRegistration = (body: any): body is IndividualRegistrationRequ
  * Validates a single participant's data structure and required fields
  * @param participant - The participant data to validate
  * @param index - The participant's index in the array (for error reporting)
+ * @param teamLevelWaiver - Team-level waiver value to apply if participant doesn't have one
+ * @param teamLevelNewsletter - Team-level newsletter value to apply if participant doesn't have one
  * @throws ValidationError if validation fails
  */
-const validateParticipant = (participant: any, index: number): TeamParticipantData => {
+const validateParticipant = (
+  participant: any,
+  index: number,
+  teamLevelWaiver?: boolean,
+  teamLevelNewsletter?: boolean
+): TeamParticipantData => {
   if (!participant || typeof participant !== 'object' || Array.isArray(participant)) {
     throw new ValidationError(`Participant at index ${index} must be a valid object`);
   }
 
-  // Check for required fields
-  const requiredFields = ['email', 'firstName', 'lastName', 'waiver', 'newsletter'];
+  // Check for required fields (waiver and newsletter can come from team level)
+  const requiredFields = ['email', 'firstName', 'lastName', 'role'];
   const missingFields: string[] = [];
 
   for (const field of requiredFields) {
     const value = participant[field];
-    // For boolean fields, only check if undefined
-    if (field === 'waiver' || field === 'newsletter') {
-      if (value === undefined) {
-        missingFields.push(field);
-      }
-    } else {
-      // For string fields, check for undefined, null, or empty string
-      if (value === undefined || value === null || value === '') {
-        missingFields.push(field);
-      }
+    // For string fields, check for undefined, null, or empty string
+    if (value === undefined || value === null || value === '') {
+      missingFields.push(field);
     }
   }
 
@@ -179,6 +191,24 @@ const validateParticipant = (participant: any, index: number): TeamParticipantDa
 
   if (typeof participant.lastName !== 'string') {
     throw new ValidationError(`Participant at index ${index}: lastName must be a string`);
+  }
+
+  // Apply team-level waiver/newsletter if not present at participant level
+  if (participant.waiver === undefined && teamLevelWaiver !== undefined) {
+    participant.waiver = teamLevelWaiver;
+  }
+
+  if (participant.newsletter === undefined && teamLevelNewsletter !== undefined) {
+    participant.newsletter = teamLevelNewsletter;
+  }
+
+  // Now validate that waiver and newsletter are present
+  if (participant.waiver === undefined) {
+    throw new ValidationError(`Participant at index ${index}: waiver is required (either at participant or team level)`);
+  }
+
+  if (participant.newsletter === undefined) {
+    throw new ValidationError(`Participant at index ${index}: newsletter is required (either at participant or team level)`);
   }
 
   if (typeof participant.waiver !== 'boolean') {
@@ -225,10 +255,67 @@ const validateTeamRegistrationBody = (body: any): TeamRegistrationRequest => {
     throw new ValidationError('Team registration must include at least one participant');
   }
 
+  // Validate team-level waiver and newsletter if present
+  if (body.waiver !== undefined && typeof body.waiver !== 'boolean') {
+    throw new ValidationError('Team-level waiver must be a boolean');
+  }
+
+  if (body.newsletter !== undefined && typeof body.newsletter !== 'boolean') {
+    throw new ValidationError('Team-level newsletter must be a boolean');
+  }
+
+  // Validate optional team-level fields (that will be applied to first participant)
+  const teamLevelFields = [
+    'address', 'city', 'state', 'zipCode', 'country',
+    'medicalConditions', 'medications', 'allergies'
+  ];
+
+  for (const field of teamLevelFields) {
+    if (body[field] !== undefined && typeof body[field] !== 'string') {
+      throw new ValidationError(`Team-level ${field} must be a string if provided`);
+    }
+  }
+
+  // Apply team-level address and medical fields to the first participant
+  if (body.participants.length > 0) {
+    const firstParticipant = body.participants[0];
+
+    // Only apply if not already present on the participant
+    if (body.address !== undefined && !firstParticipant.address) {
+      firstParticipant.address = body.address;
+    }
+    if (body.city !== undefined && !firstParticipant.city) {
+      firstParticipant.city = body.city;
+    }
+    if (body.state !== undefined && !firstParticipant.state) {
+      firstParticipant.state = body.state;
+    }
+    if (body.zipCode !== undefined && !firstParticipant.zipCode) {
+      firstParticipant.zipCode = body.zipCode;
+    }
+    if (body.country !== undefined && !firstParticipant.country) {
+      firstParticipant.country = body.country;
+    }
+    if (body.medicalConditions !== undefined && !firstParticipant.medicalConditions) {
+      firstParticipant.medicalConditions = body.medicalConditions;
+    }
+    if (body.medications !== undefined && !firstParticipant.medications) {
+      firstParticipant.medications = body.medications;
+    }
+    if (body.allergies !== undefined && !firstParticipant.allergies) {
+      firstParticipant.allergies = body.allergies;
+    }
+  }
+
   // Validate each participant
   const validatedParticipants: TeamParticipantData[] = [];
   for (let i = 0; i < body.participants.length; i++) {
-    const validatedParticipant = validateParticipant(body.participants[i], i);
+    const validatedParticipant = validateParticipant(
+      body.participants[i],
+      i,
+      body.waiver,
+      body.newsletter
+    );
     validatedParticipants.push(validatedParticipant);
   }
 
@@ -244,7 +331,17 @@ const validateTeamRegistrationBody = (body: any): TeamRegistrationRequest => {
   }
 
   return {
-    participants: validatedParticipants
+    participants: validatedParticipants,
+    waiver: body.waiver,
+    newsletter: body.newsletter,
+    address: body.address,
+    city: body.city,
+    state: body.state,
+    zipCode: body.zipCode,
+    country: body.country,
+    medicalConditions: body.medicalConditions,
+    medications: body.medications,
+    allergies: body.allergies,
   };
 };
 

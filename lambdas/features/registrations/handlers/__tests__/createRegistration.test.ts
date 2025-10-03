@@ -267,6 +267,7 @@ describe('Unified Registration Handler', () => {
             lastName: 'Player',
             waiver: true,
             newsletter: false,
+            role: 'athlete',
           },
         ],
       };
@@ -320,6 +321,7 @@ describe('Unified Registration Handler', () => {
             lastName: 'Smith',
             waiver: true,
             newsletter: true,
+            role: 'athlete',
           },
         ],
       };
@@ -538,7 +540,7 @@ describe('Unified Registration Handler', () => {
           {
             email: 'test@example.com',
             firstName: 'John',
-            // Missing lastName, waiver, newsletter
+            // Missing lastName, role, waiver, newsletter
           },
         ],
       };
@@ -553,7 +555,7 @@ describe('Unified Registration Handler', () => {
       expect(result.statusCode).toBe(422);
       const parsedBody = JSON.parse(result.body);
       expect(parsedBody.error.message).toContain('Participant at index 0 is missing required fields');
-      expect(parsedBody.error.details.missingFields).toEqual(['lastName', 'waiver', 'newsletter']);
+      expect(parsedBody.error.details.missingFields).toEqual(['lastName', 'role']);
     });
 
     it('should return 422 for duplicate emails within team', async () => {
@@ -565,6 +567,7 @@ describe('Unified Registration Handler', () => {
             lastName: 'Doe',
             waiver: true,
             newsletter: false,
+            role: 'swimmer',
           },
           {
             email: 'duplicate@example.com', // Same email
@@ -572,6 +575,7 @@ describe('Unified Registration Handler', () => {
             lastName: 'Smith',
             waiver: true,
             newsletter: true,
+            role: 'cyclist',
           },
         ],
       };
