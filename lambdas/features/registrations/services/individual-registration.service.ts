@@ -1,11 +1,6 @@
-import { BadRequestError, ConflictError, NotFoundError, ValidationError } from '../../../shared/errors';
-import { generateParticipantId, isValidULID } from '../../../shared/utils/ulid';
-import { EventEntity } from '../../events/models/event.model';
-import { CreateParticipantData, ParticipantEntity } from '../models/participant.model';
-import { CreateRegistrationData, RegistrationEntity } from '../models/registration.model';
+import { BaseRegistrationService } from './base-registration.service';
 import { capacityValidationService } from './capacity-validation.service';
 import { emailValidationService } from './email-validation.service';
-import { reservationIdService } from './reservation-id.service';
 
 export interface IndividualRegistrationData {
   // Required fields
@@ -51,98 +46,7 @@ export interface IndividualRegistrationResult {
   createdAt: string;
 }
 
-export class IndividualRegistrationService {
-  /**
-   * Validates the input data for individual registration
-   * @param eventId - The event ID (must be valid ULID)
-   * @param participantData - The participant registration data
-   * @throws ValidationError if data is invalid
-   * @throws BadRequestError if ULID format is invalid
-   */
-  private validateInputData(eventId: string, participantData: IndividualRegistrationData): void {
-    // Validate event ID format
-    if (!isValidULID(eventId)) {
-      throw new BadRequestError('Invalid event ID format. Must be a valid ULID.', { eventId });
-    }
-
-    // Validate required fields
-    const requiredFields = ['email', 'firstName', 'lastName', 'waiver', 'newsletter'];
-    const missingFields: string[] = [];
-
-    for (const field of requiredFields) {
-      const value = participantData[field as keyof IndividualRegistrationData];
-      if (value === undefined || value === null || value === '') {
-        missingFields.push(field);
-      }
-    }
-
-    if (missingFields.length > 0) {
-      throw new ValidationError(
-        `Missing required fields: ${missingFields.join(', ')}`,
-        { missingFields }
-      );
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(participantData.email)) {
-      throw new ValidationError('Invalid email format', { email: participantData.email });
-    }
-
-    // Validate waiver acceptance
-    if (!participantData.waiver) {
-      throw new ValidationError('Waiver must be accepted to complete registration', { waiver: participantData.waiver });
-    }
-
-    // Validate optional email fields if provided
-    if (participantData.emergencyEmail && !emailRegex.test(participantData.emergencyEmail)) {
-      throw new ValidationError('Invalid emergency contact email format', { emergencyEmail: participantData.emergencyEmail });
-    }
-  }
-
-  /**
-   * Validates that the event exists and is available for registration
-   * @param eventId - The event ID to validate
-   * @returns Promise<Event> - The event data
-   * @throws NotFoundError if event doesn't exist
-   * @throws ConflictError if event is not available for registration
-   */
-  private async validateEventAvailability(eventId: string) {
-    try {
-      const eventResult = await EventEntity.get({ id: eventId }).go();
-
-      if (!eventResult.data) {
-        throw new NotFoundError(`Event with ID ${eventId} not found`);
-      }
-
-      const event = eventResult.data;
-
-      // Check if event is enabled
-      if (!event.isEnabled) {
-        throw new ConflictError('Event is currently disabled and not accepting registrations', { eventId });
-      }
-
-      // Check if registration deadline has passed
-      const now = new Date();
-      const registrationDeadline = new Date(event.registrationDeadline);
-
-      if (now > registrationDeadline) {
-        throw new ConflictError('Registration deadline has passed for this event', {
-          eventId,
-          registrationDeadline: event.registrationDeadline,
-          currentTime: now.toISOString(),
-        });
-      }
-
-      return event;
-    } catch (error) {
-      if (error instanceof NotFoundError || error instanceof ConflictError) {
-        throw error;
-      }
-      throw new Error(`Failed to validate event availability: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
+export class IndividualRegistrationService extends BaseRegistrationService {
   /**
    * Creates the registration and participant entities in the database
    * @param eventId - The event ID
@@ -155,75 +59,26 @@ export class IndividualRegistrationService {
     participantData: IndividualRegistrationData,
     event: any
   ): Promise<IndividualRegistrationResult> {
-    const reservationIdResult = reservationIdService.generateReservationId();
-    const reservationId = reservationIdResult.reservationId;
-    const participantId = generateParticipantId();
-    const timestamp = reservationIdResult.timestamp;
+    const { reservationId, timestamp } = this.generateReservationData();
 
     try {
-      // Create registration data
-      const registrationData: CreateRegistrationData = {
-        reservationId,
-        eventId,
-        registrationType: 'individual',
-        totalParticipants: 1,
-        registrationFee: event.registrationFee,
-      };
-
-      // Create participant data
-      const participantCreateData: CreateParticipantData = {
-        participantId,
-        reservationId,
-        eventId,
-        email: participantData.email,
-        firstName: participantData.firstName,
-        lastName: participantData.lastName,
-        waiver: participantData.waiver,
-        newsletter: participantData.newsletter,
-        // Optional fields
-        phone: participantData.phone,
-        dateOfBirth: participantData.dateOfBirth,
-        gender: participantData.gender,
-        address: participantData.address,
-        city: participantData.city,
-        state: participantData.state,
-        zipCode: participantData.zipCode,
-        country: participantData.country,
-        emergencyName: participantData.emergencyName,
-        emergencyRelationship: participantData.emergencyRelationship,
-        emergencyPhone: participantData.emergencyPhone,
-        emergencyEmail: participantData.emergencyEmail,
-        shirtSize: participantData.shirtSize,
-        dietaryRestrictions: participantData.dietaryRestrictions,
-        medicalConditions: participantData.medicalConditions,
-        medications: participantData.medications,
-        allergies: participantData.allergies,
-      };
-
       // Create registration entity
-      await RegistrationEntity.create({
-        ...registrationData,
-        paymentStatus: false, // Default to unpaid
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        // GSI attributes are computed automatically by ElectroDB watch functions
-        eventRegistrationId: eventId,
-        registrationDate: timestamp,
-        eventPaymentStatus: `${eventId}#false`,
-        paymentDate: timestamp,
-      }).go();
+      await this.createRegistrationEntity(
+        reservationId,
+        eventId,
+        'individual',
+        1,
+        event.registrationFee,
+        timestamp
+      );
 
       // Create participant entity
-      await ParticipantEntity.create({
-        ...participantCreateData,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        // GSI attributes are computed automatically by ElectroDB watch functions
-        eventParticipantId: eventId,
-        participantEmail: participantData.email,
-        reservationParticipantId: reservationId,
-        participantSequence: participantId,
-      }).go();
+      const participantId = await this.createParticipantEntity(
+        participantData,
+        reservationId,
+        eventId,
+        timestamp
+      );
 
       return {
         reservationId,
@@ -241,37 +96,7 @@ export class IndividualRegistrationService {
     }
   }
 
-  /**
-   * Updates the event's current participant count
-   * @param eventId - The event ID
-   * @param incrementBy - Number to increment the participant count by (default: 1)
-   */
-  private async updateEventParticipantCount(eventId: string, incrementBy: number = 1): Promise<void> {
-    try {
-      // Get current event data
-      const eventResult = await EventEntity.get({ id: eventId }).go();
 
-      if (!eventResult.data) {
-        throw new NotFoundError(`Event with ID ${eventId} not found`);
-      }
-
-      const currentCount = eventResult.data.currentParticipants;
-      const newCount = currentCount + incrementBy;
-
-      // Update the participant count
-      await EventEntity.update({ id: eventId })
-        .set({
-          currentParticipants: newCount,
-          updatedAt: new Date().toISOString(),
-        })
-        .go();
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        throw error;
-      }
-      throw new Error(`Failed to update event participant count: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
 
   /**
    * Processes an individual registration for an event
@@ -288,7 +113,7 @@ export class IndividualRegistrationService {
     participantData: IndividualRegistrationData
   ): Promise<IndividualRegistrationResult> {
     // Step 1: Validate input data and ULID format
-    this.validateInputData(eventId, participantData);
+    this.validateSingleParticipantInput(eventId, participantData);
 
     // Step 2: Validate event exists and is available for registration
     const event = await this.validateEventAvailability(eventId);
@@ -321,7 +146,7 @@ export class IndividualRegistrationService {
     participantData: IndividualRegistrationData
   ): Promise<boolean> {
     // Perform all validation steps without creating entities
-    this.validateInputData(eventId, participantData);
+    this.validateSingleParticipantInput(eventId, participantData);
     await this.validateEventAvailability(eventId);
     await emailValidationService.validateIndividualRegistration(eventId, participantData.email);
     await capacityValidationService.validateIndividualRegistration(eventId);
