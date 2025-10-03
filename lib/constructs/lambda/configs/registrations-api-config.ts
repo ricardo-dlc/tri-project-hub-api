@@ -3,12 +3,12 @@ import type { LambdaCreationConfig } from '../../../types/infrastructure';
 
 export const registrationsApiLambdaConfigs: Record<string, LambdaCreationConfig> = {
   createIndividualRegistration: {
-    functionName: 'createIndividualRegistration',
-    handlerPath: 'createIndividualRegistration.ts',
+    functionName: 'createRegistration',
+    handlerPath: 'createRegistration.ts',
     route: {
       path: '/events/{eventId}/registrations',
       method: HttpMethod.POST,
-      integrationName: 'EventsIndividualRegistrationIntegration',
+      integrationName: 'EventsRegistrationIntegration',
     },
     tables: [
       {

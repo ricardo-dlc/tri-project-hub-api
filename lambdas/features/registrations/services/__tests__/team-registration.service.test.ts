@@ -35,6 +35,7 @@ describe('TeamRegistrationService', () => {
   const mockEvent = {
     id: mockEventId,
     isEnabled: true,
+    isTeamEvent: true, // This is a team event
     registrationDeadline: '2025-12-31T23:59:59.000Z',
     registrationFee: 100,
     maxParticipants: 50,
@@ -281,6 +282,19 @@ describe('TeamRegistrationService', () => {
       );
 
       await expect(service.registerTeam(mockEventId, mockTeamData)).rejects.toThrow(ConflictError);
+    });
+
+    it('should throw ConflictError when event is configured for individual registration', async () => {
+      jest.spyOn(service as any, 'validateEventAvailability').mockRejectedValue(
+        new ConflictError('Registration type mismatch. This event is configured for individual registration only.', {
+          eventId: mockEventId,
+          eventRegistrationType: 'individual',
+          attemptedRegistrationType: 'team',
+        })
+      );
+
+      await expect(service.registerTeam(mockEventId, mockTeamData)).rejects.toThrow(ConflictError);
+      await expect(service.registerTeam(mockEventId, mockTeamData)).rejects.toThrow('Registration type mismatch. This event is configured for individual registration only.');
     });
 
     it('should throw ConflictError when email validation fails', async () => {

@@ -115,8 +115,8 @@ export class IndividualRegistrationService extends BaseRegistrationService {
     // Step 1: Validate input data and ULID format
     this.validateSingleParticipantInput(eventId, participantData);
 
-    // Step 2: Validate event exists and is available for registration
-    const event = await this.validateEventAvailability(eventId);
+    // Step 2: Validate event exists and is available for individual registration
+    const event = await this.validateEventAvailability(eventId, 'individual');
 
     // Step 3: Validate email uniqueness for this event
     await emailValidationService.validateIndividualRegistration(eventId, participantData.email);
@@ -147,7 +147,7 @@ export class IndividualRegistrationService extends BaseRegistrationService {
   ): Promise<boolean> {
     // Perform all validation steps without creating entities
     this.validateSingleParticipantInput(eventId, participantData);
-    await this.validateEventAvailability(eventId);
+    await this.validateEventAvailability(eventId, 'individual');
     await emailValidationService.validateIndividualRegistration(eventId, participantData.email);
     await capacityValidationService.validateIndividualRegistration(eventId);
 

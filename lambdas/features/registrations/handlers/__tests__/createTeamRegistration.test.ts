@@ -1,11 +1,11 @@
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { isValidULID } from '../../../../shared/utils/ulid';
-import { individualRegistrationService } from '../../services/individual-registration.service';
-import { handler } from '../createIndividualRegistration';
+import { teamRegistrationService } from '../../services/team-registration.service';
+import { handler } from '../createTeamRegistration';
 
-// Mock the individual registration service
-jest.mock('../../services/individual-registration.service');
-const mockIndividualRegistrationService = individualRegistrationService as jest.Mocked<typeof individualRegistrationService>;
+// Mock the team registration service
+jest.mock('../../services/team-registration.service');
+const mockTeamRegistrationService = teamRegistrationService as jest.Mocked<typeof teamRegistrationService>;
 
 // Mock ULID validation
 jest.mock('../../../../shared/utils/ulid');
@@ -97,9 +97,9 @@ const createMockContext = (overrides: Partial<Context> = {}): Context => ({
   ...overrides,
 });
 
-// Valid registration data for testing
-const validRegistrationData = {
-  email: 'test@example.com',
+// Valid participant data for testing
+const validParticipant1 = {
+  email: 'participant1@example.com',
   firstName: 'John',
   lastName: 'Doe',
   waiver: true,
@@ -121,29 +121,75 @@ const validRegistrationData = {
   medicalConditions: 'None',
   medications: 'None',
   allergies: 'None',
+  role: 'swimmer',
 };
 
-// Mock successful registration result
-const mockRegistrationResult = {
+const validParticipant2 = {
+  email: 'participant2@example.com',
+  firstName: 'Jane',
+  lastName: 'Smith',
+  waiver: true,
+  newsletter: true,
+  role: 'cyclist',
+};
+
+const validParticipant3 = {
+  email: 'participant3@example.com',
+  firstName: 'Bob',
+  lastName: 'Johnson',
+  waiver: true,
+  newsletter: false,
+  role: 'runner',
+};
+
+// Valid team registration data
+const validTeamRegistrationData = {
+  participants: [validParticipant1, validParticipant2, validParticipant3],
+};
+
+// Mock successful team registration result
+const mockTeamRegistrationResult = {
   reservationId: '01ARZ3NDEKTSV4RRFFQ69G5FBW',
-  participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBX',
   eventId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
-  email: 'test@example.com',
+  participants: [
+    {
+      participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBX',
+      email: 'participant1@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      role: 'swimmer',
+    },
+    {
+      participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBY',
+      email: 'participant2@example.com',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      role: 'cyclist',
+    },
+    {
+      participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBZ',
+      email: 'participant3@example.com',
+      firstName: 'Bob',
+      lastName: 'Johnson',
+      role: 'runner',
+    },
+  ],
   paymentStatus: false,
-  registrationFee: 50.00,
+  registrationFee: 150.00,
+  totalParticipants: 3,
   createdAt: '2023-01-01T00:00:00.000Z',
 };
 
-describe('Create Individual Registration Handler', () => {
+describe('Create Team Registration Handler', () => {
   describe('Successful Registration', () => {
     beforeEach(() => {
       mockIsValidULID.mockReturnValue(true);
-      mockIndividualRegistrationService.registerIndividual.mockResolvedValue(mockRegistrationResult);
+      mockTeamRegistrationService.registerTeam.mockResolvedValue(mockTeamRegistrationResult);
     });
 
-    it('should successfully create individual registration with all fields', async () => {
+    it('should successfully create team registration with all fields', async () => {
       const event = createMockEvent({
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
@@ -157,33 +203,66 @@ describe('Create Individual Registration Handler', () => {
         success: true,
         data: {
           reservationId: '01ARZ3NDEKTSV4RRFFQ69G5FBW',
-          participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBX',
           eventId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
-          email: 'test@example.com',
+          participants: [
+            {
+              participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBX',
+              email: 'participant1@example.com',
+              firstName: 'John',
+              lastName: 'Doe',
+              role: 'swimmer',
+            },
+            {
+              participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBY',
+              email: 'participant2@example.com',
+              firstName: 'Jane',
+              lastName: 'Smith',
+              role: 'cyclist',
+            },
+            {
+              participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBZ',
+              email: 'participant3@example.com',
+              firstName: 'Bob',
+              lastName: 'Johnson',
+              role: 'runner',
+            },
+          ],
           paymentStatus: false,
-          registrationFee: 50.00,
+          registrationFee: 150.00,
+          totalParticipants: 3,
           createdAt: '2023-01-01T00:00:00.000Z',
-          message: 'Individual registration created successfully',
+          message: 'Team registration created successfully',
         },
       });
 
-      expect(mockIndividualRegistrationService.registerIndividual).toHaveBeenCalledWith(
+      expect(mockTeamRegistrationService.registerTeam).toHaveBeenCalledWith(
         '01ARZ3NDEKTSV4RRFFQ69G5FAV',
-        validRegistrationData
+        validTeamRegistrationData
       );
     });
 
-    it('should successfully create registration with only required fields', async () => {
-      const minimalData = {
-        email: 'test@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        waiver: true,
-        newsletter: false,
+    it('should successfully create team registration with minimal participant data', async () => {
+      const minimalTeamData = {
+        participants: [
+          {
+            email: 'participant1@example.com',
+            firstName: 'John',
+            lastName: 'Doe',
+            waiver: true,
+            newsletter: false,
+          },
+          {
+            email: 'participant2@example.com',
+            firstName: 'Jane',
+            lastName: 'Smith',
+            waiver: true,
+            newsletter: true,
+          },
+        ],
       };
 
       const event = createMockEvent({
-        body: JSON.stringify(minimalData),
+        body: JSON.stringify(minimalTeamData),
       });
       const context = createMockContext();
 
@@ -192,17 +271,17 @@ describe('Create Individual Registration Handler', () => {
       expect(result.statusCode).toBe(201);
       const parsedBody = JSON.parse(result.body);
       expect(parsedBody.success).toBe(true);
-      expect(parsedBody.data.message).toBe('Individual registration created successfully');
+      expect(parsedBody.data.message).toBe('Team registration created successfully');
 
-      expect(mockIndividualRegistrationService.registerIndividual).toHaveBeenCalledWith(
+      expect(mockTeamRegistrationService.registerTeam).toHaveBeenCalledWith(
         '01ARZ3NDEKTSV4RRFFQ69G5FAV',
-        expect.objectContaining(minimalData)
+        minimalTeamData
       );
     });
 
     it('should include CORS headers in successful response', async () => {
       const event = createMockEvent({
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
@@ -221,7 +300,7 @@ describe('Create Individual Registration Handler', () => {
     it('should return 400 for missing eventId parameter', async () => {
       const event = createMockEvent({
         pathParameters: undefined,
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
@@ -242,21 +321,7 @@ describe('Create Individual Registration Handler', () => {
     it('should return 400 for empty eventId parameter', async () => {
       const event = createMockEvent({
         pathParameters: { eventId: '' },
-        body: JSON.stringify(validRegistrationData),
-      });
-      const context = createMockContext();
-
-      const result = await callWrappedHandler(event, context);
-
-      expect(result.statusCode).toBe(400);
-      const parsedBody = JSON.parse(result.body);
-      expect(parsedBody.error.message).toBe('Missing eventId parameter in path');
-    });
-
-    it('should return 400 for whitespace-only eventId parameter', async () => {
-      const event = createMockEvent({
-        pathParameters: { eventId: '   ' },
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
@@ -272,7 +337,7 @@ describe('Create Individual Registration Handler', () => {
 
       const event = createMockEvent({
         pathParameters: { eventId: 'invalid-ulid-format' },
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
@@ -291,34 +356,6 @@ describe('Create Individual Registration Handler', () => {
       });
 
       expect(mockIsValidULID).toHaveBeenCalledWith('invalid-ulid-format');
-    });
-
-    it('should validate ULID format for various invalid formats', async () => {
-      const invalidULIDs = [
-        'too-short',
-        'TOO-LONG-ULID-FORMAT-INVALID',
-        '01ARZ3NDEKTSV4RRFFQ69G5FA!', // Invalid character
-        '01arz3ndektsv4rrffq69g5fav', // Lowercase (invalid for ULID)
-        '123456789012345678901234567', // Too long
-        '12345678901234567890123456', // Valid length but invalid characters
-      ];
-
-      for (const invalidULID of invalidULIDs) {
-        mockIsValidULID.mockReturnValue(false);
-
-        const event = createMockEvent({
-          pathParameters: { eventId: invalidULID },
-          body: JSON.stringify(validRegistrationData),
-        });
-        const context = createMockContext();
-
-        const result = await callWrappedHandler(event, context);
-
-        expect(result.statusCode).toBe(400);
-        const parsedBody = JSON.parse(result.body);
-        expect(parsedBody.error.message).toBe('Invalid eventId format. Must be a valid ULID.');
-        expect(parsedBody.error.details.eventId).toBe(invalidULID);
-      }
     });
   });
 
@@ -367,15 +404,64 @@ describe('Create Individual Registration Handler', () => {
       });
     });
 
-    it('should return 422 for missing required fields', async () => {
-      const incompleteData = {
-        email: 'test@example.com',
-        firstName: 'John',
-        // Missing lastName, waiver, newsletter
+    it('should return 422 for missing participants array', async () => {
+      const event = createMockEvent({
+        body: '{}',
+      });
+      const context = createMockContext();
+
+      const result = await callWrappedHandler(event, context);
+
+      expect(result.statusCode).toBe(422);
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody.error.message).toBe('Request body must include participants array');
+    });
+
+    it('should return 422 for non-array participants field', async () => {
+      const event = createMockEvent({
+        body: JSON.stringify({ participants: 'not-an-array' }),
+      });
+      const context = createMockContext();
+
+      const result = await callWrappedHandler(event, context);
+
+      expect(result.statusCode).toBe(422);
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody.error.message).toBe('Participants must be an array');
+    });
+
+    it('should return 422 for empty participants array', async () => {
+      const event = createMockEvent({
+        body: JSON.stringify({ participants: [] }),
+      });
+      const context = createMockContext();
+
+      const result = await callWrappedHandler(event, context);
+
+      expect(result.statusCode).toBe(422);
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody.error.message).toBe('Team registration must include at least one participant');
+    });
+  });
+
+  describe('Participant Validation', () => {
+    beforeEach(() => {
+      mockIsValidULID.mockReturnValue(true);
+    });
+
+    it('should return 422 for participant missing required fields', async () => {
+      const incompleteParticipant = {
+        participants: [
+          {
+            email: 'test@example.com',
+            firstName: 'John',
+            // Missing lastName, waiver, newsletter
+          },
+        ],
       };
 
       const event = createMockEvent({
-        body: JSON.stringify(incompleteData),
+        body: JSON.stringify(incompleteParticipant),
       });
       const context = createMockContext();
 
@@ -385,21 +471,25 @@ describe('Create Individual Registration Handler', () => {
       const parsedBody = JSON.parse(result.body);
       expect(parsedBody.success).toBe(false);
       expect(parsedBody.error.code).toBe('VALIDATION_ERROR');
-      expect(parsedBody.error.message).toContain('Missing required fields');
+      expect(parsedBody.error.message).toContain('Participant at index 0 is missing required fields');
       expect(parsedBody.error.details.missingFields).toEqual(['lastName', 'waiver', 'newsletter']);
     });
 
-    it('should return 422 for invalid field types', async () => {
-      const invalidTypeData = {
-        email: 123, // Should be string
-        firstName: 'John',
-        lastName: 'Doe',
-        waiver: true,
-        newsletter: false,
+    it('should return 422 for participant with invalid field types', async () => {
+      const invalidParticipant = {
+        participants: [
+          {
+            email: 123, // Should be string
+            firstName: 'John',
+            lastName: 'Doe',
+            waiver: true,
+            newsletter: false,
+          },
+        ],
       };
 
       const event = createMockEvent({
-        body: JSON.stringify(invalidTypeData),
+        body: JSON.stringify(invalidParticipant),
       });
       const context = createMockContext();
 
@@ -407,21 +497,25 @@ describe('Create Individual Registration Handler', () => {
 
       expect(result.statusCode).toBe(422);
       const parsedBody = JSON.parse(result.body);
-      expect(parsedBody.error.message).toBe('Email must be a string');
+      expect(parsedBody.error.message).toBe('Participant at index 0: email must be a string');
     });
 
-    it('should validate all required field types', async () => {
+    it('should validate all participant required field types', async () => {
       const testCases = [
-        { field: 'firstName', value: 123, expectedMessage: 'First name must be a string' },
-        { field: 'lastName', value: [], expectedMessage: 'Last name must be a string' },
-        { field: 'waiver', value: 'true', expectedMessage: 'Waiver must be a boolean' },
-        { field: 'newsletter', value: 1, expectedMessage: 'Newsletter must be a boolean' },
+        { field: 'firstName', value: 123, expectedMessage: 'Participant at index 0: firstName must be a string' },
+        { field: 'lastName', value: [], expectedMessage: 'Participant at index 0: lastName must be a string' },
+        { field: 'waiver', value: 'true', expectedMessage: 'Participant at index 0: waiver must be a boolean' },
+        { field: 'newsletter', value: 1, expectedMessage: 'Participant at index 0: newsletter must be a boolean' },
       ];
 
       for (const testCase of testCases) {
         const invalidData = {
-          ...validRegistrationData,
-          [testCase.field]: testCase.value,
+          participants: [
+            {
+              ...validParticipant1,
+              [testCase.field]: testCase.value,
+            },
+          ],
         };
 
         const event = createMockEvent({
@@ -439,8 +533,12 @@ describe('Create Individual Registration Handler', () => {
 
     it('should validate optional field types when provided', async () => {
       const invalidOptionalData = {
-        ...validRegistrationData,
-        phone: 123, // Should be string if provided
+        participants: [
+          {
+            ...validParticipant1,
+            phone: 123, // Should be string if provided
+          },
+        ],
       };
 
       const event = createMockEvent({
@@ -452,30 +550,104 @@ describe('Create Individual Registration Handler', () => {
 
       expect(result.statusCode).toBe(422);
       const parsedBody = JSON.parse(result.body);
-      expect(parsedBody.error.message).toBe('phone must be a string if provided');
+      expect(parsedBody.error.message).toBe('Participant at index 0: phone must be a string if provided');
     });
 
-    it('should accept null or undefined optional fields', async () => {
-      const dataWithNullOptionals = {
-        email: 'test@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        waiver: true,
-        newsletter: false,
-        // Don't include optional fields at all (undefined)
+    it('should return 422 for duplicate emails within team', async () => {
+      const duplicateEmailData = {
+        participants: [
+          {
+            email: 'duplicate@example.com',
+            firstName: 'John',
+            lastName: 'Doe',
+            waiver: true,
+            newsletter: false,
+          },
+          {
+            email: 'duplicate@example.com', // Same email
+            firstName: 'Jane',
+            lastName: 'Smith',
+            waiver: true,
+            newsletter: true,
+          },
+        ],
       };
 
-      mockIndividualRegistrationService.registerIndividual.mockResolvedValue(mockRegistrationResult);
-
       const event = createMockEvent({
-        body: JSON.stringify(dataWithNullOptionals),
+        body: JSON.stringify(duplicateEmailData),
       });
       const context = createMockContext();
 
       const result = await callWrappedHandler(event, context);
 
-      expect(result.statusCode).toBe(201);
-      expect(mockIndividualRegistrationService.registerIndividual).toHaveBeenCalled();
+      expect(result.statusCode).toBe(422);
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody.error.message).toBe('Team registration contains duplicate email addresses');
+      expect(parsedBody.error.details.duplicateEmails).toEqual(['duplicate@example.com']);
+    });
+
+    it('should handle case-insensitive duplicate email detection', async () => {
+      const duplicateEmailData = {
+        participants: [
+          {
+            email: 'Test@Example.com',
+            firstName: 'John',
+            lastName: 'Doe',
+            waiver: true,
+            newsletter: false,
+          },
+          {
+            email: 'test@example.com', // Same email, different case
+            firstName: 'Jane',
+            lastName: 'Smith',
+            waiver: true,
+            newsletter: true,
+          },
+        ],
+      };
+
+      const event = createMockEvent({
+        body: JSON.stringify(duplicateEmailData),
+      });
+      const context = createMockContext();
+
+      const result = await callWrappedHandler(event, context);
+
+      expect(result.statusCode).toBe(422);
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody.error.message).toBe('Team registration contains duplicate email addresses');
+      expect(parsedBody.error.details.duplicateEmails).toEqual(['test@example.com']);
+    });
+
+    it('should validate multiple participants with different errors', async () => {
+      const multipleErrorData = {
+        participants: [
+          {
+            email: 'valid@example.com',
+            firstName: 'John',
+            lastName: 'Doe',
+            waiver: true,
+            newsletter: false,
+          },
+          {
+            // Missing required fields
+            email: 'invalid@example.com',
+            firstName: 'Jane',
+            // Missing lastName, waiver, newsletter
+          },
+        ],
+      };
+
+      const event = createMockEvent({
+        body: JSON.stringify(multipleErrorData),
+      });
+      const context = createMockContext();
+
+      const result = await callWrappedHandler(event, context);
+
+      expect(result.statusCode).toBe(422);
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody.error.message).toContain('Participant at index 1 is missing required fields');
     });
   });
 
@@ -487,12 +659,12 @@ describe('Create Individual Registration Handler', () => {
     it('should handle service validation errors (422)', async () => {
       // Import the actual ValidationError class
       const { ValidationError } = require('../../../../shared/errors');
-      const validationError = new ValidationError('Invalid email format');
+      const validationError = new ValidationError('Team contains invalid participant data');
 
-      mockIndividualRegistrationService.registerIndividual.mockRejectedValue(validationError);
+      mockTeamRegistrationService.registerTeam.mockRejectedValue(validationError);
 
       const event = createMockEvent({
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
@@ -501,18 +673,20 @@ describe('Create Individual Registration Handler', () => {
       expect(result.statusCode).toBe(422);
       const parsedBody = JSON.parse(result.body);
       expect(parsedBody.success).toBe(false);
-      expect(parsedBody.error.message).toBe('Invalid email format');
+      expect(parsedBody.error.message).toBe('Team contains invalid participant data');
     });
 
-    it('should handle service conflict errors (409)', async () => {
+    it('should handle service conflict errors for duplicate emails (409)', async () => {
       // Import the actual ConflictError class
       const { ConflictError } = require('../../../../shared/errors');
-      const conflictError = new ConflictError('Email already registered for this event');
+      const conflictError = new ConflictError('Email already registered for this event', {
+        duplicateEmails: ['participant1@example.com']
+      });
 
-      mockIndividualRegistrationService.registerIndividual.mockRejectedValue(conflictError);
+      mockTeamRegistrationService.registerTeam.mockRejectedValue(conflictError);
 
       const event = createMockEvent({
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
@@ -524,15 +698,39 @@ describe('Create Individual Registration Handler', () => {
       expect(parsedBody.error.message).toBe('Email already registered for this event');
     });
 
+    it('should handle capacity exceeded errors (409)', async () => {
+      // Import the actual ConflictError class
+      const { ConflictError } = require('../../../../shared/errors');
+      const capacityError = new ConflictError('Event has reached maximum capacity', {
+        maxParticipants: 100,
+        currentParticipants: 98,
+        requestedParticipants: 3
+      });
+
+      mockTeamRegistrationService.registerTeam.mockRejectedValue(capacityError);
+
+      const event = createMockEvent({
+        body: JSON.stringify(validTeamRegistrationData),
+      });
+      const context = createMockContext();
+
+      const result = await callWrappedHandler(event, context);
+
+      expect(result.statusCode).toBe(409);
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody.success).toBe(false);
+      expect(parsedBody.error.message).toBe('Event has reached maximum capacity');
+    });
+
     it('should handle service not found errors (404)', async () => {
       // Import the actual NotFoundError class
       const { NotFoundError } = require('../../../../shared/errors');
       const notFoundError = new NotFoundError('Event not found');
 
-      mockIndividualRegistrationService.registerIndividual.mockRejectedValue(notFoundError);
+      mockTeamRegistrationService.registerTeam.mockRejectedValue(notFoundError);
 
       const event = createMockEvent({
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
@@ -548,18 +746,18 @@ describe('Create Individual Registration Handler', () => {
       // Import the actual ConflictError class
       const { ConflictError } = require('../../../../shared/errors');
       const registrationTypeMismatchError = new ConflictError(
-        'Registration type mismatch. This event is configured for team registration only.',
+        'Registration type mismatch. This event is configured for individual registration only.',
         {
           eventId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
-          eventRegistrationType: 'team',
-          attemptedRegistrationType: 'individual',
+          eventRegistrationType: 'individual',
+          attemptedRegistrationType: 'team',
         }
       );
 
-      mockIndividualRegistrationService.registerIndividual.mockRejectedValue(registrationTypeMismatchError);
+      mockTeamRegistrationService.registerTeam.mockRejectedValue(registrationTypeMismatchError);
 
       const event = createMockEvent({
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
@@ -568,38 +766,15 @@ describe('Create Individual Registration Handler', () => {
       expect(result.statusCode).toBe(409);
       const parsedBody = JSON.parse(result.body);
       expect(parsedBody.success).toBe(false);
-      expect(parsedBody.error.message).toBe('Registration type mismatch. This event is configured for team registration only.');
-    });
-
-    it('should handle capacity exceeded errors', async () => {
-      // Import the actual ConflictError class
-      const { ConflictError } = require('../../../../shared/errors');
-      const capacityError = new ConflictError('Event has reached maximum capacity', {
-        maxParticipants: 100,
-        currentParticipants: 100
-      });
-
-      mockIndividualRegistrationService.registerIndividual.mockRejectedValue(capacityError);
-
-      const event = createMockEvent({
-        body: JSON.stringify(validRegistrationData),
-      });
-      const context = createMockContext();
-
-      const result = await callWrappedHandler(event, context);
-
-      expect(result.statusCode).toBe(409);
-      const parsedBody = JSON.parse(result.body);
-      expect(parsedBody.success).toBe(false);
-      expect(parsedBody.error.message).toBe('Event has reached maximum capacity');
+      expect(parsedBody.error.message).toBe('Registration type mismatch. This event is configured for individual registration only.');
     });
 
     it('should handle generic service errors (500)', async () => {
       const genericError = new Error('Database connection failed');
-      mockIndividualRegistrationService.registerIndividual.mockRejectedValue(genericError);
+      mockTeamRegistrationService.registerTeam.mockRejectedValue(genericError);
 
       const event = createMockEvent({
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
@@ -620,14 +795,14 @@ describe('Create Individual Registration Handler', () => {
         '01CXYZ123456789ABCDEFGHIJK',
       ];
 
-      mockIndividualRegistrationService.registerIndividual.mockResolvedValue(mockRegistrationResult);
+      mockTeamRegistrationService.registerTeam.mockResolvedValue(mockTeamRegistrationResult);
 
       for (const validULID of validULIDs) {
         mockIsValidULID.mockReturnValue(true);
 
         const event = createMockEvent({
           pathParameters: { eventId: validULID },
-          body: JSON.stringify(validRegistrationData),
+          body: JSON.stringify(validTeamRegistrationData),
         });
         const context = createMockContext();
 
@@ -635,7 +810,7 @@ describe('Create Individual Registration Handler', () => {
 
         expect(result.statusCode).toBe(201);
         expect(mockIsValidULID).toHaveBeenCalledWith(validULID);
-        expect(mockIndividualRegistrationService.registerIndividual).toHaveBeenCalledWith(
+        expect(mockTeamRegistrationService.registerTeam).toHaveBeenCalledWith(
           validULID,
           expect.any(Object)
         );
@@ -658,7 +833,7 @@ describe('Create Individual Registration Handler', () => {
 
         const event = createMockEvent({
           pathParameters: { eventId: ulid },
-          body: JSON.stringify(validRegistrationData),
+          body: JSON.stringify(validTeamRegistrationData),
         });
         const context = createMockContext();
 
@@ -672,84 +847,125 @@ describe('Create Individual Registration Handler', () => {
     });
   });
 
-  describe('Edge Cases and Error Scenarios', () => {
+  describe('Edge Cases and Complex Scenarios', () => {
     beforeEach(() => {
       mockIsValidULID.mockReturnValue(true);
     });
 
-    it('should handle empty JSON object in request body', async () => {
-      const event = createMockEvent({
-        body: '{}',
-      });
-      const context = createMockContext();
-
-      const result = await callWrappedHandler(event, context);
-
-      expect(result.statusCode).toBe(422);
-      const parsedBody = JSON.parse(result.body);
-      expect(parsedBody.error.message).toContain('Missing required fields');
-    });
-
-    it('should handle null request body after JSON parsing', async () => {
-      const event = createMockEvent({
-        body: 'null',
-      });
-      const context = createMockContext();
-
-      const result = await callWrappedHandler(event, context);
-
-      expect(result.statusCode).toBe(422);
-      const parsedBody = JSON.parse(result.body);
-      expect(parsedBody.error.message).toBe('Request body must be a valid JSON object');
-    });
-
-    it('should handle array instead of object in request body', async () => {
-      const event = createMockEvent({
-        body: '[]',
-      });
-      const context = createMockContext();
-
-      const result = await callWrappedHandler(event, context);
-
-      expect(result.statusCode).toBe(422);
-      const parsedBody = JSON.parse(result.body);
-      expect(parsedBody.error.message).toBe('Request body must be a valid JSON object');
-    });
-
-    it('should handle string instead of object in request body', async () => {
-      const event = createMockEvent({
-        body: '"string"',
-      });
-      const context = createMockContext();
-
-      const result = await callWrappedHandler(event, context);
-
-      expect(result.statusCode).toBe(422);
-      const parsedBody = JSON.parse(result.body);
-      expect(parsedBody.error.message).toBe('Request body must be a valid JSON object');
-    });
-
-    it('should handle very large request body', async () => {
-      const largeData = {
-        ...validRegistrationData,
-        dietaryRestrictions: 'A'.repeat(10000), // Very long string
+    it('should handle large team registrations', async () => {
+      const largeTeam = {
+        participants: Array.from({ length: 10 }, (_, i) => ({
+          email: `participant${i + 1}@example.com`,
+          firstName: `Participant${i + 1}`,
+          lastName: 'Test',
+          waiver: true,
+          newsletter: i % 2 === 0,
+          role: i % 3 === 0 ? 'swimmer' : i % 3 === 1 ? 'cyclist' : 'runner',
+        })),
       };
 
-      mockIndividualRegistrationService.registerIndividual.mockResolvedValue(mockRegistrationResult);
+      const largeTeamResult = {
+        ...mockTeamRegistrationResult,
+        participants: largeTeam.participants.map((p, i) => ({
+          participantId: `01ARZ3NDEKTSV4RRFFQ69G5FB${i}`,
+          email: p.email,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          role: p.role,
+        })),
+        totalParticipants: 10,
+        registrationFee: 500.00,
+      };
+
+      mockTeamRegistrationService.registerTeam.mockResolvedValue(largeTeamResult);
 
       const event = createMockEvent({
-        body: JSON.stringify(largeData),
+        body: JSON.stringify(largeTeam),
       });
       const context = createMockContext();
 
       const result = await callWrappedHandler(event, context);
 
       expect(result.statusCode).toBe(201);
-      expect(mockIndividualRegistrationService.registerIndividual).toHaveBeenCalledWith(
+      const parsedBody = JSON.parse(result.body);
+      expect(parsedBody.data.totalParticipants).toBe(10);
+      expect(parsedBody.data.participants).toHaveLength(10);
+    });
+
+    it('should handle participants with extensive optional data', async () => {
+      const extensiveParticipant = {
+        participants: [
+          {
+            ...validParticipant1,
+            dietaryRestrictions: 'Vegetarian, gluten-free, no nuts, lactose intolerant',
+            medicalConditions: 'Asthma, diabetes type 1, previous knee surgery',
+            medications: 'Insulin, albuterol inhaler, vitamin D supplements',
+            allergies: 'Peanuts, shellfish, bee stings, latex',
+          },
+        ],
+      };
+
+      mockTeamRegistrationService.registerTeam.mockResolvedValue({
+        ...mockTeamRegistrationResult,
+        participants: [mockTeamRegistrationResult.participants[0]],
+        totalParticipants: 1,
+        registrationFee: 50.00,
+      });
+
+      const event = createMockEvent({
+        body: JSON.stringify(extensiveParticipant),
+      });
+      const context = createMockContext();
+
+      const result = await callWrappedHandler(event, context);
+
+      expect(result.statusCode).toBe(201);
+      expect(mockTeamRegistrationService.registerTeam).toHaveBeenCalledWith(
         '01ARZ3NDEKTSV4RRFFQ69G5FAV',
-        expect.objectContaining({
-          dietaryRestrictions: 'A'.repeat(10000),
-        })
+        extensiveParticipant
+      );
+    });
+
+    it('should handle mixed participant data completeness', async () => {
+      const mixedTeamData = {
+        participants: [
+          // Full data participant
+          validParticipant1,
+          // Minimal data participant
+          {
+            email: 'minimal@example.com',
+            firstName: 'Min',
+            lastName: 'Imal',
+            waiver: true,
+            newsletter: false,
+          },
+          // Partial data participant
+          {
+            email: 'partial@example.com',
+            firstName: 'Par',
+            lastName: 'Tial',
+            waiver: true,
+            newsletter: true,
+            phone: '+1234567890',
+            emergencyName: 'Emergency Contact',
+            emergencyPhone: '+0987654321',
+          },
+        ],
+      };
+
+      mockTeamRegistrationService.registerTeam.mockResolvedValue(mockTeamRegistrationResult);
+
+      const event = createMockEvent({
+        body: JSON.stringify(mixedTeamData),
+      });
+      const context = createMockContext();
+
+      const result = await callWrappedHandler(event, context);
+
+      expect(result.statusCode).toBe(201);
+      expect(mockTeamRegistrationService.registerTeam).toHaveBeenCalledWith(
+        '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+        mixedTeamData
       );
     });
   });
@@ -757,12 +973,12 @@ describe('Create Individual Registration Handler', () => {
   describe('Response Format Validation', () => {
     beforeEach(() => {
       mockIsValidULID.mockReturnValue(true);
-      mockIndividualRegistrationService.registerIndividual.mockResolvedValue(mockRegistrationResult);
+      mockTeamRegistrationService.registerTeam.mockResolvedValue(mockTeamRegistrationResult);
     });
 
     it('should return consistent response structure for success', async () => {
       const event = createMockEvent({
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
@@ -779,19 +995,28 @@ describe('Create Individual Registration Handler', () => {
 
       // Verify response data structure
       expect(parsedBody.data).toHaveProperty('reservationId');
-      expect(parsedBody.data).toHaveProperty('participantId');
       expect(parsedBody.data).toHaveProperty('eventId');
-      expect(parsedBody.data).toHaveProperty('email');
+      expect(parsedBody.data).toHaveProperty('participants');
       expect(parsedBody.data).toHaveProperty('paymentStatus');
       expect(parsedBody.data).toHaveProperty('registrationFee');
+      expect(parsedBody.data).toHaveProperty('totalParticipants');
       expect(parsedBody.data).toHaveProperty('createdAt');
       expect(parsedBody.data).toHaveProperty('message');
+
+      // Verify participants structure
+      expect(Array.isArray(parsedBody.data.participants)).toBe(true);
+      parsedBody.data.participants.forEach((participant: any) => {
+        expect(participant).toHaveProperty('participantId');
+        expect(participant).toHaveProperty('email');
+        expect(participant).toHaveProperty('firstName');
+        expect(participant).toHaveProperty('lastName');
+      });
     });
 
     it('should return consistent response structure for errors', async () => {
       const event = createMockEvent({
         pathParameters: { eventId: 'invalid' },
-        body: JSON.stringify(validRegistrationData),
+        body: JSON.stringify(validTeamRegistrationData),
       });
       const context = createMockContext();
 
