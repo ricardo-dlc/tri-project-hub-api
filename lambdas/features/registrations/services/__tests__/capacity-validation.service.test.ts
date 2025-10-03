@@ -270,12 +270,13 @@ describe('CapacityValidationService', () => {
       currentParticipants: 50,
       isEnabled: true,
       registrationDeadline: '2024-12-31T23:59:59Z',
+      requiredParticipants: 4,
     };
 
-    it('should not throw when capacity is available for team registration', async () => {
+    it('should not throw when capacity is available and team size matches required participants', async () => {
       // Arrange
       const eventId = 'event-123';
-      const teamSize = 5;
+      const teamSize = 4;
 
       mockGo.mockResolvedValue({ data: mockEvent });
 
@@ -284,10 +285,23 @@ describe('CapacityValidationService', () => {
         .resolves.not.toThrow();
     });
 
-    it('should throw ConflictError when insufficient capacity for team', async () => {
+    it('should not throw when capacity is available and event has no required participants', async () => {
       // Arrange
       const eventId = 'event-123';
-      const teamSize = 60; // More than available spots (50)
+      const teamSize = 5;
+      const eventWithoutRequirement = { ...mockEvent, requiredParticipants: undefined };
+
+      mockGo.mockResolvedValue({ data: eventWithoutRequirement });
+
+      // Act & Assert
+      await expect(capacityValidationService.validateTeamRegistration(eventId, teamSize))
+        .resolves.not.toThrow();
+    });
+
+    it('should throw ConflictError when team size is less than required participants', async () => {
+      // Arrange
+      const eventId = 'event-123';
+      const teamSize = 3; // Less than required 4
 
       mockGo.mockResolvedValue({ data: mockEvent });
 
@@ -300,15 +314,90 @@ describe('CapacityValidationService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(ConflictError);
         expect((error as ConflictError).message).toBe(
-          'Event does not have sufficient capacity for team registration. Available spots: 50, team size: 60'
+          'Team size must be exactly 4 participants. Received: 3'
+        );
+        expect((error as ConflictError).details).toEqual({
+          eventId,
+          requiredParticipants: 4,
+          providedParticipants: 3,
+        });
+      }
+    });
+
+    it('should throw ConflictError when team size is more than required participants', async () => {
+      // Arrange
+      const eventId = 'event-123';
+      const teamSize = 5; // More than required 4
+
+      mockGo.mockResolvedValue({ data: mockEvent });
+
+      // Act & Assert
+      await expect(capacityValidationService.validateTeamRegistration(eventId, teamSize))
+        .rejects.toThrow(ConflictError);
+
+      try {
+        await capacityValidationService.validateTeamRegistration(eventId, teamSize);
+      } catch (error) {
+        expect(error).toBeInstanceOf(ConflictError);
+        expect((error as ConflictError).message).toBe(
+          'Team size must be exactly 4 participants. Received: 5'
+        );
+        expect((error as ConflictError).details).toEqual({
+          eventId,
+          requiredParticipants: 4,
+          providedParticipants: 5,
+        });
+      }
+    });
+
+    it('should validate required participants before checking capacity', async () => {
+      // Arrange
+      const eventId = 'event-123';
+      const teamSize = 3; // Less than required 4
+      const eventWithLowCapacity = { ...mockEvent, currentParticipants: 99 }; // Only 1 spot left
+
+      mockGo.mockResolvedValue({ data: eventWithLowCapacity });
+
+      // Act & Assert
+      // Should throw required participants error, not capacity error
+      await expect(capacityValidationService.validateTeamRegistration(eventId, teamSize))
+        .rejects.toThrow(ConflictError);
+
+      try {
+        await capacityValidationService.validateTeamRegistration(eventId, teamSize);
+      } catch (error) {
+        expect(error).toBeInstanceOf(ConflictError);
+        expect((error as ConflictError).message).toContain('must be exactly');
+        expect((error as ConflictError).message).not.toContain('capacity');
+      }
+    });
+
+    it('should throw ConflictError when insufficient capacity for team', async () => {
+      // Arrange
+      const eventId = 'event-123';
+      const teamSize = 4; // Matches required participants
+      const eventWithLowCapacity = { ...mockEvent, currentParticipants: 98 }; // Only 2 spots left
+
+      mockGo.mockResolvedValue({ data: eventWithLowCapacity });
+
+      // Act & Assert
+      await expect(capacityValidationService.validateTeamRegistration(eventId, teamSize))
+        .rejects.toThrow(ConflictError);
+
+      try {
+        await capacityValidationService.validateTeamRegistration(eventId, teamSize);
+      } catch (error) {
+        expect(error).toBeInstanceOf(ConflictError);
+        expect((error as ConflictError).message).toBe(
+          'Event does not have sufficient capacity for team registration. Available spots: 2, team size: 4'
         );
         expect((error as ConflictError).details).toEqual({
           eventId,
           maxParticipants: 100,
-          currentParticipants: 50,
-          requestedParticipants: 60,
-          availableSpots: 50,
-          teamSize: 60,
+          currentParticipants: 98,
+          requestedParticipants: 4,
+          availableSpots: 2,
+          teamSize: 4,
         });
       }
     });
@@ -316,21 +405,23 @@ describe('CapacityValidationService', () => {
     it('should handle exact capacity match for team registration', async () => {
       // Arrange
       const eventId = 'event-123';
-      const teamSize = 50; // Exactly the available spots
+      const teamSize = 4; // Matches required participants and exactly the available spots
+      const eventWithExactCapacity = { ...mockEvent, currentParticipants: 96 }; // Exactly 4 spots left
 
-      mockGo.mockResolvedValue({ data: mockEvent });
+      mockGo.mockResolvedValue({ data: eventWithExactCapacity });
 
       // Act & Assert
       await expect(capacityValidationService.validateTeamRegistration(eventId, teamSize))
         .resolves.not.toThrow();
     });
 
-    it('should handle single member team registration', async () => {
+    it('should handle team registration when event has no required participants constraint', async () => {
       // Arrange
       const eventId = 'event-123';
       const teamSize = 1;
+      const flexibleEvent = { ...mockEvent, requiredParticipants: undefined };
 
-      mockGo.mockResolvedValue({ data: mockEvent });
+      mockGo.mockResolvedValue({ data: flexibleEvent });
 
       // Act & Assert
       await expect(capacityValidationService.validateTeamRegistration(eventId, teamSize))
