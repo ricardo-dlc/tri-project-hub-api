@@ -181,8 +181,8 @@ export class TeamRegistrationService extends BaseRegistrationService {
     // Step 1: Validate input data and ULID format
     this.validateInputData(eventId, teamData);
 
-    // Step 2: Validate event exists and is available for registration
-    const event = await this.validateEventAvailability(eventId);
+    // Step 2: Validate event exists and is available for team registration
+    const event = await this.validateEventAvailability(eventId, 'team');
 
     // Step 3: Extract emails for validation
     const emails = teamData.participants.map(p => p.email);
@@ -216,7 +216,7 @@ export class TeamRegistrationService extends BaseRegistrationService {
   ): Promise<boolean> {
     // Perform all validation steps without creating entities
     this.validateInputData(eventId, teamData);
-    await this.validateEventAvailability(eventId);
+    await this.validateEventAvailability(eventId, 'team');
 
     const emails = teamData.participants.map(p => p.email);
     await emailValidationService.validateTeamRegistration(eventId, emails);

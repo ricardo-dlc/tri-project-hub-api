@@ -62,6 +62,7 @@ describe('IndividualRegistrationService', () => {
     id: validEventId,
     title: 'Test Event',
     isEnabled: true,
+    isTeamEvent: false, // This is an individual event
     registrationDeadline: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
     registrationFee: 50,
     maxParticipants: 100,
@@ -296,6 +297,18 @@ describe('IndividualRegistrationService', () => {
           .rejects.toThrow(ConflictError);
         await expect(service.registerIndividual(validEventId, validParticipantData))
           .rejects.toThrow('Registration deadline has passed for this event');
+      });
+
+      it('should throw ConflictError when event is configured for team registration', async () => {
+        const teamEvent = { ...mockEvent, isTeamEvent: true };
+        mockEventEntity.get = jest.fn().mockReturnValue({
+          go: jest.fn().mockResolvedValue({ data: teamEvent }),
+        });
+
+        await expect(service.registerIndividual(validEventId, validParticipantData))
+          .rejects.toThrow(ConflictError);
+        await expect(service.registerIndividual(validEventId, validParticipantData))
+          .rejects.toThrow('Registration type mismatch. This event is configured for team registration only.');
       });
     });
 

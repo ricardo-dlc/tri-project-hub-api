@@ -58,11 +58,12 @@ export abstract class BaseRegistrationService {
   /**
    * Validates that the event exists and is available for registration
    * @param eventId - The event ID to validate
+   * @param expectedRegistrationType - The expected registration type ('individual' or 'team')
    * @returns Promise<Event> - The event data
    * @throws NotFoundError if event doesn't exist
-   * @throws ConflictError if event is not available for registration
+   * @throws ConflictError if event is not available for registration or registration type mismatch
    */
-  protected async validateEventAvailability(eventId: string) {
+  protected async validateEventAvailability(eventId: string, expectedRegistrationType?: 'individual' | 'team') {
     try {
       const eventResult = await EventEntity.get({ id: eventId }).go();
 
@@ -87,6 +88,24 @@ export abstract class BaseRegistrationService {
           registrationDeadline: event.registrationDeadline,
           currentTime: now.toISOString(),
         });
+      }
+
+      // Validate registration type matches event configuration
+      if (expectedRegistrationType) {
+        const isEventTeamType = event.isTeamEvent;
+        const isExpectedTeamType = expectedRegistrationType === 'team';
+
+        if (isEventTeamType !== isExpectedTeamType) {
+          const eventType = isEventTeamType ? 'team' : 'individual';
+          throw new ConflictError(
+            `Registration type mismatch. This event is configured for ${eventType} registration only.`,
+            {
+              eventId,
+              eventRegistrationType: eventType,
+              attemptedRegistrationType: expectedRegistrationType,
+            }
+          );
+        }
       }
 
       return event;
