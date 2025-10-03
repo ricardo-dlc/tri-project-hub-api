@@ -70,10 +70,10 @@ describe('IndividualRegistrationService', () => {
 
   beforeEach(() => {
     service = new IndividualRegistrationService();
-    
+
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Setup mocks
     mockEmailValidationService = emailValidationService as jest.Mocked<typeof emailValidationService>;
     mockCapacityValidationService = capacityValidationService as jest.Mocked<typeof capacityValidationService>;
@@ -91,7 +91,7 @@ describe('IndividualRegistrationService', () => {
       timestamp: mockTimestamp,
     });
     mockGenerateParticipantId.mockReturnValue(validParticipantId);
-    
+
     mockEventEntity.get = jest.fn().mockReturnValue({
       go: jest.fn().mockResolvedValue({ data: mockEvent }),
     });
