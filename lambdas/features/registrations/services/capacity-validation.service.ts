@@ -77,12 +77,33 @@ export class CapacityValidationService {
    * Validates capacity for team registration
    * @param eventId - The event ID to check capacity for
    * @param teamSize - Number of team members to register
-   * @throws ConflictError if event doesn't have sufficient capacity
+   * @throws ConflictError if event doesn't have sufficient capacity or team size doesn't match required participants
    * @throws NotFoundError if event doesn't exist
    */
   async validateTeamRegistration(eventId: string, teamSize: number): Promise<void> {
     const result = await this.validateCapacity(eventId, teamSize);
 
+    // Fetch event to check required participants
+    const eventResult = await EventEntity.get({ id: eventId }).go();
+    if (!eventResult.data) {
+      throw new NotFoundError(`Event with ID ${eventId} not found`);
+    }
+
+    const event = eventResult.data;
+
+    // Validate team size matches required participants
+    if (event.requiredParticipants && teamSize !== event.requiredParticipants) {
+      throw new ConflictError(
+        `Team size must be exactly ${event.requiredParticipants} participants. Received: ${teamSize}`,
+        {
+          eventId,
+          requiredParticipants: event.requiredParticipants,
+          providedParticipants: teamSize,
+        }
+      );
+    }
+
+    // Validate capacity
     if (!result.isValid) {
       throw new ConflictError(
         `Event does not have sufficient capacity for team registration. Available spots: ${result.availableSpots}, team size: ${result.requestedParticipants}`,
