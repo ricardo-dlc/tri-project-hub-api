@@ -75,7 +75,7 @@
   - Write unit tests for participant querying and data formatting
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 6.2 Create participant list API handler
+- [x] 6.2 Create participant list API handler
   - Implement Lambda handler for GET /events/{eventId}/registrations
   - Validate organizer access (only event creators can view participants)
   - Format response to group participants by reservation ID
