@@ -89,7 +89,7 @@ export const EventEntity = new Entity(
       },
       CreatorIndex: {
         index: 'CreatorIndex',
-        pk: { field: 'creatorId', composite: ['creatorId'] },
+        pk: { field: 'creatorId', composite: ['creatorId'], casing: 'none' },
         sk: { field: 'date', composite: ['date'] },
       },
       SlugIndex: {
