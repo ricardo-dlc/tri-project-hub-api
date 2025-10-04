@@ -14,3 +14,6 @@ export type { IndividualRegistrationData, IndividualRegistrationResult } from '.
 
 export { TeamRegistrationService, teamRegistrationService } from './team-registration.service';
 export type { TeamParticipantData, TeamRegistrationData, TeamRegistrationResult } from './team-registration.service';
+
+export { ParticipantQueryService, participantQueryService } from './participant-query.service';
+export type { ParticipantWithRegistration, ParticipantQueryResult } from './participant-query.service';

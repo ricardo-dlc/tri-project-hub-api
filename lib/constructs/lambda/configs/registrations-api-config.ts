@@ -18,4 +18,20 @@ export const registrationsApiLambdaConfigs: Record<string, LambdaCreationConfig>
       },
     ],
   },
+  getParticipantsByEvent: {
+    functionName: 'getParticipantsByEvent',
+    handlerPath: 'getParticipantsByEvent.ts',
+    route: {
+      path: '/events/{eventId}/participants',
+      method: HttpMethod.GET,
+      integrationName: 'EventsParticipantsIntegration',
+    },
+    tables: [
+      {
+        tableName: 'events',
+        environmentVariable: 'EVENTS_TABLE_NAME',
+        permission: 'read',
+      },
+    ],
+  },
 };

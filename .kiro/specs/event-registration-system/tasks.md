@@ -68,7 +68,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 8.4, 8.5_
 
 - [ ] 6. Implement participant query functionality
-- [ ] 6.1 Create participant query service
+- [x] 6.1 Create participant query service
   - Implement service to retrieve participants by event ID for organizers
   - Use EventParticipantIndex to efficiently query participants
   - Include registration and payment status information in response
