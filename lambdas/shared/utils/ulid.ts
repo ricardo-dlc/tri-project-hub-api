@@ -66,3 +66,20 @@ export const isValidParticipantId = (participantId: string): boolean => {
 export const isValidEventId = (eventId: string): boolean => {
   return isValidULID(eventId);
 };
+
+/**
+ * Generate an organizer ID (ULID format)
+ * @returns A new ULID for organizer identification
+ */
+export const generateOrganizerId = (): string => {
+  return generateULID();
+};
+
+/**
+ * Validate organizer ID format
+ * @param organizerId The organizer ID to validate
+ * @returns True if valid ULID format
+ */
+export const isValidOrganizerId = (organizerId: string): boolean => {
+  return isValidULID(organizerId);
+};
