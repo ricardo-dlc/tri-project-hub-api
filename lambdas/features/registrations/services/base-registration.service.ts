@@ -1,10 +1,13 @@
 import { BadRequestError, ConflictError, NotFoundError, ValidationError } from '../../../shared/errors';
+import { createFeatureLogger } from '../../../shared/logger';
 import { generateParticipantId } from '../../../shared/utils/ulid';
 import { isValidULID } from '../../../shared/utils/ulid';
 import { EventEntity } from '../../events/models/event.model';
 import { CreateParticipantData, ParticipantEntity } from '../models/participant.model';
 import { CreateRegistrationData, RegistrationEntity } from '../models/registration.model';
 import { reservationIdService } from './reservation-id.service';
+
+const logger = createFeatureLogger('registrations');
 
 export abstract class BaseRegistrationService {
   /**
@@ -75,6 +78,7 @@ export abstract class BaseRegistrationService {
 
       // Check if event is enabled
       if (!event.isEnabled) {
+        logger.warn({ eventId, eventTitle: event.title }, 'Event is disabled');
         throw new ConflictError('Event is currently disabled and not accepting registrations', { eventId });
       }
 
@@ -83,6 +87,7 @@ export abstract class BaseRegistrationService {
       const registrationDeadline = new Date(event.registrationDeadline);
 
       if (now > registrationDeadline) {
+        logger.warn({ eventId, registrationDeadline: event.registrationDeadline, currentTime: now.toISOString() }, 'Registration deadline passed');
         throw new ConflictError('Registration deadline has passed for this event', {
           eventId,
           registrationDeadline: event.registrationDeadline,
@@ -97,6 +102,7 @@ export abstract class BaseRegistrationService {
 
         if (isEventTeamType !== isExpectedTeamType) {
           const eventType = isEventTeamType ? 'team' : 'individual';
+          logger.warn({ eventId, eventType, attemptedType: expectedRegistrationType }, 'Registration type mismatch');
           throw new ConflictError(
             `Registration type mismatch. This event is configured for ${eventType} registration only.`,
             {

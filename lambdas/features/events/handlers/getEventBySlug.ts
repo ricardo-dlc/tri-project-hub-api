@@ -3,8 +3,11 @@ import type {
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
 import { BadRequestError, NotFoundError } from '../../../shared/errors';
+import { createFeatureLogger } from '../../../shared/logger';
 import { withMiddleware } from '../../../shared/wrapper';
 import { EventEntity } from '../models/event.model';
+
+const logger = createFeatureLogger('events');
 
 // Refactored handler using arrow function, async/await, and destructuring
 const getEventBySlugHandler = async (event: APIGatewayProxyEventV2) => {
@@ -15,15 +18,13 @@ const getEventBySlugHandler = async (event: APIGatewayProxyEventV2) => {
     throw new BadRequestError('Missing slug parameter');
   }
 
-  console.log('Slug: ', slug);
+  logger.debug({ slug }, 'Fetching event by slug');
 
   const eventInfo = await EventEntity.query
     .SlugIndex({ slug })
     .begins({ slugDate: slug })
     .where(({ isEnabled }, { eq }) => eq(isEnabled, true))
     .go();
-
-  console.log('Event info: ', eventInfo);
 
   if (!eventInfo.data.length) {
     throw new NotFoundError('Event not found');

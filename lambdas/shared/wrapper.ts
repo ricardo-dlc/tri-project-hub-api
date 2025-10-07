@@ -1,4 +1,6 @@
 import { APIGatewayProxyHandlerV2 } from 'aws-lambda';
+import { handleError, sanitizeError } from './error-handler';
+import { createRequestLogger } from './logger';
 import {
   formatErrorResponse,
   formatSuccessResponse,
@@ -9,7 +11,6 @@ import {
   MiddlewareHandler,
   MiddlewareOptions,
 } from './types';
-import { handleError, sanitizeError } from './error-handler';
 
 // Main middleware function signature using ES6+ arrow function and async/await
 export const withMiddleware =
@@ -19,6 +20,15 @@ export const withMiddleware =
   ): APIGatewayProxyHandlerV2 =>
   async (event, context) => {
     const startTime = Date.now();
+
+    // Create request logger with context
+    const reqLogger = createRequestLogger({
+      requestId: context.awsRequestId,
+      path: event.routeKey ?? event.rawPath,
+      method: event.requestContext?.http?.method,
+    });
+
+    reqLogger.info('Request started');
 
     try {
       // Execute the wrapped handler
@@ -42,6 +52,9 @@ export const withMiddleware =
 
       // Format success response
       const response = formatSuccessResponse(data);
+
+      const executionTime = Date.now() - startTime;
+      reqLogger.info({ statusCode, executionTime }, 'Request completed');
 
       return {
         statusCode,

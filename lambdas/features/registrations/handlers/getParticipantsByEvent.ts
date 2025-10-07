@@ -1,18 +1,14 @@
 import type {
   APIGatewayProxyHandlerV2
 } from 'aws-lambda';
-import pino from 'pino';
 import { AuthenticatedEvent, withAuth } from '../../../shared/auth/middleware';
 import { BadRequestError } from '../../../shared/errors';
+import { createFeatureLogger } from '../../../shared/logger';
 import { isValidULID } from '../../../shared/utils/ulid';
 import { withMiddleware } from '../../../shared/wrapper';
 import { participantQueryService, ParticipantWithRegistration } from '../services/participant-query.service';
 
-// Initialize Pino logger
-const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  // No prettyPrint or transport needed for Lambda
-});
+const logger = createFeatureLogger('registrations');
 
 
 /**
@@ -135,46 +131,46 @@ const groupParticipantsByReservation = (participants: ParticipantWithRegistratio
 };
 
 const getParticipantsByEventHandler = async (event: AuthenticatedEvent) => {
-  try {
-    const { eventId } = event.pathParameters ?? {};
+  const { eventId } = event.pathParameters ?? {};
 
-    if (!eventId || eventId.trim() === '') {
-      logger.warn({ event }, 'Missing eventId in path parameters');
-      throw new BadRequestError('Missing eventId parameter in path');
-    }
+  if (!eventId || eventId.trim() === '') {
+    logger.warn('Missing eventId in path parameters');
+    throw new BadRequestError('Missing eventId parameter in path');
+  }
 
-    if (!isValidULID(eventId)) {
-      logger.warn({ eventId }, 'Invalid eventId format');
-      throw new BadRequestError('Invalid eventId format. Must be a valid ULID.', { eventId });
-    }
+  if (!isValidULID(eventId)) {
+    logger.warn({ eventId }, 'Invalid eventId format');
+    throw new BadRequestError('Invalid eventId format. Must be a valid ULID.', { eventId });
+  }
 
-    const organizerId = event.user.id;
-    logger.info({ eventId, organizerId }, 'Fetching participants for event');
+  const organizerId = event.user.id;
+  logger.debug({ eventId, organizerId }, 'Fetching participants for event');
 
-    const queryResult = await participantQueryService.getParticipantsByEvent(eventId, organizerId);
+  const queryResult = await participantQueryService.getParticipantsByEvent(eventId, organizerId);
 
-    logger.info(
-      { eventId, totalFetched: queryResult.totalCount },
-      'Participants fetched successfully'
-    );
-
-    const registrationGroups = groupParticipantsByReservation(queryResult.participants);
-
-    const response: ParticipantsByReservationResponse = {
+  logger.info(
+    {
       eventId,
       totalParticipants: queryResult.totalCount,
-      registrations: registrationGroups,
-      summary: queryResult.registrationSummary,
-    };
+      totalRegistrations: queryResult.registrationSummary.totalRegistrations,
+      paidRegistrations: queryResult.registrationSummary.paidRegistrations
+    },
+    'Participants fetched successfully'
+  );
 
-    return {
-      statusCode: 200,
-      data: response,
-    };
-  } catch (error) {
-    logger.error({ error, event }, 'Error in getParticipantsByEventHandler');
-    throw error;
-  }
+  const registrationGroups = groupParticipantsByReservation(queryResult.participants);
+
+  const response: ParticipantsByReservationResponse = {
+    eventId,
+    totalParticipants: queryResult.totalCount,
+    registrations: registrationGroups,
+    summary: queryResult.registrationSummary,
+  };
+
+  return {
+    statusCode: 200,
+    data: response,
+  };
 };
 
 export const handler: APIGatewayProxyHandlerV2 = withMiddleware(

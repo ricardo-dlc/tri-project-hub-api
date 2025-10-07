@@ -2,16 +2,19 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
+import { createFeatureLogger } from '../../../shared/logger';
 import { executeWithPagination } from '../../../shared/utils/pagination';
 import { withMiddleware } from '../../../shared/wrapper';
 import { EventEntity } from '../models/event.model';
 import { PaginationQueryParams } from '../types/event.types';
 
+const logger = createFeatureLogger('events');
+
 const getFeaturedEventsHandler = async (event: APIGatewayProxyEventV2) => {
   const queryParams: PaginationQueryParams = event.queryStringParameters ?? {};
   const { limit, nextToken } = queryParams;
 
-  console.log(`Featured events query parameters:`, queryParams);
+  logger.debug({ limit, nextToken }, 'Fetching featured events');
 
   const query = EventEntity.query
     .FeaturedIndex({

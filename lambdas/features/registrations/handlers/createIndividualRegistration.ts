@@ -3,9 +3,12 @@ import type {
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
 import { BadRequestError, ValidationError } from '../../../shared/errors';
+import { createFeatureLogger } from '../../../shared/logger';
 import { isValidULID } from '../../../shared/utils/ulid';
 import { withMiddleware } from '../../../shared/wrapper';
 import { IndividualRegistrationData, individualRegistrationService } from '../services/individual-registration.service';
+
+const logger = createFeatureLogger('registrations');
 
 /**
  * Request body interface for individual registration
@@ -174,6 +177,8 @@ const createIndividualRegistrationHandler = async (event: APIGatewayProxyEventV2
   // Parse and validate request body
   const registrationData = parseRequestBody(event);
 
+  logger.info({ eventId, email: registrationData.email }, 'Processing individual registration');
+
   // Convert request data to service interface
   const participantData: IndividualRegistrationData = {
     email: registrationData.email,
@@ -203,6 +208,8 @@ const createIndividualRegistrationHandler = async (event: APIGatewayProxyEventV2
 
   // Process the registration using the service
   const result = await individualRegistrationService.registerIndividual(eventId, participantData);
+
+  logger.info({ eventId, reservationId: result.reservationId, participantId: result.participantId }, 'Individual registration created successfully');
 
   // Format the response
   const response: CreateIndividualRegistrationResponse = {

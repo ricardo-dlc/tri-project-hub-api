@@ -1,8 +1,11 @@
 import { BadRequestError, NotFoundError } from '../../../shared/errors';
+import { createFeatureLogger } from '../../../shared/logger';
 import { isValidULID } from '../../../shared/utils/ulid';
 import { EventEntity } from '../../events/models/event.model';
 import { ParticipantEntity, ParticipantItem } from '../models/participant.model';
 import { RegistrationEntity } from '../models/registration.model';
+
+const logger = createFeatureLogger('registrations');
 
 export interface ParticipantWithRegistration {
   participantId: string;
@@ -136,7 +139,7 @@ export class ParticipantQueryService {
             return result.data;
           } catch (error) {
             // Log error but don't fail the entire operation
-            console.warn(`Failed to fetch registration for reservationId ${reservationId}:`, error);
+            logger.warn({ reservationId, error }, 'Failed to fetch registration');
             return null;
           }
         })
@@ -170,7 +173,10 @@ export class ParticipantQueryService {
 
       if (!registration) {
         // This should not happen in normal operation, but we'll handle it gracefully
-        console.warn(`No registration found for participant ${participant.participantId} with reservationId ${participant.reservationId}`);
+        logger.warn(
+          { participantId: participant.participantId, reservationId: participant.reservationId },
+          'No registration found for participant'
+        );
 
         // Return participant data with default registration values
         return {

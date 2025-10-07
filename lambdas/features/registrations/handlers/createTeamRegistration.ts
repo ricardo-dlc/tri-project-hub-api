@@ -3,9 +3,12 @@ import type {
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
 import { BadRequestError, ValidationError } from '../../../shared/errors';
+import { createFeatureLogger } from '../../../shared/logger';
 import { isValidULID } from '../../../shared/utils/ulid';
 import { withMiddleware } from '../../../shared/wrapper';
 import { TeamParticipantData, TeamRegistrationData, teamRegistrationService } from '../services/team-registration.service';
+
+const logger = createFeatureLogger('registrations');
 
 /**
  * Request body interface for team registration
@@ -197,6 +200,8 @@ const createTeamRegistrationHandler = async (event: APIGatewayProxyEventV2) => {
   // Parse and validate request body
   const registrationData = parseRequestBody(event);
 
+  logger.info({ eventId, participantCount: registrationData.participants.length }, 'Processing team registration');
+
   // Convert request data to service interface
   const teamData: TeamRegistrationData = {
     participants: registrationData.participants
@@ -204,6 +209,8 @@ const createTeamRegistrationHandler = async (event: APIGatewayProxyEventV2) => {
 
   // Process the registration using the service
   const result = await teamRegistrationService.registerTeam(eventId, teamData);
+
+  logger.info({ eventId, reservationId: result.reservationId, participantCount: result.totalParticipants }, 'Team registration created successfully');
 
   // Format the response
   const response: CreateTeamRegistrationResponse = {

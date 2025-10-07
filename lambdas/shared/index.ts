@@ -1,6 +1,9 @@
 // Main middleware wrapper function
 export { withMiddleware } from './wrapper';
 
+// Logging utilities
+export { createFeatureLogger, createRequestLogger, logger } from './logger';
+
 // Type definitions
 export type {
   CorsOptions,

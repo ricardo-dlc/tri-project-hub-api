@@ -1,5 +1,8 @@
 import { ConflictError } from '../../../shared/errors';
+import { createFeatureLogger } from '../../../shared/logger';
 import { ParticipantEntity } from '../models/participant.model';
+
+const logger = createFeatureLogger('registrations');
 
 export interface EmailValidationResult {
   isValid: boolean;
@@ -126,6 +129,7 @@ export class EmailValidationService {
     const result = await this.validateSingleEmail(eventId, email);
 
     if (!result.isValid) {
+      logger.warn({ eventId, email, conflictingCount: result.conflictingParticipants?.length }, 'Email already registered for event');
       throw new ConflictError(
         `Email ${email} is already registered for this event`,
         {
@@ -135,6 +139,8 @@ export class EmailValidationService {
         }
       );
     }
+
+    logger.debug({ eventId, email }, 'Email validation passed - email is unique');
   }
 
   /**
@@ -144,9 +150,18 @@ export class EmailValidationService {
    * @throws ConflictError if any email conflicts are found
    */
   async validateTeamRegistration(eventId: string, emails: string[]): Promise<void> {
+    logger.debug({ eventId, emailCount: emails.length }, 'Validating team emails');
     const result = await this.validateMultipleEmails(eventId, emails);
 
     if (!result.isValid) {
+      const isInternalDuplicate = !result.conflictingParticipants;
+      logger.warn({
+        eventId,
+        duplicateEmails: result.duplicateEmails,
+        isInternalDuplicate,
+        conflictingCount: result.conflictingParticipants?.length
+      }, 'Team email validation failed');
+
       const errorMessage = result.conflictingParticipants
         ? `The following emails are already registered for this event: ${result.duplicateEmails.join(', ')}`
         : `Duplicate emails found within team registration: ${result.duplicateEmails.join(', ')}`;
@@ -157,6 +172,8 @@ export class EmailValidationService {
         conflictingParticipants: result.conflictingParticipants,
       });
     }
+
+    logger.debug({ eventId, emailCount: emails.length }, 'Team email validation passed - all emails unique');
   }
 }
 

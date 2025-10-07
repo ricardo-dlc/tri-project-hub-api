@@ -3,6 +3,7 @@ import type {
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
 import { BadRequestError, ValidationError } from '../../../shared/errors';
+import { createFeatureLogger } from '../../../shared/logger';
 import { isValidULID } from '../../../shared/utils/ulid';
 import { withMiddleware } from '../../../shared/wrapper';
 import {
@@ -10,10 +11,12 @@ import {
   individualRegistrationService
 } from '../services/individual-registration.service';
 import {
-  TeamRegistrationData,
   TeamParticipantData,
+  TeamRegistrationData,
   teamRegistrationService
 } from '../services/team-registration.service';
+
+const logger = createFeatureLogger('registrations');
 
 /**
  * Request body interface for individual registration
@@ -560,9 +563,15 @@ const createRegistrationHandler = async (event: APIGatewayProxyEventV2) => {
 
   // Process registration based on detected type
   if (isTeamRegistration(registrationData)) {
+    const participantCount = registrationData.participants.length;
+    logger.info({ eventId, participantCount }, 'Processing team registration');
     response = await processTeamRegistration(eventId, registrationData);
+    logger.info({ eventId, reservationId: response.reservationId, participantCount }, 'Team registration created successfully');
   } else {
-    response = await processIndividualRegistration(eventId, registrationData as IndividualRegistrationRequest);
+    const individualData = registrationData as IndividualRegistrationRequest;
+    logger.info({ eventId, email: individualData.email }, 'Processing individual registration');
+    response = await processIndividualRegistration(eventId, individualData);
+    logger.info({ eventId, reservationId: response.reservationId, participantId: (response as IndividualRegistrationResponse).participantId }, 'Individual registration created successfully');
   }
 
   return {

@@ -1,7 +1,10 @@
 import { ValidationError } from '../../../shared/errors';
+import { createFeatureLogger } from '../../../shared/logger';
 import { BaseRegistrationService } from './base-registration.service';
 import { capacityValidationService } from './capacity-validation.service';
 import { emailValidationService } from './email-validation.service';
+
+const logger = createFeatureLogger('registrations');
 
 export interface TeamParticipantData {
   // Required fields
@@ -178,26 +181,34 @@ export class TeamRegistrationService extends BaseRegistrationService {
     eventId: string,
     teamData: TeamRegistrationData
   ): Promise<TeamRegistrationResult> {
+    const teamSize = teamData.participants.length;
+    logger.debug({ eventId, teamSize }, 'Starting team registration');
+
     // Step 1: Validate input data and ULID format
     this.validateInputData(eventId, teamData);
 
     // Step 2: Validate event exists and is available for team registration
     const event = await this.validateEventAvailability(eventId, 'team');
+    logger.debug({ eventId, eventTitle: event.title, registrationFee: event.registrationFee, teamSize }, 'Event validated for team');
 
     // Step 3: Extract emails for validation
     const emails = teamData.participants.map(p => p.email);
 
     // Step 4: Validate email uniqueness (both within team and against existing participants)
     await emailValidationService.validateTeamRegistration(eventId, emails);
+    logger.debug({ eventId, teamSize }, 'Email validation passed for team');
 
     // Step 5: Validate event capacity for the entire team
     await capacityValidationService.validateTeamRegistration(eventId, teamData.participants.length);
+    logger.debug({ eventId, teamSize, currentParticipants: event.currentParticipants, maxParticipants: event.maxParticipants }, 'Capacity validation passed for team');
 
     // Step 6: Create registration and participant entities
     const result = await this.createRegistrationEntities(eventId, teamData, event);
+    logger.debug({ eventId, reservationId: result.reservationId, teamSize }, 'Team registration entities created');
 
     // Step 7: Update event participant count
     await this.updateEventParticipantCount(eventId, teamData.participants.length);
+    logger.debug({ eventId, newCount: event.currentParticipants + teamSize }, 'Event participant count updated for team');
 
     return result;
   }

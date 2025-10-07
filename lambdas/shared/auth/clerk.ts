@@ -1,6 +1,7 @@
 import { createClerkClient, verifyToken } from '@clerk/backend';
 import { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { ForbiddenError, NotAuthorizedError } from '../errors';
+import { logger } from '../logger';
 
 // Ensure Clerk is configured with the secret key
 if (!process.env.CLERK_SECRET_KEY) {
@@ -59,7 +60,7 @@ export const verifyClerkToken = async (token: string): Promise<ClerkUser> => {
     if (error instanceof NotAuthorizedError) {
       throw error;
     }
-    console.error('Token verification error:', error);
+    logger.error({ error }, 'Token verification failed');
     throw new NotAuthorizedError('Token verification failed');
   }
 };
