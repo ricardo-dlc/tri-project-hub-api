@@ -1,3 +1,5 @@
+import { ClerkUser } from '../../../shared/auth/clerk';
+import { BadRequestError, ForbiddenError } from '../../../shared/errors';
 import { isValidOrganizerId } from '../../../shared/utils/ulid';
 import {
   CreateOrganizerData,
@@ -134,4 +136,52 @@ export const sanitizeUpdateOrganizerData = (data: UpdateOrganizerData): UpdateOr
   }
 
   return sanitized;
+};
+
+/**
+ * Validates ownership of an organizer with admin override logic
+ * @param organizer - The organizer to validate ownership for
+ * @param user - The authenticated user
+ * @throws ForbiddenError if user doesn't own the organizer and is not an admin
+ */
+export const validateOrganizerOwnership = (organizer: OrganizerItem, user: ClerkUser): void => {
+  if (user.role !== 'admin' && organizer.clerkId !== user.id) {
+    throw new ForbiddenError('You can only modify organizers you created');
+  }
+};
+
+/**
+ * Validates that an organizer ID is provided and has valid format
+ * @param organizerId - The organizer ID to validate
+ * @throws BadRequestError if organizer ID is invalid
+ */
+export const validateOrganizerIdFormat = (organizerId: string): void => {
+  if (!organizerId || typeof organizerId !== 'string' || organizerId.trim().length === 0) {
+    throw new BadRequestError('Organizer ID is required');
+  }
+
+  if (!isValidOrganizerId(organizerId)) {
+    throw new BadRequestError('Invalid organizer ID format');
+  }
+};
+
+/**
+ * Validates that an organizer exists and is accessible to a user for event operations
+ * This is a utility function that can be used by event services to validate organizer references
+ * @param organizerId - The organizer ID to validate
+ * @param user - The authenticated user
+ * @param organizerService - The organizer service instance to use for validation
+ * @returns Promise<OrganizerItem> - The validated organizer
+ * @throws NotFoundError if organizer doesn't exist or user doesn't have access
+ */
+export const validateOrganizerForEventOperation = async (
+  organizerId: string,
+  user: ClerkUser,
+  organizerService: { validateOrganizerExists: (organizerId: string, user?: ClerkUser) => Promise<OrganizerItem> }
+): Promise<OrganizerItem> => {
+  // First validate the format
+  validateOrganizerIdFormat(organizerId);
+
+  // Then validate existence and access
+  return await organizerService.validateOrganizerExists(organizerId, user);
 };
