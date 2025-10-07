@@ -1,3 +1,5 @@
+import { ValidationError } from '../../../shared/errors';
+
 export interface OrganizerItem {
   organizerId: string;
   clerkId: string;
@@ -53,46 +55,46 @@ export interface OrganizerValidationSchema {
 // Validation functions
 export const validateCreateOrganizerData = (data: CreateOrganizerData): void => {
   if (!data.name || typeof data.name !== 'string' || data.name.trim().length === 0) {
-    throw new Error('Name is required and must be a non-empty string');
+    throw new ValidationError('Name is required and must be a non-empty string');
   }
 
   if (data.name.length > 255) {
-    throw new Error('Name must be 255 characters or less');
+    throw new ValidationError('Name must be 255 characters or less');
   }
 
   if (!data.contact || typeof data.contact !== 'string' || data.contact.trim().length === 0) {
-    throw new Error('Contact is required and must be a non-empty string');
+    throw new ValidationError('Contact is required and must be a non-empty string');
   }
 
   if (data.contact.length > 255) {
-    throw new Error('Contact must be 255 characters or less');
+    throw new ValidationError('Contact must be 255 characters or less');
   }
 
   if (data.website !== undefined) {
     if (typeof data.website !== 'string') {
-      throw new Error('Website must be a string');
+      throw new ValidationError('Website must be a string');
     }
 
     if (data.website.length > 500) {
-      throw new Error('Website must be 500 characters or less');
+      throw new ValidationError('Website must be 500 characters or less');
     }
 
     // Basic URL validation
     if (data.website.trim().length > 0) {
       const urlPattern = /^https?:\/\/.+/i;
       if (!urlPattern.test(data.website)) {
-        throw new Error('Website must be a valid URL starting with http:// or https://');
+        throw new ValidationError('Website must be a valid URL starting with http:// or https://');
       }
     }
   }
 
   if (data.description !== undefined) {
     if (typeof data.description !== 'string') {
-      throw new Error('Description must be a string');
+      throw new ValidationError('Description must be a string');
     }
 
     if (data.description.length > 1000) {
-      throw new Error('Description must be 1000 characters or less');
+      throw new ValidationError('Description must be 1000 characters or less');
     }
   }
 };
@@ -104,54 +106,54 @@ export const validateUpdateOrganizerData = (data: UpdateOrganizerData): void => 
   );
 
   if (!hasValidField) {
-    throw new Error('At least one field must be provided for update');
+    throw new ValidationError('At least one field must be provided for update');
   }
 
   if (data.name !== undefined) {
     if (typeof data.name !== 'string' || data.name.trim().length === 0) {
-      throw new Error('Name must be a non-empty string');
+      throw new ValidationError('Name must be a non-empty string');
     }
 
     if (data.name.length > 255) {
-      throw new Error('Name must be 255 characters or less');
+      throw new ValidationError('Name must be 255 characters or less');
     }
   }
 
   if (data.contact !== undefined) {
     if (typeof data.contact !== 'string' || data.contact.trim().length === 0) {
-      throw new Error('Contact must be a non-empty string');
+      throw new ValidationError('Contact must be a non-empty string');
     }
 
     if (data.contact.length > 255) {
-      throw new Error('Contact must be 255 characters or less');
+      throw new ValidationError('Contact must be 255 characters or less');
     }
   }
 
   if (data.website !== undefined) {
     if (typeof data.website !== 'string') {
-      throw new Error('Website must be a string');
+      throw new ValidationError('Website must be a string');
     }
 
     if (data.website.length > 500) {
-      throw new Error('Website must be 500 characters or less');
+      throw new ValidationError('Website must be 500 characters or less');
     }
 
     // Basic URL validation for non-empty strings
     if (data.website.trim().length > 0) {
       const urlPattern = /^https?:\/\/.+/i;
       if (!urlPattern.test(data.website)) {
-        throw new Error('Website must be a valid URL starting with http:// or https://');
+        throw new ValidationError('Website must be a valid URL starting with http:// or https://');
       }
     }
   }
 
   if (data.description !== undefined) {
     if (typeof data.description !== 'string') {
-      throw new Error('Description must be a string');
+      throw new ValidationError('Description must be a string');
     }
 
     if (data.description.length > 1000) {
-      throw new Error('Description must be 1000 characters or less');
+      throw new ValidationError('Description must be 1000 characters or less');
     }
   }
 };

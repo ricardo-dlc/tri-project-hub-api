@@ -67,6 +67,12 @@ export const EventEntity = new Entity(
         watch: ['creatorId', 'date'],
         set: (val, item) => `${item.creatorId}#${item.date}`,
       },
+      organizerDate: {
+        type: 'string',
+        required: true,
+        watch: ['organizerId', 'date'],
+        set: (val, item) => `${item.organizerId}#${item.date}`,
+      },
       typeDate: {
         type: 'string',
         required: true,
@@ -104,6 +110,11 @@ export const EventEntity = new Entity(
         index: 'CreatorIndex',
         pk: { field: 'creatorId', composite: ['creatorId'], casing: 'none' },
         sk: { field: 'date', composite: ['date'] },
+      },
+      OrganizerIndex: {
+        index: 'OrganizerIndex',
+        pk: { field: 'organizerId', composite: ['organizerId'], casing: 'none' },
+        sk: { field: 'organizerDate', composite: ['organizerDate'] },
       },
       SlugIndex: {
         index: 'SlugIndex',
