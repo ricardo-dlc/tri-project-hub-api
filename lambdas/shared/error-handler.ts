@@ -1,4 +1,5 @@
 import { HttpError } from './errors';
+import { logger } from './logger';
 import { ErrorMapping, MiddlewareOptions, ProcessingResult } from './types';
 
 // Default error mappings configuration using ES6+ features
@@ -89,13 +90,13 @@ export const logError = (
     }),
   };
 
-  // Log with appropriate level based on status code using template literals
+  // Log with appropriate level based on status code
   if (statusCode >= 500) {
-    console.error(`🚨 Server Error (${statusCode}):`, errorDetails);
+    logger.error(errorDetails, 'Server error');
   } else if (statusCode >= 400) {
-    console.warn(`⚠️ Client Error (${statusCode}):`, errorDetails);
+    logger.warn(errorDetails, 'Client error');
   } else {
-    console.info(`ℹ️ Error (${statusCode}):`, errorDetails);
+    logger.info(errorDetails, 'Error handled');
   }
 };
 

@@ -1,6 +1,9 @@
+import { createFeatureLogger } from '../../../shared/logger';
 import { BaseRegistrationService } from './base-registration.service';
 import { capacityValidationService } from './capacity-validation.service';
 import { emailValidationService } from './email-validation.service';
+
+const logger = createFeatureLogger('registrations');
 
 export interface IndividualRegistrationData {
   // Required fields
@@ -112,23 +115,30 @@ export class IndividualRegistrationService extends BaseRegistrationService {
     eventId: string,
     participantData: IndividualRegistrationData
   ): Promise<IndividualRegistrationResult> {
+    logger.debug({ eventId, email: participantData.email }, 'Starting individual registration');
+
     // Step 1: Validate input data and ULID format
     this.validateSingleParticipantInput(eventId, participantData);
 
     // Step 2: Validate event exists and is available for individual registration
     const event = await this.validateEventAvailability(eventId, 'individual');
+    logger.debug({ eventId, eventTitle: event.title, registrationFee: event.registrationFee }, 'Event validated');
 
     // Step 3: Validate email uniqueness for this event
     await emailValidationService.validateIndividualRegistration(eventId, participantData.email);
+    logger.debug({ eventId, email: participantData.email }, 'Email validation passed');
 
     // Step 4: Validate event capacity
     await capacityValidationService.validateIndividualRegistration(eventId);
+    logger.debug({ eventId, currentParticipants: event.currentParticipants, maxParticipants: event.maxParticipants }, 'Capacity validation passed');
 
     // Step 5: Create registration and participant entities
     const result = await this.createRegistrationEntities(eventId, participantData, event);
+    logger.debug({ eventId, reservationId: result.reservationId, participantId: result.participantId }, 'Registration entities created');
 
     // Step 6: Update event participant count
     await this.updateEventParticipantCount(eventId, 1);
+    logger.debug({ eventId, newCount: event.currentParticipants + 1 }, 'Event participant count updated');
 
     return result;
   }

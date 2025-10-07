@@ -1,18 +1,18 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import type { AuthenticatedEvent } from '../../../shared';
 import { withAuth, withMiddleware } from '../../../shared';
+import { createFeatureLogger } from '../../../shared/logger';
 import { executeWithPagination } from '../../../shared/utils/pagination';
 import { EventEntity } from '../models/event.model';
 import { PaginationQueryParams } from '../types/event.types';
 
-
+const logger = createFeatureLogger('events');
 
 const getEventsByCreatorIdHandler = async (event: AuthenticatedEvent) => {
   // Get the creator ID from the authenticated user
   const creatorId = event.user.id;
 
-  console.log('Authenticated user creatorId:', creatorId);
-  console.log('User role:', event.user.role);
+  logger.debug({ creatorId, role: event.user.role }, 'Fetching events by creator');
 
   const queryParams: PaginationQueryParams = event.queryStringParameters ?? {};
   const { limit, nextToken } = queryParams;
@@ -20,8 +20,6 @@ const getEventsByCreatorIdHandler = async (event: AuthenticatedEvent) => {
   const query = EventEntity.query
     .CreatorIndex({ creatorId })
   // .where(({ isEnabled }, { eq }) => eq(isEnabled, true))
-
-  console.log('query', query.params());
 
   const result = await executeWithPagination(query, {
     limit: limit ? parseInt(limit, 10) : undefined,

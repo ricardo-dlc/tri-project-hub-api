@@ -1,6 +1,9 @@
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
+import { createFeatureLogger } from '../logger';
 import { MiddlewareHandler } from '../types';
 import { authenticateUser, ClerkUser, requireRole } from './clerk';
+
+const logger = createFeatureLogger('auth');
 
 export interface AuthenticatedEvent extends APIGatewayProxyEventV2 {
   user: ClerkUser;
@@ -21,9 +24,12 @@ export const withAuth = <T = any>(
     // Authenticate user
     const user = await authenticateUser(event);
 
+    logger.debug({ userId: user.id, role: user.role, email: user.email }, 'User authenticated');
+
     // Check role requirements if specified
     if (options.requiredRoles && options.requiredRoles.length > 0) {
       requireRole(user, options.requiredRoles);
+      logger.debug({ userId: user.id, role: user.role, requiredRoles: options.requiredRoles }, 'Role check passed');
     }
 
     // Add user to event object

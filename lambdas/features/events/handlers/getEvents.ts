@@ -2,10 +2,13 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
+import { createFeatureLogger } from '../../../shared/logger';
 import { executeWithPagination } from '../../../shared/utils/pagination';
 import { withMiddleware } from '../../../shared/wrapper';
 import { EventEntity } from '../models/event.model';
 import { PaginationQueryParams } from '../types/event.types';
+
+const logger = createFeatureLogger('events');
 
 interface EventQueryParams extends PaginationQueryParams {
   type?: string;
@@ -16,25 +19,24 @@ const getEventsHandler = async (event: APIGatewayProxyEventV2) => {
   const queryParams: EventQueryParams = event.queryStringParameters ?? {};
   const { type, difficulty, limit, nextToken } = queryParams;
 
-  console.log(`Query parameters:`, queryParams);
   let query;
   // Determine query priority: type > difficulty > default
   if (type) {
-    console.log(`Querying events by type: ${type}`);
+    logger.debug({ type }, 'Querying events by type');
     query = EventEntity.query
       .TypeIndex({
         type,
       })
       .where(({ isEnabled }, { eq }) => eq(isEnabled, true));
   } else if (difficulty) {
-    console.log(`Querying events by difficulty: ${difficulty}`);
+    logger.debug({ difficulty }, 'Querying events by difficulty');
     query = EventEntity.query
       .DifficultyIndex({
         difficulty,
       })
       .where(({ isEnabled }, { eq }) => eq(isEnabled, true));
   } else {
-    console.log(`Querying all enabled events`);
+    logger.debug('Querying all enabled events');
     query = EventEntity.query.EnabledIndex({ enabledStatus: 'enabled' });
   }
 

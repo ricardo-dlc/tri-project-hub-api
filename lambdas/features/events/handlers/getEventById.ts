@@ -3,7 +3,10 @@ import type {
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
 import { BadRequestError, NotFoundError, withMiddleware } from '../../../shared';
+import { createFeatureLogger } from '../../../shared/logger';
 import { EventEntity } from '../models/event.model';
+
+const logger = createFeatureLogger('events');
 
 // Refactored handler using arrow function, async/await, and destructuring
 const getEventByIdHandler = async (event: APIGatewayProxyEventV2) => {
@@ -14,11 +17,9 @@ const getEventByIdHandler = async (event: APIGatewayProxyEventV2) => {
     throw new BadRequestError('Missing id parameter');
   }
 
-  console.log('ID: ', id);
+  logger.debug({ id }, 'Fetching event by id');
 
   const eventInfo = await EventEntity.get({ id }).go();
-
-  console.log('Event info: ', eventInfo);
 
   if (!eventInfo.data) {
     throw new NotFoundError('Event not found');

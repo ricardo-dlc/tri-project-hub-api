@@ -1,5 +1,8 @@
 import { ConflictError, NotFoundError } from '../../../shared/errors';
+import { createFeatureLogger } from '../../../shared/logger';
 import { EventEntity } from '../../events/models/event.model';
+
+const logger = createFeatureLogger('registrations');
 
 export interface CapacityValidationResult {
   isValid: boolean;
@@ -59,7 +62,15 @@ export class CapacityValidationService {
   async validateIndividualRegistration(eventId: string): Promise<void> {
     const result = await this.validateCapacity(eventId, 1);
 
+    logger.debug({
+      eventId,
+      maxParticipants: result.maxParticipants,
+      currentParticipants: result.currentParticipants,
+      availableSpots: result.availableSpots
+    }, 'Validating capacity for individual registration');
+
     if (!result.isValid) {
+      logger.warn({ eventId, availableSpots: result.availableSpots }, 'Event at maximum capacity');
       throw new ConflictError(
         `Event is at maximum capacity. Available spots: ${result.availableSpots}, requested: ${result.requestedParticipants}`,
         {
@@ -83,6 +94,14 @@ export class CapacityValidationService {
   async validateTeamRegistration(eventId: string, teamSize: number): Promise<void> {
     const result = await this.validateCapacity(eventId, teamSize);
 
+    logger.debug({
+      eventId,
+      teamSize,
+      maxParticipants: result.maxParticipants,
+      currentParticipants: result.currentParticipants,
+      availableSpots: result.availableSpots
+    }, 'Validating capacity for team registration');
+
     // Fetch event to check required participants
     const eventResult = await EventEntity.get({ id: eventId }).go();
     if (!eventResult.data) {
@@ -93,6 +112,7 @@ export class CapacityValidationService {
 
     // Validate team size matches required participants
     if (event.requiredParticipants && teamSize !== event.requiredParticipants) {
+      logger.warn({ eventId, requiredParticipants: event.requiredParticipants, providedParticipants: teamSize }, 'Team size mismatch');
       throw new ConflictError(
         `Team size must be exactly ${event.requiredParticipants} participants. Received: ${teamSize}`,
         {
@@ -105,6 +125,7 @@ export class CapacityValidationService {
 
     // Validate capacity
     if (!result.isValid) {
+      logger.warn({ eventId, availableSpots: result.availableSpots, teamSize }, 'Insufficient capacity for team');
       throw new ConflictError(
         `Event does not have sufficient capacity for team registration. Available spots: ${result.availableSpots}, team size: ${result.requestedParticipants}`,
         {
