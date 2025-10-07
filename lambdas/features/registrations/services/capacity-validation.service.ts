@@ -26,7 +26,7 @@ export class CapacityValidationService {
 
     try {
       // Fetch the event to get current capacity information
-      const eventResult = await EventEntity.get({ id: eventId }).go();
+      const eventResult = await EventEntity.get({ eventId }).go();
 
       if (!eventResult.data) {
         throw new NotFoundError(`Event with ID ${eventId} not found`);
@@ -103,7 +103,7 @@ export class CapacityValidationService {
     }, 'Validating capacity for team registration');
 
     // Fetch event to check required participants
-    const eventResult = await EventEntity.get({ id: eventId }).go();
+    const eventResult = await EventEntity.get({ eventId }).go();
     if (!eventResult.data) {
       throw new NotFoundError(`Event with ID ${eventId} not found`);
     }
@@ -148,7 +148,7 @@ export class CapacityValidationService {
    */
   async isEventAvailableForRegistration(eventId: string): Promise<boolean> {
     try {
-      const eventResult = await EventEntity.get({ id: eventId }).go();
+      const eventResult = await EventEntity.get({ eventId }).go();
 
       if (!eventResult.data) {
         throw new NotFoundError(`Event with ID ${eventId} not found`);

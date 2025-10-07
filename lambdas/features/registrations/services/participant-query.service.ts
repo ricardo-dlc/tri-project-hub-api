@@ -77,7 +77,7 @@ export class ParticipantQueryService {
    */
   private async validateEventAccess(eventId: string, organizerId: string): Promise<void> {
     try {
-      const eventResult = await EventEntity.get({ id: eventId }).go();
+      const eventResult = await EventEntity.get({ eventId }).go();
 
       if (!eventResult.data) {
         throw new NotFoundError(`Event with ID ${eventId} not found`);

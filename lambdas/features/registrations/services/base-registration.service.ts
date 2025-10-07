@@ -68,7 +68,7 @@ export abstract class BaseRegistrationService {
    */
   protected async validateEventAvailability(eventId: string, expectedRegistrationType?: 'individual' | 'team') {
     try {
-      const eventResult = await EventEntity.get({ id: eventId }).go();
+      const eventResult = await EventEntity.get({ eventId }).go();
 
       if (!eventResult.data) {
         throw new NotFoundError(`Event with ID ${eventId} not found`);
@@ -131,7 +131,7 @@ export abstract class BaseRegistrationService {
   protected async updateEventParticipantCount(eventId: string, incrementBy: number): Promise<void> {
     try {
       // Get current event data
-      const eventResult = await EventEntity.get({ id: eventId }).go();
+      const eventResult = await EventEntity.get({ eventId }).go();
 
       if (!eventResult.data) {
         throw new NotFoundError(`Event with ID ${eventId} not found`);
@@ -141,7 +141,7 @@ export abstract class BaseRegistrationService {
       const newCount = currentCount + incrementBy;
 
       // Update the participant count
-      await EventEntity.update({ id: eventId })
+      await EventEntity.update({ eventId })
         .set({
           currentParticipants: newCount,
           updatedAt: new Date().toISOString(),

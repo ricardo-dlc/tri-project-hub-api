@@ -161,7 +161,7 @@ describe('IndividualRegistrationService', () => {
       );
 
       // Verify event participant count was updated
-      expect(mockEventEntity.update).toHaveBeenCalledWith({ id: validEventId });
+      expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: validEventId });
     });
 
     it('should successfully register with only required fields', async () => {
