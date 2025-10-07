@@ -19,7 +19,7 @@ const getEventByIdHandler = async (event: APIGatewayProxyEventV2) => {
 
   logger.debug({ id }, 'Fetching event by id');
 
-  const eventInfo = await EventEntity.get({ id }).go();
+  const eventInfo = await EventEntity.get({ eventId: id }).go();
 
   if (!eventInfo.data) {
     throw new NotFoundError('Event not found');

@@ -1,5 +1,6 @@
 import { Entity } from 'electrodb';
 import { ddbDocClient } from '../../../shared/utils/dynamo';
+import { isValidULID } from '../../../shared/utils/ulid';
 
 export const EventEntity = new Entity(
   {
@@ -10,7 +11,27 @@ export const EventEntity = new Entity(
     },
     attributes: {
       id: { type: 'string', required: true },
+      eventId: {
+        type: 'string',
+        required: true,
+        validate: (value: string) => {
+          if (!isValidULID(value)) {
+            throw new Error('eventId must be a valid ULID format');
+          }
+          return true;
+        }
+      },
       creatorId: { type: 'string', required: true },
+      organizerId: {
+        type: 'string',
+        required: true,
+        validate: (value: string) => {
+          if (!isValidULID(value)) {
+            throw new Error('organizerId must be a valid ULID format');
+          }
+          return true;
+        }
+      },
       title: { type: 'string', required: true },
       type: { type: 'string', required: true },
       date: { type: 'string', required: true }, // ISO string
@@ -30,14 +51,6 @@ export const EventEntity = new Entity(
       tags: { type: 'list', items: { type: 'string' } },
       slug: { type: 'string', required: true },
       isEnabled: { type: 'boolean', required: true, default: true },
-      organizer: {
-        type: 'map',
-        properties: {
-          name: { type: 'string', required: true },
-          contact: { type: 'string', required: true },
-          website: { type: 'string' },
-        },
-      },
       createdAt: { type: 'string', required: true },
       updatedAt: { type: 'string', required: true },
 
@@ -85,7 +98,7 @@ export const EventEntity = new Entity(
     },
     indexes: {
       EventPrimaryIndex: {
-        pk: { field: 'id', composite: ['id'], casing: 'upper' },
+        pk: { field: 'id', composite: ['eventId'], template: '${eventId}', casing: 'upper' },
       },
       CreatorIndex: {
         index: 'CreatorIndex',

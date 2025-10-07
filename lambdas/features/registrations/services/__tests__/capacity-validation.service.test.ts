@@ -53,7 +53,7 @@ describe('CapacityValidationService', () => {
         requestedParticipants: 10,
         availableSpots: 50,
       });
-      expect(mockEventEntity.get).toHaveBeenCalledWith({ id: eventId });
+      expect(mockEventEntity.get).toHaveBeenCalledWith({ eventId });
     });
 
     it('should return invalid result when insufficient capacity', async () => {

@@ -35,28 +35,28 @@
   - _Requirements: 7.1, 7.4, 5.1_
 
 - [ ] 3. Update event entity model
-- [ ] 3.1 Migrate event model to use ULID-based composite keys
+- [x] 3.1 Migrate event model to use ULID-based composite keys
 
   - Keep EventEntity using 'id' field for consistency with other models
   - Add ULID validation for eventId field
   - Update composite key configurations to use eventId instead of plain id
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 3.2 Add organizer reference to event model
+- [x] 3.2 Add organizer reference to event model
 
   - Add organizerId field with ULID validation
   - Remove embedded organizer object from event attributes
   - Update composite keys to include organizerDate
   - _Requirements: 1.5, 1.6, 9.1, 9.2, 9.3_
 
-- [ ] 3.3 Update event data types and interfaces
+- [x] 3.3 Update event data types and interfaces
 
   - Update EventItem interface to include organizerId
   - Remove organizer object from CreateEventData and UpdateEventData
   - Add organizerId to CreateEventData interface
   - _Requirements: 1.5, 1.6, 9.1, 9.3_
 
-- [ ] 3.4 Write unit tests for updated event model
+- [x] 3.4 Write unit tests for updated event model
 
   - Test ULID validation for eventId and organizerId
   - Test composite key generation
