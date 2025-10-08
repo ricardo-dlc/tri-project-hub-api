@@ -173,7 +173,7 @@
   - _Requirements: 7.1, 7.2, 8.1, 8.2, 10.1, 10.2, 10.3_
 
 - [ ] 8. Update event API handlers
-- [ ] 8.1 Update createEvent handler
+- [x] 8.1 Update createEvent handler
 
   - Modify to require organizerId in request body
   - Add organizer existence validation
