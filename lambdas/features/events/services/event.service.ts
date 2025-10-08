@@ -1,11 +1,24 @@
 import { ClerkUser } from '../../../shared/auth/clerk';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../../../shared/errors';
 import { logger } from '../../../shared/logger';
+import { PaginationOptions } from '../../../shared/types/common.types';
+import { executeWithPagination } from '../../../shared/utils/pagination';
 import { generateULID } from '../../../shared/utils/ulid';
 import { EventEntity } from '../models/event.model';
 import { CreateEventData, EventItem, UpdateEventData } from '../types/event.types';
 import { generateUniqueSlug } from '../utils/slug.utils';
 import { organizerService } from './organizer.service';
+
+// Define the pagination result type locally since it's not exported from the utility
+interface PaginatedEventsResult {
+  data: EventItem[];
+  pagination: {
+    hasNextPage: boolean;
+    nextToken: string | null;
+    limit: number;
+    count: number;
+  };
+}
 
 export class EventService {
   /**
@@ -234,6 +247,62 @@ export class EventService {
         throw error;
       }
       logger.error({ error, slug }, 'Failed to get event by slug');
+      throw error;
+    }
+  }
+
+  /**
+   * Lists events by creator ID with pagination
+   * @param creatorId - ID of the creator
+   * @param pagination - Pagination options
+   * @returns Promise with paginated events
+   */
+  async listEventsByCreator(creatorId: string, pagination?: PaginationOptions): Promise<PaginatedEventsResult> {
+    logger.debug({ creatorId, pagination }, 'Listing events by creator');
+
+    try {
+      const query = EventEntity.query
+        .CreatorIndex({ creatorId })
+        .where(({ isEnabled }, { eq }) => eq(isEnabled, true));
+
+      const result = await executeWithPagination<EventItem>(query, {
+        limit: pagination?.limit,
+        nextToken: pagination?.nextToken,
+        defaultLimit: pagination?.defaultLimit || 20,
+      });
+
+      logger.debug({ creatorId, count: result.data.length }, 'Events retrieved by creator successfully');
+      return result as PaginatedEventsResult;
+    } catch (error) {
+      logger.error({ error, creatorId }, 'Failed to list events by creator');
+      throw error;
+    }
+  }
+
+  /**
+   * Lists events by organizer ID with pagination
+   * @param organizerId - ID of the organizer
+   * @param pagination - Pagination options
+   * @returns Promise with paginated events
+   */
+  async listEventsByOrganizer(organizerId: string, pagination?: PaginationOptions): Promise<PaginatedEventsResult> {
+    logger.debug({ organizerId, pagination }, 'Listing events by organizer');
+
+    try {
+      const query = EventEntity.query
+        .OrganizerIndex({ organizerId })
+        .where(({ isEnabled }, { eq }) => eq(isEnabled, true));
+
+      const result = await executeWithPagination<EventItem>(query, {
+        limit: pagination?.limit,
+        nextToken: pagination?.nextToken,
+        defaultLimit: pagination?.defaultLimit || 20,
+      });
+
+      logger.debug({ organizerId, count: result.data.length }, 'Events retrieved by organizer successfully');
+      return result as PaginatedEventsResult;
+    } catch (error) {
+      logger.error({ error, organizerId }, 'Failed to list events by organizer');
       throw error;
     }
   }

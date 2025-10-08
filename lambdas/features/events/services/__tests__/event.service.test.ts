@@ -499,4 +499,112 @@ describe('EventService', () => {
       await expect(eventService.getEventBySlug('non-existent-slug')).rejects.toThrow('Event not found');
     });
   });
+
+  describe('listEventsByCreator', () => {
+    const mockEvents = [
+      { eventId: 'event-1', title: 'Event 1', creatorId: 'creator-1' },
+      { eventId: 'event-2', title: 'Event 2', creatorId: 'creator-1' },
+    ];
+
+    it('should list events by creator successfully', async () => {
+      const mockQuery = {
+        where: jest.fn().mockReturnThis(),
+        go: jest.fn().mockResolvedValue({
+          data: mockEvents,
+          cursor: null,
+        }),
+      };
+
+      mockEventEntity.query = {
+        CreatorIndex: jest.fn().mockReturnValue(mockQuery),
+      } as any;
+
+      const result = await eventService.listEventsByCreator('creator-1');
+
+      expect(mockEventEntity.query.CreatorIndex).toHaveBeenCalledWith({ creatorId: 'creator-1' });
+      expect(mockQuery.where).toHaveBeenCalled();
+      expect(result.data).toEqual(mockEvents);
+    });
+
+    it('should handle pagination options', async () => {
+      const mockQuery = {
+        where: jest.fn().mockReturnThis(),
+        go: jest.fn().mockResolvedValue({
+          data: mockEvents,
+          cursor: 'next-cursor',
+        }),
+      };
+
+      mockEventEntity.query = {
+        CreatorIndex: jest.fn().mockReturnValue(mockQuery),
+      } as any;
+
+      const paginationOptions = {
+        limit: 10,
+        nextToken: 'some-token',
+        defaultLimit: 15,
+      };
+
+      await eventService.listEventsByCreator('creator-1', paginationOptions);
+
+      expect(mockQuery.go).toHaveBeenCalledWith({
+        limit: 11, // +1 for pagination check
+        cursor: 'some-token',
+      });
+    });
+  });
+
+  describe('listEventsByOrganizer', () => {
+    const mockEvents = [
+      { eventId: 'event-1', title: 'Event 1', organizerId: 'organizer-1' },
+      { eventId: 'event-2', title: 'Event 2', organizerId: 'organizer-1' },
+    ];
+
+    it('should list events by organizer successfully', async () => {
+      const mockQuery = {
+        where: jest.fn().mockReturnThis(),
+        go: jest.fn().mockResolvedValue({
+          data: mockEvents,
+          cursor: null,
+        }),
+      };
+
+      mockEventEntity.query = {
+        OrganizerIndex: jest.fn().mockReturnValue(mockQuery),
+      } as any;
+
+      const result = await eventService.listEventsByOrganizer('organizer-1');
+
+      expect(mockEventEntity.query.OrganizerIndex).toHaveBeenCalledWith({ organizerId: 'organizer-1' });
+      expect(mockQuery.where).toHaveBeenCalled();
+      expect(result.data).toEqual(mockEvents);
+    });
+
+    it('should handle pagination options', async () => {
+      const mockQuery = {
+        where: jest.fn().mockReturnThis(),
+        go: jest.fn().mockResolvedValue({
+          data: mockEvents,
+          cursor: 'next-cursor',
+        }),
+      };
+
+      mockEventEntity.query = {
+        OrganizerIndex: jest.fn().mockReturnValue(mockQuery),
+      } as any;
+
+      const paginationOptions = {
+        limit: 5,
+        nextToken: 'organizer-token',
+        defaultLimit: 25,
+      };
+
+      await eventService.listEventsByOrganizer('organizer-1', paginationOptions);
+
+      expect(mockQuery.go).toHaveBeenCalledWith({
+        limit: 6, // +1 for pagination check
+        cursor: 'organizer-token',
+      });
+    });
+  });
 });
