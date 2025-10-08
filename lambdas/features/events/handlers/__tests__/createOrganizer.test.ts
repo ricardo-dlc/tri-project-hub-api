@@ -1,6 +1,7 @@
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { organizerService } from '../../services/organizer.service';
 import { handler } from '../createOrganizer';
+import { AuthenticatedEvent } from '../../../../shared/auth/middleware';
 
 // Mock environment variables
 process.env.CLERK_SECRET_KEY = 'test-clerk-secret-key';
@@ -74,7 +75,7 @@ afterEach(() => {
 // Helper function to create mock API Gateway event
 const createMockEvent = (
   overrides: Partial<APIGatewayProxyEventV2> = {}
-): APIGatewayProxyEventV2 & { user?: any } => ({
+): AuthenticatedEvent => ({
   version: '2.0',
   routeKey: 'POST /organizers',
   rawPath: '/organizers',

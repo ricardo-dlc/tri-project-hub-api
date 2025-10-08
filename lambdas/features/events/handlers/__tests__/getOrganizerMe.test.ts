@@ -1,4 +1,5 @@
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
+import { AuthenticatedEvent } from '../../../../shared/auth';
 import { organizerService } from '../../services/organizer.service';
 import { handler } from '../getOrganizerMe';
 
@@ -31,7 +32,7 @@ jest.mock('../../../../shared', () => ({
       let statusCode = 500;
       if (error.name === 'NotFoundError') statusCode = 404;
       else if (error.name === 'BadRequestError') statusCode = 400;
-      
+
       return {
         statusCode,
         headers: { 'Content-Type': 'application/json' },
@@ -88,7 +89,7 @@ afterEach(() => {
 // Helper function to create mock API Gateway event
 const createMockEvent = (
   overrides: Partial<APIGatewayProxyEventV2> = {}
-): APIGatewayProxyEventV2 & { user?: any } => ({
+): AuthenticatedEvent => ({
   version: '2.0',
   routeKey: 'GET /organizers/me',
   rawPath: '/organizers/me',
