@@ -165,7 +165,7 @@
   - Add event dependency validation
   - _Requirements: 8.1, 8.2, 9.5, 10.5_
 
-- [ ] 7.5 Write integration tests for organizer handlers
+- [x] 7.5 Write integration tests for organizer handlers
 
   - Test all CRUD operations with authentication
   - Test error scenarios and validation
