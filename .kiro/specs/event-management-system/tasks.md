@@ -159,7 +159,7 @@
   - Create GET /organizers/me endpoint for current user's organizer
   - _Requirements: 7.1, 8.1_
 
-- [ ] 7.4 Implement deleteOrganizer handler
+- [x] 7.4 Implement deleteOrganizer handler
 
   - Create DELETE /organizers/{organizerId} endpoint
   - Add event dependency validation
