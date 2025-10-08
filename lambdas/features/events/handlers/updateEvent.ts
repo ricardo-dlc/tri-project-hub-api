@@ -28,11 +28,6 @@ const updateEventHandler = async (event: APIGatewayProxyEventV2 & { user?: any }
     throw new BadRequestError('Invalid JSON in request body');
   }
 
-  // Explicitly check for slug in update data and reject it
-  if ('slug' in updateData) {
-    throw new BadRequestError('Event slug cannot be modified after creation');
-  }
-
   // Get user from authenticated request
   if (!event.user?.id) {
     throw new BadRequestError('User authentication required');

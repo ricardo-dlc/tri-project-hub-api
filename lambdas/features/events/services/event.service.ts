@@ -1,11 +1,17 @@
 import { ClerkUser } from '../../../shared/auth/clerk';
-import { BadRequestError, ForbiddenError, NotFoundError } from '../../../shared/errors';
+import { BadRequestError, NotFoundError } from '../../../shared/errors';
 import { logger } from '../../../shared/logger';
 import { PaginationOptions } from '../../../shared/types/common.types';
 import { executeWithPagination } from '../../../shared/utils/pagination';
 import { generateULID } from '../../../shared/utils/ulid';
 import { EventEntity } from '../models/event.model';
 import { CreateEventData, EventItem, UpdateEventData } from '../types/event.types';
+import {
+  validateAndSanitizeAdminOnlyFields,
+  validateEventOwnership,
+  validateMaxParticipantsReduction,
+  validateTeamEventCapacity
+} from '../utils/event.utils';
 import { generateUniqueSlug } from '../utils/slug.utils';
 import { organizerService } from './organizer.service';
 
@@ -32,7 +38,7 @@ export class EventService {
     logger.debug({ data, creatorId, userRole: user?.role }, 'Creating new event');
 
     // Validate team event capacity
-    this.validateTeamEventCapacity(data.isTeamEvent, data.maxParticipants, data.requiredParticipants);
+    validateTeamEventCapacity(data.isTeamEvent, data.maxParticipants, data.requiredParticipants);
 
     // Note: isFeatured is always set to false regardless of input data
     // Only admins can modify featured status through updates
@@ -127,25 +133,17 @@ export class EventService {
   async updateEvent(eventId: string, data: UpdateEventData, user: ClerkUser): Promise<EventItem> {
     logger.debug({ eventId, data, userId: user.id, userRole: user.role }, 'Updating event');
 
-    // Prevent slug modification
-    if ('slug' in data) {
-      throw new BadRequestError('Event slug cannot be modified after creation');
-    }
-
-    // Get existing event
+    // Get existing event first
     const existingEvent = await this.getEvent(eventId);
 
+    // Validate ownership (admins can update any event)
+    validateEventOwnership(existingEvent, user);
+
+
+
     // Validate maxParticipants cannot be lower than current registrations
-    if (data.maxParticipants !== undefined && data.maxParticipants < existingEvent.currentParticipants) {
-      throw new BadRequestError(
-        `Cannot reduce maxParticipants (${data.maxParticipants}) below current registrations (${existingEvent.currentParticipants}). ` +
-        `Minimum allowed value: ${existingEvent.currentParticipants}`,
-        {
-          requestedMaxParticipants: data.maxParticipants,
-          currentParticipants: existingEvent.currentParticipants,
-          minimumAllowed: existingEvent.currentParticipants
-        }
-      );
+    if (data.maxParticipants !== undefined) {
+      validateMaxParticipantsReduction(data.maxParticipants, existingEvent.currentParticipants);
     }
 
     // Validate team event capacity if relevant fields are being updated
@@ -154,39 +152,33 @@ export class EventService {
     const maxParticipants = data.maxParticipants !== undefined ? data.maxParticipants : existingEvent.maxParticipants;
     const requiredParticipants = data.requiredParticipants !== undefined ? data.requiredParticipants : existingEvent.requiredParticipants;
 
-    this.validateTeamEventCapacity(isTeamEvent, maxParticipants, requiredParticipants);
-
-    // Validate ownership (admins can update any event)
-    if (user.role !== 'admin' && existingEvent.creatorId !== user.id) {
-      throw new ForbiddenError('You can only update events you created');
-    }
+    validateTeamEventCapacity(isTeamEvent, maxParticipants, requiredParticipants);
 
     const now = new Date().toISOString();
 
-    // Prepare update data, excluding immutable fields
-    const updateData = {
+    // Prepare update data with timestamp
+    const rawUpdateData = {
       ...data,
       updatedAt: now,
     };
 
-    // Remove any fields that shouldn't be updated
-    delete (updateData as any).eventId;
-    delete (updateData as any).creatorId;
-    delete (updateData as any).slug;
-    delete (updateData as any).createdAt;
-    delete (updateData as any).currentParticipants; // This should be managed separately
+    // Sanitize admin-only fields and silently ignored fields for non-admin users
+    const adminOnlyFields = ['isFeatured'];
+    const silentlyIgnoredFields = ['isTeamEvent', 'eventId', 'creatorId', 'createdAt', 'currentParticipants', 'slug']; // Fields that are silently removed without error
 
-    // Remove isTeamEvent field (immutable after creation)
-    if ('isTeamEvent' in updateData) {
-      logger.debug({ userId: user.id, existingIsTeamEvent: existingEvent.isTeamEvent }, 'Removing isTeamEvent from update data - field is immutable after creation');
-      delete (updateData as any).isTeamEvent;
-    }
+    let updateData = validateAndSanitizeAdminOnlyFields(rawUpdateData, user, adminOnlyFields);
 
-    // Remove isFeatured field for non-admin users (silently ignore)
-    if (user.role !== 'admin' && 'isFeatured' in updateData) {
-      logger.debug({ userId: user.id, userRole: user.role }, 'Removing isFeatured from update data - only admins can modify featured status');
-      delete (updateData as any).isFeatured;
-    }
+    // Remove silently ignored fields (like isTeamEvent which is immutable but should be silently ignored)
+    silentlyIgnoredFields.forEach(field => {
+      if (field in updateData) {
+        logger.debug({
+          userId: user.id,
+          field,
+          existingValue: existingEvent[field as keyof EventItem]
+        }, `Removing ${field} from update data - field is immutable after creation`);
+        delete (updateData as any)[field];
+      }
+    });
 
     try {
       const result = await EventEntity.update({ eventId }).set(updateData).go();
@@ -304,31 +296,6 @@ export class EventService {
     } catch (error) {
       logger.error({ error, organizerId }, 'Failed to list events by organizer');
       throw error;
-    }
-  }
-
-  /**
-   * Validates team event capacity requirements
-   * @param isTeamEvent - Whether the event is a team event
-   * @param maxParticipants - Maximum number of participants
-   * @param requiredParticipants - Required participants per team
-   * @throws BadRequestError if validation fails
-   */
-  private validateTeamEventCapacity(isTeamEvent: boolean, maxParticipants: number, requiredParticipants: number): void {
-    if (isTeamEvent && maxParticipants % requiredParticipants !== 0) {
-      const suggestedMax = Math.floor(maxParticipants / requiredParticipants) * requiredParticipants;
-      const nextValidMax = suggestedMax + requiredParticipants;
-
-      throw new BadRequestError(
-        `For team events, maxParticipants (${maxParticipants}) must be a multiple of requiredParticipants (${requiredParticipants}). ` +
-        `Suggested values: ${suggestedMax} or ${nextValidMax}`,
-        {
-          maxParticipants,
-          requiredParticipants,
-          suggestedValues: [suggestedMax, nextValidMax],
-          availableTeamSlots: Math.floor(maxParticipants / requiredParticipants)
-        }
-      );
     }
   }
 }

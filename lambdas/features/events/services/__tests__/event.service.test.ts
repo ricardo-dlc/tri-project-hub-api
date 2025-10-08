@@ -229,6 +229,148 @@ describe('EventService', () => {
       );
       expect(result).toEqual(mockCreatedEvent);
     });
+
+    describe('event-organizer relationship validation', () => {
+      it('should validate organizer exists when organizerId is provided', async () => {
+        const result = await eventService.createEvent(mockCreateEventData, 'test-creator-id', mockUser);
+
+        expect(mockOrganizerService.validateOrganizerExists).toHaveBeenCalledWith('test-organizer-id', mockUser);
+        expect(result).toEqual(mockCreatedEvent);
+      });
+
+      it('should allow admin to use any valid organizerId', async () => {
+        const result = await eventService.createEvent(mockCreateEventData, 'admin-user-id', mockAdminUser);
+
+        expect(mockOrganizerService.getOrganizer).toHaveBeenCalledWith('test-organizer-id');
+        expect(result).toEqual(mockCreatedEvent);
+      });
+
+      it('should auto-inject organizerId when not provided', async () => {
+        const dataWithoutOrganizer = { ...mockCreateEventData };
+        delete (dataWithoutOrganizer as any).organizerId;
+
+        const result = await eventService.createEvent(dataWithoutOrganizer, 'test-creator-id', mockUser);
+
+        expect(mockOrganizerService.getOrganizerByClerkId).toHaveBeenCalledWith('test-creator-id');
+        expect(mockEventEntity.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            organizerId: 'test-organizer-id',
+          })
+        );
+        expect(result).toEqual(mockCreatedEvent);
+      });
+
+      it('should throw error when auto-injecting organizerId but user has no organizer profile', async () => {
+        const dataWithoutOrganizer = { ...mockCreateEventData };
+        delete (dataWithoutOrganizer as any).organizerId;
+
+        mockOrganizerService.getOrganizerByClerkId = jest.fn().mockRejectedValue(
+          new NotFoundError('Organizer not found')
+        );
+
+        await expect(
+          eventService.createEvent(dataWithoutOrganizer, 'test-creator-id', mockUser)
+        ).rejects.toThrow(BadRequestError);
+        await expect(
+          eventService.createEvent(dataWithoutOrganizer, 'test-creator-id', mockUser)
+        ).rejects.toThrow('No organizer profile found for user');
+      });
+
+      it('should throw error when provided organizerId does not exist', async () => {
+        mockOrganizerService.validateOrganizerExists = jest.fn().mockRejectedValue(
+          new NotFoundError('Organizer not found')
+        );
+
+        await expect(
+          eventService.createEvent(mockCreateEventData, 'test-creator-id', mockUser)
+        ).rejects.toThrow(NotFoundError);
+      });
+
+      it('should throw error when user does not have access to provided organizerId', async () => {
+        mockOrganizerService.validateOrganizerExists = jest.fn().mockRejectedValue(
+          new NotFoundError('Organizer not found')
+        );
+
+        await expect(
+          eventService.createEvent(mockCreateEventData, 'test-creator-id', mockUser)
+        ).rejects.toThrow(NotFoundError);
+      });
+    });
+
+    describe('team event capacity validation', () => {
+      it('should validate team event capacity with various invalid combinations', async () => {
+        const testCases = [
+          { requiredParticipants: 3, maxParticipants: 10 }, // 10 % 3 !== 0
+          { requiredParticipants: 4, maxParticipants: 15 }, // 15 % 4 !== 0
+          { requiredParticipants: 5, maxParticipants: 23 }, // 23 % 5 !== 0
+        ];
+
+        for (const testCase of testCases) {
+          const invalidTeamEventData = {
+            ...mockCreateEventData,
+            isTeamEvent: true,
+            requiredParticipants: testCase.requiredParticipants,
+            maxParticipants: testCase.maxParticipants,
+          };
+
+          await expect(
+            eventService.createEvent(invalidTeamEventData, 'test-creator-id', mockUser)
+          ).rejects.toThrow(BadRequestError);
+          await expect(
+            eventService.createEvent(invalidTeamEventData, 'test-creator-id', mockUser)
+          ).rejects.toThrow(`maxParticipants (${testCase.maxParticipants}) must be a multiple of requiredParticipants (${testCase.requiredParticipants})`);
+        }
+      });
+
+      it('should allow valid team event capacity combinations', async () => {
+        const testCases = [
+          { requiredParticipants: 2, maxParticipants: 20 }, // 20 % 2 === 0
+          { requiredParticipants: 3, maxParticipants: 15 }, // 15 % 3 === 0
+          { requiredParticipants: 4, maxParticipants: 16 }, // 16 % 4 === 0
+          { requiredParticipants: 5, maxParticipants: 25 }, // 25 % 5 === 0
+        ];
+
+        for (const testCase of testCases) {
+          const validTeamEventData = {
+            ...mockCreateEventData,
+            isTeamEvent: true,
+            requiredParticipants: testCase.requiredParticipants,
+            maxParticipants: testCase.maxParticipants,
+          };
+
+          const result = await eventService.createEvent(validTeamEventData, 'test-creator-id', mockUser);
+
+          expect(mockEventEntity.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+              isTeamEvent: true,
+              requiredParticipants: testCase.requiredParticipants,
+              maxParticipants: testCase.maxParticipants,
+            })
+          );
+          expect(result).toEqual(mockCreatedEvent);
+        }
+      });
+
+      it('should not validate team capacity for non-team events', async () => {
+        const nonTeamEventData = {
+          ...mockCreateEventData,
+          isTeamEvent: false,
+          requiredParticipants: 3,
+          maxParticipants: 10, // Would be invalid for team event, but should be allowed for non-team
+        };
+
+        const result = await eventService.createEvent(nonTeamEventData, 'test-creator-id', mockUser);
+
+        expect(mockEventEntity.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isTeamEvent: false,
+            requiredParticipants: 3,
+            maxParticipants: 10,
+          })
+        );
+        expect(result).toEqual(mockCreatedEvent);
+      });
+    });
   });
 
   describe('updateEvent', () => {
@@ -288,15 +430,14 @@ describe('EventService', () => {
       } as any);
     });
 
-    it('should prevent slug modification', async () => {
+    it('should silently ignore slug modification', async () => {
       const updateData = { title: 'Updated Title', slug: 'new-slug' };
 
-      await expect(
-        eventService.updateEvent('test-event-id', updateData, mockUser)
-      ).rejects.toThrow(BadRequestError);
-      await expect(
-        eventService.updateEvent('test-event-id', updateData, mockUser)
-      ).rejects.toThrow('Event slug cannot be modified after creation');
+      const result = await eventService.updateEvent('test-event-id', updateData, mockUser);
+
+      // Should succeed and only update the title, ignoring the slug
+      expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: 'test-event-id' });
+      expect(result).toEqual(mockExistingEvent);
     });
 
     it('should silently ignore isFeatured field for non-admin users', async () => {
@@ -412,12 +553,12 @@ describe('EventService', () => {
 
     it('should prevent reducing maxParticipants below current registrations', async () => {
       const updateData = { maxParticipants: 50 }; // Lower than current 75
-      const eventWithRegistrations = { 
-        ...mockExistingEvent, 
+      const eventWithRegistrations = {
+        ...mockExistingEvent,
         currentParticipants: 75,
-        maxParticipants: 100 
+        maxParticipants: 100
       };
-      
+
       mockEventEntity.get = jest.fn().mockReturnValue({
         go: jest.fn().mockResolvedValue({ data: eventWithRegistrations }),
       } as any);
@@ -432,12 +573,12 @@ describe('EventService', () => {
 
     it('should allow increasing maxParticipants above current registrations', async () => {
       const updateData = { maxParticipants: 150 }; // Higher than current 75
-      const eventWithRegistrations = { 
-        ...mockExistingEvent, 
+      const eventWithRegistrations = {
+        ...mockExistingEvent,
         currentParticipants: 75,
-        maxParticipants: 100 
+        maxParticipants: 100
       };
-      
+
       mockEventEntity.get = jest.fn().mockReturnValue({
         go: jest.fn().mockResolvedValue({ data: eventWithRegistrations }),
       } as any);
@@ -450,12 +591,12 @@ describe('EventService', () => {
 
     it('should allow setting maxParticipants equal to current registrations', async () => {
       const updateData = { maxParticipants: 75 }; // Equal to current registrations
-      const eventWithRegistrations = { 
-        ...mockExistingEvent, 
+      const eventWithRegistrations = {
+        ...mockExistingEvent,
         currentParticipants: 75,
-        maxParticipants: 100 
+        maxParticipants: 100
       };
-      
+
       mockEventEntity.get = jest.fn().mockReturnValue({
         go: jest.fn().mockResolvedValue({ data: eventWithRegistrations }),
       } as any);
@@ -464,6 +605,267 @@ describe('EventService', () => {
 
       expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: 'test-event-id' });
       expect(result).toEqual(mockExistingEvent);
+    });
+
+    describe('ownership validation with new model structure', () => {
+      it('should validate event ownership for regular users', async () => {
+        const updateData = { title: 'Updated Title' };
+
+        const result = await eventService.updateEvent('test-event-id', updateData, mockUser);
+
+        expect(mockEventEntity.get).toHaveBeenCalledWith({ eventId: 'test-event-id' });
+        expect(result).toEqual(mockExistingEvent);
+      });
+
+      it('should reject updates from non-owner users', async () => {
+        const updateData = { title: 'Updated Title' };
+
+        await expect(
+          eventService.updateEvent('test-event-id', updateData, mockDifferentUser)
+        ).rejects.toThrow(ForbiddenError);
+        await expect(
+          eventService.updateEvent('test-event-id', updateData, mockDifferentUser)
+        ).rejects.toThrow('You can only update events you created');
+      });
+
+      it('should allow admin to update any event regardless of ownership', async () => {
+        const updateData = { title: 'Admin Updated Title', description: 'Admin updated description' };
+
+        const result = await eventService.updateEvent('test-event-id', updateData, mockAdminUser);
+
+        expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: 'test-event-id' });
+        expect(result).toEqual(mockExistingEvent);
+      });
+
+      it('should validate ownership using creatorId field from event model', async () => {
+        const eventWithDifferentCreator = {
+          ...mockExistingEvent,
+          creatorId: 'different-creator-id',
+        };
+
+        mockEventEntity.get = jest.fn().mockReturnValue({
+          go: jest.fn().mockResolvedValue({ data: eventWithDifferentCreator }),
+        } as any);
+
+        const updateData = { title: 'Updated Title' };
+
+        await expect(
+          eventService.updateEvent('test-event-id', updateData, mockUser)
+        ).rejects.toThrow(ForbiddenError);
+        await expect(
+          eventService.updateEvent('test-event-id', updateData, mockUser)
+        ).rejects.toThrow('You can only update events you created');
+      });
+
+      it('should handle admin role validation correctly', async () => {
+        const eventWithDifferentCreator = {
+          ...mockExistingEvent,
+          creatorId: 'different-creator-id',
+        };
+
+        mockEventEntity.get = jest.fn().mockReturnValue({
+          go: jest.fn().mockResolvedValue({ data: eventWithDifferentCreator }),
+        } as any);
+
+        const updateData = { title: 'Admin Updated Title', isFeatured: true };
+
+        // Admin should be able to update any event
+        const result = await eventService.updateEvent('test-event-id', updateData, mockAdminUser);
+
+        expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: 'test-event-id' });
+        expect(result).toEqual(mockExistingEvent);
+      });
+    });
+
+    describe('team event capacity validation in updates', () => {
+      it('should validate team event capacity when updating maxParticipants', async () => {
+        const teamEvent = {
+          ...mockExistingEvent,
+          isTeamEvent: true,
+          requiredParticipants: 4,
+          maxParticipants: 20
+        };
+
+        mockEventEntity.get = jest.fn().mockReturnValue({
+          go: jest.fn().mockResolvedValue({ data: teamEvent }),
+        } as any);
+
+        const invalidUpdateData = { maxParticipants: 15 }; // Not divisible by 4
+
+        await expect(
+          eventService.updateEvent('test-event-id', invalidUpdateData, mockUser)
+        ).rejects.toThrow(BadRequestError);
+        await expect(
+          eventService.updateEvent('test-event-id', invalidUpdateData, mockUser)
+        ).rejects.toThrow('maxParticipants (15) must be a multiple of requiredParticipants (4)');
+      });
+
+      it('should validate team event capacity when updating requiredParticipants', async () => {
+        const teamEvent = {
+          ...mockExistingEvent,
+          isTeamEvent: true,
+          requiredParticipants: 4,
+          maxParticipants: 20
+        };
+
+        mockEventEntity.get = jest.fn().mockReturnValue({
+          go: jest.fn().mockResolvedValue({ data: teamEvent }),
+        } as any);
+
+        const invalidUpdateData = { requiredParticipants: 3 }; // 20 not divisible by 3
+
+        await expect(
+          eventService.updateEvent('test-event-id', invalidUpdateData, mockUser)
+        ).rejects.toThrow(BadRequestError);
+        await expect(
+          eventService.updateEvent('test-event-id', invalidUpdateData, mockUser)
+        ).rejects.toThrow('maxParticipants (20) must be a multiple of requiredParticipants (3)');
+      });
+
+      it('should validate team event capacity when updating both maxParticipants and requiredParticipants', async () => {
+        const teamEvent = {
+          ...mockExistingEvent,
+          isTeamEvent: true,
+          requiredParticipants: 4,
+          maxParticipants: 20
+        };
+
+        mockEventEntity.get = jest.fn().mockReturnValue({
+          go: jest.fn().mockResolvedValue({ data: teamEvent }),
+        } as any);
+
+        const invalidUpdateData = {
+          maxParticipants: 25,
+          requiredParticipants: 4
+        }; // 25 not divisible by 4
+
+        await expect(
+          eventService.updateEvent('test-event-id', invalidUpdateData, mockUser)
+        ).rejects.toThrow(BadRequestError);
+        await expect(
+          eventService.updateEvent('test-event-id', invalidUpdateData, mockUser)
+        ).rejects.toThrow('maxParticipants (25) must be a multiple of requiredParticipants (4)');
+      });
+
+      it('should allow valid team event capacity updates', async () => {
+        const teamEvent = {
+          ...mockExistingEvent,
+          isTeamEvent: true,
+          requiredParticipants: 4,
+          maxParticipants: 20
+        };
+
+        mockEventEntity.get = jest.fn().mockReturnValue({
+          go: jest.fn().mockResolvedValue({ data: teamEvent }),
+        } as any);
+
+        const validUpdateData = { maxParticipants: 24 }; // Divisible by 4
+
+        const result = await eventService.updateEvent('test-event-id', validUpdateData, mockUser);
+
+        expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: 'test-event-id' });
+        expect(result).toEqual(mockExistingEvent);
+      });
+
+      it('should not validate team capacity for non-team events during updates', async () => {
+        const nonTeamEvent = {
+          ...mockExistingEvent,
+          isTeamEvent: false,
+          requiredParticipants: 1,
+          maxParticipants: 100
+        };
+
+        mockEventEntity.get = jest.fn().mockReturnValue({
+          go: jest.fn().mockResolvedValue({ data: nonTeamEvent }),
+        } as any);
+
+        const updateData = {
+          maxParticipants: 15,
+          requiredParticipants: 4
+        }; // Would be invalid for team event
+
+        const result = await eventService.updateEvent('test-event-id', updateData, mockUser);
+
+        expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: 'test-event-id' });
+        expect(result).toEqual(mockExistingEvent);
+      });
+
+      it('should use existing isTeamEvent value even when isTeamEvent is provided in update data', async () => {
+        const teamEvent = {
+          ...mockExistingEvent,
+          isTeamEvent: true,
+          requiredParticipants: 4,
+          maxParticipants: 20
+        };
+
+        mockEventEntity.get = jest.fn().mockReturnValue({
+          go: jest.fn().mockResolvedValue({ data: teamEvent }),
+        } as any);
+
+        const updateData = {
+          maxParticipants: 15, // Not divisible by 4
+          isTeamEvent: false // This should be ignored
+        };
+
+        // Should still validate as team event despite isTeamEvent: false in payload
+        await expect(
+          eventService.updateEvent('test-event-id', updateData, mockUser)
+        ).rejects.toThrow(BadRequestError);
+        await expect(
+          eventService.updateEvent('test-event-id', updateData, mockUser)
+        ).rejects.toThrow('maxParticipants (15) must be a multiple of requiredParticipants (4)');
+      });
+    });
+
+    describe('silently ignored immutable fields', () => {
+      it('should silently ignore system-managed immutable fields', async () => {
+        const updateData = {
+          title: 'Updated Title',
+          eventId: 'different-event-id', // Should be ignored
+          creatorId: 'different-creator-id', // Should be ignored
+          createdAt: '2023-01-01T00:00:00Z', // Should be ignored
+          currentParticipants: 999, // Should be ignored
+        };
+
+        const result = await eventService.updateEvent('test-event-id', updateData, mockUser);
+
+        // Should succeed and only update the title
+        expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: 'test-event-id' });
+        expect(result).toEqual(mockExistingEvent);
+      });
+
+      it('should silently ignore multiple immutable fields together', async () => {
+        const updateData = {
+          title: 'Updated Title',
+          description: 'Updated description',
+          eventId: 'hack-attempt-1',
+          creatorId: 'hack-attempt-2',
+          createdAt: '1970-01-01T00:00:00Z',
+          currentParticipants: -1,
+          isTeamEvent: true, // Also silently ignored
+          slug: 'new-slug', // Also silently ignored
+        };
+
+        const result = await eventService.updateEvent('test-event-id', updateData, mockUser);
+
+        // Should succeed and only update title and description
+        expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: 'test-event-id' });
+        expect(result).toEqual(mockExistingEvent);
+      });
+
+      it('should log when silently ignored fields are removed', async () => {
+        const updateData = {
+          title: 'Updated Title',
+          eventId: 'should-be-ignored',
+          currentParticipants: 123,
+        };
+
+        const result = await eventService.updateEvent('test-event-id', updateData, mockUser);
+
+        // Should succeed
+        expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: 'test-event-id' });
+        expect(result).toEqual(mockExistingEvent);
+      });
     });
   });
 

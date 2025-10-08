@@ -378,7 +378,6 @@ describe('EventEntity', () => {
 
     it('should validate organizerId format in event data', () => {
       const validEventData: EventItem = {
-        id: generateULID(),
         eventId: generateULID(),
         creatorId: 'user_123',
         organizerId: generateULID(), // Valid ULID
@@ -427,11 +426,13 @@ describe('EventEntity', () => {
         difficulty: 'intermediate',
       };
 
-      expect(isValidULID(validCreateData.organizerId)).toBe(true);
-
-      // Test that organizerId is required in CreateEventData
       expect(validCreateData.organizerId).toBeDefined();
       expect(typeof validCreateData.organizerId).toBe('string');
+      
+      // Type guard to ensure organizerId is defined before ULID validation
+      if (validCreateData.organizerId) {
+        expect(isValidULID(validCreateData.organizerId)).toBe(true);
+      }
     });
 
     it('should maintain referential integrity between event and organizer', () => {
@@ -440,7 +441,6 @@ describe('EventEntity', () => {
 
       // Event should reference a valid organizer ID
       const eventData: EventItem = {
-        id: eventId,
         eventId: eventId,
         creatorId: 'user_123',
         organizerId: organizerId, // References organizer
@@ -519,7 +519,6 @@ describe('EventEntity', () => {
   describe('Data Validation Integration', () => {
     it('should validate complete event data structure', () => {
       const validEventData: EventItem = {
-        id: generateULID(),
         eventId: generateULID(),
         creatorId: 'user_123',
         organizerId: generateULID(),
@@ -547,7 +546,6 @@ describe('EventEntity', () => {
       };
 
       // Validate all required fields are present and valid
-      expect(validEventData.id).toBeDefined();
       expect(validEventData.eventId).toBeDefined();
       expect(validEventData.creatorId).toBeDefined();
       expect(validEventData.organizerId).toBeDefined();
@@ -585,7 +583,8 @@ describe('EventEntity', () => {
         tags: ['marathon', 'running', 'endurance'],
       };
 
-      expect(isValidULID(createData.organizerId)).toBe(true);
+      expect(createData.organizerId).toBeDefined();
+      expect(isValidULID(createData.organizerId!)).toBe(true);
       expect(createData.title).toBe('New Marathon');
       expect(createData.tags).toHaveLength(3);
       expect(createData.isRelay).toBe(false);

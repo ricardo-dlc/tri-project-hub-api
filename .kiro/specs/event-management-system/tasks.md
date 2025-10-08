@@ -126,13 +126,13 @@
   - Integrate team validation into create and update operations
   - _Requirements: 1.3, 2.3, 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 6.3 Update event ownership validation
+- [x] 6.3 Update event ownership validation
 
   - Modify validateEventOwnership to work with updated model
   - Ensure admin override functionality works correctly
   - _Requirements: 2.1, 2.2, 3.1, 3.2, 4.2, 4.3, 4.4_
 
-- [ ] 6.4 Write unit tests for updated event service
+- [x] 6.4 Write unit tests for updated event service
 
   - Test event-organizer relationship validation
   - Test team event capacity validation
