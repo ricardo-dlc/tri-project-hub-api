@@ -143,69 +143,208 @@ describe('Slug Utils', () => {
       (EventEntity.query.SlugIndex as jest.Mock).mockReturnValue(mockQuery);
     });
 
-    it('should generate unique slug when no collision', async () => {
-      mockQuery.go.mockResolvedValue({ data: [] });
+    describe('slug uniqueness and collision handling', () => {
+      it('should generate unique slug when no collision', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
 
-      const result = await generateUniqueSlug('My Event Title');
+        const result = await generateUniqueSlug('My Event Title');
 
-      expect(result).toBe('my-event-title');
-      expect(EventEntity.query.SlugIndex).toHaveBeenCalledWith({ slug: 'my-event-title' });
+        expect(result).toBe('my-event-title');
+        expect(EventEntity.query.SlugIndex).toHaveBeenCalledWith({ slug: 'my-event-title' });
+      });
+
+      it('should handle collision by appending counter', async () => {
+        mockQuery.go
+          .mockResolvedValueOnce({ data: [{ slug: 'my-event-title' }] }) // First call - exists
+          .mockResolvedValueOnce({ data: [{ slug: 'my-event-title-1' }] }) // Second call - exists
+          .mockResolvedValueOnce({ data: [] }); // Third call - doesn't exist
+
+        const result = await generateUniqueSlug('My Event Title');
+
+        expect(result).toBe('my-event-title-2');
+        expect(EventEntity.query.SlugIndex).toHaveBeenCalledTimes(3);
+      });
+
+      it('should handle multiple collisions with sequential numbering', async () => {
+        mockQuery.go
+          .mockResolvedValueOnce({ data: [{ slug: 'event-title' }] }) // base exists
+          .mockResolvedValueOnce({ data: [{ slug: 'event-title-1' }] }) // -1 exists
+          .mockResolvedValueOnce({ data: [{ slug: 'event-title-2' }] }) // -2 exists
+          .mockResolvedValueOnce({ data: [{ slug: 'event-title-3' }] }) // -3 exists
+          .mockResolvedValueOnce({ data: [] }); // -4 doesn't exist
+
+        const result = await generateUniqueSlug('Event Title');
+
+        expect(result).toBe('event-title-4');
+        expect(EventEntity.query.SlugIndex).toHaveBeenCalledTimes(5);
+      });
+
+      it('should prevent infinite loops with counter limit', async () => {
+        // Mock to always return existing slug
+        mockQuery.go.mockResolvedValue({ data: [{ slug: 'test' }] });
+
+        await expect(generateUniqueSlug('Test')).rejects.toThrow('Unable to generate unique slug after 1000 attempts');
+      });
+
+      it('should ensure global uniqueness across all events', async () => {
+        // Test that the function checks against all existing slugs, not just similar ones
+        mockQuery.go
+          .mockResolvedValueOnce({ data: [{ slug: 'marathon' }] }) // base exists
+          .mockResolvedValueOnce({ data: [] }); // -1 doesn't exist
+
+        const result = await generateUniqueSlug('Marathon');
+
+        expect(result).toBe('marathon-1');
+        expect(EventEntity.query.SlugIndex).toHaveBeenCalledWith({ slug: 'marathon' });
+        expect(EventEntity.query.SlugIndex).toHaveBeenCalledWith({ slug: 'marathon-1' });
+      });
     });
 
-    it('should handle collision by appending counter', async () => {
-      mockQuery.go
-        .mockResolvedValueOnce({ data: [{ slug: 'my-event-title' }] }) // First call - exists
-        .mockResolvedValueOnce({ data: [{ slug: 'my-event-title-1' }] }) // Second call - exists
-        .mockResolvedValueOnce({ data: [] }); // Third call - doesn't exist
+    describe('special character sanitization', () => {
+      it('should handle complex titles with mixed content', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
 
-      const result = await generateUniqueSlug('My Event Title');
+        const result = await generateUniqueSlug('5K Marathon Run 2024! @#$%');
 
-      expect(result).toBe('my-event-title-2');
-      expect(EventEntity.query.SlugIndex).toHaveBeenCalledTimes(3);
+        expect(result).toBe('5k-marathon-run-2024');
+      });
+
+      it('should sanitize unicode and special characters', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
+
+        const result = await generateUniqueSlug('Café & Restaurant™ Event 2024!');
+
+        expect(result).toBe('caf-restaurant-event-2024');
+      });
+
+      it('should handle titles with only numbers and special chars', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
+
+        const result = await generateUniqueSlug('2024!!! @#$% 5K');
+
+        expect(result).toBe('2024-5k');
+      });
+
+      it('should handle titles with excessive whitespace and punctuation', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
+
+        const result = await generateUniqueSlug('   Event...   Title!!!   With   Spaces   ');
+
+        expect(result).toBe('event-title-with-spaces');
+      });
+
+      it('should preserve alphanumeric characters and convert to lowercase', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
+
+        const result = await generateUniqueSlug('ABC123def456GHI789');
+
+        expect(result).toBe('abc123def456ghi789');
+      });
     });
 
-    it('should throw error for empty title', async () => {
-      await expect(generateUniqueSlug('')).rejects.toThrow('Title is required and must be a string');
+    describe('slug immutability support', () => {
+      it('should generate consistent slug for same title', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
+
+        const result1 = await generateUniqueSlug('My Event Title');
+        jest.clearAllMocks();
+        mockQuery.go.mockResolvedValue({ data: [] });
+        const result2 = await generateUniqueSlug('My Event Title');
+
+        expect(result1).toBe(result2);
+        expect(result1).toBe('my-event-title');
+      });
+
+      it('should generate deterministic base slug regardless of when called', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
+
+        // Test that the same title always produces the same base slug
+        const titles = [
+          'Annual Marathon 2024',
+          'ANNUAL MARATHON 2024',
+          'annual marathon 2024',
+          '   Annual   Marathon   2024   '
+        ];
+
+        const results = await Promise.all(
+          titles.map(title => {
+            mockQuery.go.mockResolvedValue({ data: [] });
+            return generateUniqueSlug(title);
+          })
+        );
+
+        // All should produce the same base slug
+        results.forEach(result => {
+          expect(result).toBe('annual-marathon-2024');
+        });
+      });
+
+      it('should maintain slug format that supports immutability', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
+
+        const result = await generateUniqueSlug('Test Event');
+
+        // Verify the slug format is suitable for immutable storage
+        expect(result).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+        expect(result.length).toBeGreaterThan(0);
+        expect(result.length).toBeLessThanOrEqual(100);
+        expect(result).not.toMatch(/^-/); // No leading hyphen
+        expect(result).not.toMatch(/-$/); // No trailing hyphen
+        expect(result).not.toMatch(/--/); // No consecutive hyphens
+      });
     });
 
-    it('should throw error for non-string title', async () => {
-      await expect(generateUniqueSlug(null as any)).rejects.toThrow('Title is required and must be a string');
-      await expect(generateUniqueSlug(undefined as any)).rejects.toThrow('Title is required and must be a string');
-      await expect(generateUniqueSlug(123 as any)).rejects.toThrow('Title is required and must be a string');
+    describe('error handling', () => {
+      it('should throw error for empty title', async () => {
+        await expect(generateUniqueSlug('')).rejects.toThrow('Title is required and must be a string');
+      });
+
+      it('should throw error for non-string title', async () => {
+        await expect(generateUniqueSlug(null as any)).rejects.toThrow('Title is required and must be a string');
+        await expect(generateUniqueSlug(undefined as any)).rejects.toThrow('Title is required and must be a string');
+        await expect(generateUniqueSlug(123 as any)).rejects.toThrow('Title is required and must be a string');
+      });
+
+      it('should throw error for title with no alphanumeric characters', async () => {
+        await expect(generateUniqueSlug('!@#$%^&*()')).rejects.toThrow('Title must contain at least one alphanumeric character');
+      });
+
+      it('should handle database errors during slug generation', async () => {
+        const dbError = new Error('Database connection failed');
+        mockQuery.go.mockRejectedValue(dbError);
+
+        await expect(generateUniqueSlug('Test Event')).rejects.toThrow('Database connection failed');
+      });
     });
 
-    it('should throw error for title with no alphanumeric characters', async () => {
-      await expect(generateUniqueSlug('!@#$%^&*()')).rejects.toThrow('Title must contain at least one alphanumeric character');
-    });
+    describe('edge cases', () => {
+      it('should handle titles that result in very short slugs', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
 
-    it('should handle database errors during slug generation', async () => {
-      const dbError = new Error('Database connection failed');
-      mockQuery.go.mockRejectedValue(dbError);
+        const result = await generateUniqueSlug('A');
 
-      await expect(generateUniqueSlug('Test Event')).rejects.toThrow('Database connection failed');
-    });
+        expect(result).toBe('a');
+      });
 
-    it('should prevent infinite loops with counter limit', async () => {
-      // Mock to always return existing slug
-      mockQuery.go.mockResolvedValue({ data: [{ slug: 'test' }] });
+      it('should handle titles that result in very long slugs', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
 
-      await expect(generateUniqueSlug('Test')).rejects.toThrow('Unable to generate unique slug after 1000 attempts');
-    });
+        // Create a title that will result in a slug longer than 100 characters
+        const longTitle = 'This is a very long event title that contains many words and should be properly handled according to the slug generation rules';
 
-    it('should handle complex titles with mixed content', async () => {
-      mockQuery.go.mockResolvedValue({ data: [] });
+        // The current implementation will throw an error for slugs that are too long
+        // This is the expected behavior based on the isValidSlug validation
+        await expect(generateUniqueSlug(longTitle)).rejects.toThrow('Generated slug does not meet format requirements');
+      });
 
-      const result = await generateUniqueSlug('5K Marathon Run 2024! @#$%');
+      it('should handle titles with mixed languages and characters', async () => {
+        mockQuery.go.mockResolvedValue({ data: [] });
 
-      expect(result).toBe('5k-marathon-run-2024');
-    });
+        const result = await generateUniqueSlug('Event título événement 2024');
 
-    it('should handle titles that result in very short slugs', async () => {
-      mockQuery.go.mockResolvedValue({ data: [] });
-
-      const result = await generateUniqueSlug('A');
-
-      expect(result).toBe('a');
+        expect(result).toBe('event-ttulo-vnement-2024');
+        expect(isValidSlug(result)).toBe(true);
+      });
     });
   });
 });
