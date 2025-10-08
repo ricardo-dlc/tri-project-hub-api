@@ -7,3 +7,5 @@ export { handler as getEventsByCreatorIdHandler } from './getEventsByCreatorId';
 export { handler as getFeaturedEventsHandler } from './getFeaturedEvents';
 export { handler as createOrganizerHandler } from './createOrganizer';
 export { handler as updateOrganizerHandler } from './updateOrganizer';
+export { handler as getOrganizerHandler } from './getOrganizer';
+export { handler as getOrganizerMeHandler } from './getOrganizerMe';
