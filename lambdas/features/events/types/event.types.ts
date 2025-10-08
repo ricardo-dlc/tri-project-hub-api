@@ -27,10 +27,11 @@ export interface EventItem {
 }
 
 export interface CreateEventData {
-  organizerId: string;
+  organizerId?: string; // Optional - will be auto-injected if not provided
   title: string;
   type: string;
   date: string;
+  isFeatured?: boolean; // Optional - ignored if provided, always defaults to false
   isTeamEvent: boolean;
   isRelay?: boolean;
   requiredParticipants: number;
@@ -49,8 +50,8 @@ export interface UpdateEventData {
   title?: string;
   type?: string;
   date?: string;
-  isFeatured?: boolean;
-  isTeamEvent?: boolean;
+  isFeatured?: boolean; // Only admins can modify this field
+  isTeamEvent?: boolean; // Ignored - immutable after creation
   isRelay?: boolean;
   requiredParticipants?: number;
   maxParticipants?: number;

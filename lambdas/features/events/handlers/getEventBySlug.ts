@@ -2,10 +2,10 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
-import { BadRequestError, NotFoundError } from '../../../shared/errors';
+import { BadRequestError } from '../../../shared/errors';
 import { createFeatureLogger } from '../../../shared/logger';
 import { withMiddleware } from '../../../shared/wrapper';
-import { EventEntity } from '../models/event.model';
+import { eventService } from '../services';
 
 const logger = createFeatureLogger('events');
 
@@ -20,19 +20,11 @@ const getEventBySlugHandler = async (event: APIGatewayProxyEventV2) => {
 
   logger.debug({ slug }, 'Fetching event by slug');
 
-  const eventInfo = await EventEntity.query
-    .SlugIndex({ slug })
-    .begins({ slugDate: slug })
-    .where(({ isEnabled }, { eq }) => eq(isEnabled, true))
-    .go();
-
-  if (!eventInfo.data.length) {
-    throw new NotFoundError('Event not found');
-  }
+  const eventData = await eventService.getEventBySlug(slug);
 
   // Return plain object using object shorthand syntax
   return {
-    event: eventInfo.data[0],
+    event: eventData,
   };
 };
 

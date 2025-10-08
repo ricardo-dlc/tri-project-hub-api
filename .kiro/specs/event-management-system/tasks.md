@@ -99,13 +99,13 @@
   - Ensure global uniqueness across all events
   - _Requirements: 1.7, 1.8_
 
-- [ ] 5.2 Add slug validation to event operations
+- [x] 5.2 Add slug validation to event operations
 
   - Integrate slug generation into event creation
   - Prevent slug modification in event updates
   - _Requirements: 1.7, 1.8, 2.6_
 
-- [ ] 5.3 Write unit tests for slug generation
+- [x] 5.3 Write unit tests for slug generation
 
   - Test slug uniqueness and collision handling
   - Test special character sanitization
