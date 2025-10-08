@@ -113,14 +113,14 @@
   - _Requirements: 1.7, 1.8, 2.6_
 
 - [ ] 6. Update event service layer
-- [ ] 6.1 Update event service to use organizer references
+- [x] 6.1 Update event service to use organizer references
 
   - Modify createEvent to validate organizerId and link to organizer
   - Update event queries to support organizer relationships
   - Add getEventBySlug method
   - _Requirements: 1.5, 1.6, 9.1, 9.2, 9.3, 9.4_
 
-- [ ] 6.2 Implement team event validation
+- [x] 6.2 Implement team event validation
 
   - Add validateTeamEventCapacity function
   - Integrate team validation into create and update operations
