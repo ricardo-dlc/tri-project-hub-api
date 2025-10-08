@@ -10,7 +10,7 @@ This document provides comprehensive examples of how event updates work, includi
 | `isTeamEvent` | **Ignored** | **Immutable after creation** |
 | `currentParticipants` | **Ignored** | Managed by registration system |
 | `slug` | **Forbidden** | Throws error if attempted |
-| `eventId`, `creatorId` | **Ignored** | Immutable identifiers |
+| `eventId`, `creatorId`, `createdAt` | **Ignored** | **Silently removed - immutable identifiers** |
 | `updatedAt` | **Auto-updated** | Always set to current time |
 | Team validation | ✅ Enforced | Uses existing `isTeamEvent` value |
 
@@ -178,27 +178,28 @@ Authorization: Bearer <admin-token>
 
 ## Ignored Fields Examples
 
-### Example 10: Multiple Ignored Fields
+### Example 10: Multiple Ignored Fields (Silently Removed)
 
 ```json
 PATCH /events/01ARZ3NDEKTSV4RRFFQ69G5FAV
 Authorization: Bearer <user-token>
 {
   "title": "Updated Title",
-  "currentParticipants": 50,  // ← Ignored
-  "eventId": "new-id",        // ← Ignored
-  "creatorId": "new-creator", // ← Ignored
-  "createdAt": "2024-01-01",  // ← Ignored
-  "isTeamEvent": true,        // ← Ignored
-  "isFeatured": true,         // ← Ignored (non-admin)
+  "currentParticipants": 50,  // ← Silently ignored
+  "eventId": "new-id",        // ← Silently ignored
+  "creatorId": "new-creator", // ← Silently ignored
+  "createdAt": "2024-01-01",  // ← Silently ignored
+  "isTeamEvent": true,        // ← Silently ignored
+  "isFeatured": true,         // ← Silently ignored (non-admin)
   "description": "Updated description"
 }
 ```
 
 **Result**:
 - ✅ Only `title` and `description` updated
-- ❌ All other fields ignored
+- ❌ All other fields silently ignored (no errors thrown)
 - ✅ `updatedAt` automatically set to current time
+- ✅ System logs ignored fields for debugging
 
 ## Complex Update Scenarios
 
@@ -260,6 +261,88 @@ Authorization: Bearer <user-token>
 }
 ```
 
+## Advanced Update Scenarios
+
+### Example 13: Preventing Capacity Reduction Below Current Registrations
+
+```json
+PATCH /events/01ARZ3NDEKTSV4RRFFQ69G5FAV
+Authorization: Bearer <user-token>
+{
+  "maxParticipants": 30  // Current registrations: 45 people
+}
+```
+
+**Error Response**:
+```json
+{
+  "statusCode": 400,
+  "error": "BadRequestError",
+  "message": "Cannot reduce maxParticipants (30) below current registrations (45). Minimum allowed value: 45",
+  "details": {
+    "requestedMaxParticipants": 30,
+    "currentParticipants": 45,
+    "minimumAllowed": 45
+  }
+}
+```
+
+### Example 14: Safe Capacity Increase
+
+```json
+PATCH /events/01ARZ3NDEKTSV4RRFFQ69G5FAV
+Authorization: Bearer <user-token>
+{
+  "maxParticipants": 100  // Current registrations: 45 people
+}
+```
+
+**Result**: ✅ Update succeeds - can always increase capacity above current registrations.
+
+### Example 15: System-Managed Fields with Mixed Valid Updates
+
+```json
+PATCH /events/01ARZ3NDEKTSV4RRFFQ69G5FAV
+Authorization: Bearer <user-token>
+{
+  "title": "Updated Event Title",           // ← Valid update
+  "description": "New description",         // ← Valid update
+  "registrationFee": 30.00,                // ← Valid update
+  "eventId": "hack-attempt-123",           // ← Silently ignored
+  "creatorId": "different-user",           // ← Silently ignored
+  "currentParticipants": 999,              // ← Silently ignored
+  "createdAt": "1970-01-01T00:00:00Z",     // ← Silently ignored
+  "organizerId": "01BX5ZZKBKACTAV9WEVGEMMVRZ" // ← Valid update (if user has access)
+}
+```
+
+**Result**:
+- ✅ `title`, `description`, `registrationFee`, `organizerId` updated
+- ❌ System-managed fields silently ignored
+- ✅ No errors thrown, operation succeeds
+- ✅ Logs show which fields were ignored
+
+### Example 16: Comprehensive Admin Update
+
+```json
+PATCH /events/01ARZ3NDEKTSV4RRFFQ69G5FAV
+Authorization: Bearer <admin-token>
+{
+  "title": "Admin Updated Event",
+  "isFeatured": true,                      // ← Admin can modify
+  "isEnabled": false,                      // ← Admin can disable
+  "maxParticipants": 200,                  // ← Admin can modify capacity
+  "registrationDeadline": "2024-12-31T23:59:59Z", // ← Admin can extend deadline
+  "eventId": "cannot-change-this",         // ← Still silently ignored (even for admin)
+  "creatorId": "cannot-change-this"        // ← Still silently ignored (even for admin)
+}
+```
+
+**Result**:
+- ✅ All valid fields updated (admin privileges)
+- ❌ System identifiers still silently ignored (even for admin)
+- ✅ Admin can modify `isFeatured` and `isEnabled`
+
 ## Error Scenarios
 
 ### Ownership Validation
@@ -305,25 +388,51 @@ Authorization: Bearer <user-token>
 ### For Frontend Applications
 - Don't show `isFeatured` toggle to non-admin users
 - Don't show `isTeamEvent` toggle in edit forms (immutable)
+- Don't show system-managed fields (`eventId`, `creatorId`, `createdAt`, `currentParticipants`)
 - Validate team capacity on frontend before sending request
 - Show helpful error messages for team validation failures
+- Check current registrations before allowing capacity reduction
 
 ### For API Clients
 - Can safely include ignored fields - they won't cause errors
 - Always handle team validation errors gracefully
 - Check user role before showing admin-only fields
 - Use PATCH for partial updates, not PUT
+- Monitor logs for ignored fields to clean up API calls over time
 
 ### For Admin Interfaces
 - Provide clear controls for `isFeatured` status
-- Show which fields are immutable vs editable
-- Allow admins to update any event
-- Display current field values clearly
+- Show which fields are immutable vs editable vs admin-only
+- Allow admins to update any event (bypass ownership)
+- Display current field values and registration counts clearly
+- Show warnings when reducing capacity near current registrations
+
+### For API Integration
+- System-managed fields are silently ignored (better UX than errors)
+- Only `slug` modification throws an error (critical business rule)
+- Team validation always uses existing `isTeamEvent` value
+- Capacity reduction is prevented if below current registrations
 
 ## Migration Notes
 
 - ✅ Existing update calls continue to work
+- ✅ **UX Improvement**: System-managed fields now silently ignored (no more errors)
 - ✅ Additional validation for team events (may catch invalid data)
 - ✅ New immutable field behavior (`isTeamEvent`)
 - ✅ Enhanced role-based permissions
 - ✅ Better error messages with suggested values
+- ✅ Capacity reduction protection (prevents reducing below current registrations)
+- ✅ Comprehensive logging for debugging ignored fields
+
+## Logging and Debugging
+
+When fields are silently ignored, the system logs them for debugging:
+
+```
+"Removing eventId from update data - field is immutable after creation"
+"Removing creatorId from update data - field is immutable after creation"
+"Removing currentParticipants from update data - field is immutable after creation"
+"Removed admin-only fields from update data for non-admin user"
+```
+
+This helps developers identify unnecessary fields in their API calls while maintaining a smooth user experience.

@@ -1,5 +1,4 @@
 export interface EventItem {
-  id: string;
   eventId: string;
   creatorId: string;
   organizerId: string;

@@ -233,6 +233,155 @@ const event = await eventService.createEvent(eventData, creatorId, adminUser);
 4. **API Clients**: Can safely include ignored fields - they won't cause errors
 5. **Error Handling**: Check for team validation errors and show suggested values
 
+## Additional Creation Examples
+
+### Example 4: Relay Event with Auto-injection
+
+```json
+POST /events
+{
+  "title": "City Marathon Relay",
+  "type": "running",
+  "date": "2024-12-25T09:00:00Z",
+  "isTeamEvent": true,
+  "isRelay": true,                    // ← Relay-specific field
+  "requiredParticipants": 4,
+  "maxParticipants": 40,              // ← 40 ÷ 4 = 10 relay teams
+  "location": "Downtown Circuit",
+  "description": "4-person relay race through the city",
+  "distance": "42km total (10.5km per person)",
+  "registrationFee": 120.00,
+  "registrationDeadline": "2024-12-20T23:59:59Z",
+  "difficulty": "advanced",
+  "tags": ["relay", "marathon", "team"]
+}
+```
+
+**System Processing**:
+- ✅ `organizerId` auto-injected from user's organizer profile
+- ✅ `isRelay: true` preserved (optional field)
+- ✅ Team validation: 40 ÷ 4 = 10 teams ✅
+
+### Example 5: Event with All Optional Fields
+
+```json
+POST /events
+{
+  "organizerId": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+  "title": "Complete Event Example",
+  "type": "triathlon",
+  "date": "2024-12-30T07:00:00Z",
+  "isTeamEvent": false,
+  "isRelay": false,
+  "requiredParticipants": 1,
+  "maxParticipants": 150,
+  "location": "Lakeside Sports Complex",
+  "description": "Olympic distance triathlon with scenic lake views",
+  "distance": "1.5km swim, 40km bike, 10km run",
+  "registrationFee": 85.00,
+  "registrationDeadline": "2024-12-25T23:59:59Z",
+  "image": "https://example.com/triathlon-2024.jpg",
+  "difficulty": "advanced",
+  "tags": ["triathlon", "swimming", "cycling", "running", "olympic-distance"]
+}
+```
+
+### Example 6: Minimal Required Fields Only
+
+```json
+POST /events
+{
+  "title": "Simple Running Event",
+  "type": "running",
+  "date": "2024-12-15T08:00:00Z",
+  "isTeamEvent": false,
+  "requiredParticipants": 1,
+  "maxParticipants": 50,
+  "location": "City Park",
+  "description": "Morning run in the park"
+}
+```
+
+**System Processing**:
+- ✅ `organizerId` auto-injected
+- ✅ Optional fields left undefined (not required)
+- ✅ `registrationFee` defaults to 0 if not provided
+- ✅ `tags` defaults to empty array
+
+## Complex Team Event Examples
+
+### Example 7: Large Team Event
+
+```json
+POST /events
+{
+  "title": "Corporate Challenge - 8 Person Teams",
+  "type": "obstacle-course",
+  "date": "2024-12-18T10:00:00Z",
+  "isTeamEvent": true,
+  "requiredParticipants": 8,
+  "maxParticipants": 80,              // ← 80 ÷ 8 = 10 corporate teams
+  "location": "Adventure Sports Center",
+  "description": "Corporate team building obstacle course challenge",
+  "distance": "3km obstacle course",
+  "registrationFee": 200.00,          // ← Per team registration
+  "registrationDeadline": "2024-12-15T23:59:59Z",
+  "difficulty": "intermediate",
+  "tags": ["corporate", "team-building", "obstacle-course"]
+}
+```
+
+### Example 8: Small Team Event
+
+```json
+POST /events
+{
+  "title": "Buddy Run - Pairs Only",
+  "type": "running",
+  "date": "2024-12-12T07:30:00Z",
+  "isTeamEvent": true,
+  "requiredParticipants": 2,          // ← Pairs/buddy system
+  "maxParticipants": 20,              // ← 20 ÷ 2 = 10 pairs
+  "location": "Riverside Trail",
+  "description": "Partner running event for motivation and safety",
+  "distance": "10km",
+  "registrationFee": 40.00,
+  "difficulty": "beginner",
+  "tags": ["running", "buddy-system", "pairs"]
+}
+```
+
+## Error Prevention Examples
+
+### Example 9: Frontend Validation Helper
+
+```javascript
+// Frontend validation before sending request
+function validateTeamEvent(isTeamEvent, requiredParticipants, maxParticipants) {
+  if (!isTeamEvent) return { valid: true };
+  
+  if (maxParticipants % requiredParticipants !== 0) {
+    const suggestedLower = Math.floor(maxParticipants / requiredParticipants) * requiredParticipants;
+    const suggestedHigher = suggestedLower + requiredParticipants;
+    
+    return {
+      valid: false,
+      message: `For team events, maxParticipants (${maxParticipants}) must be a multiple of requiredParticipants (${requiredParticipants}).`,
+      suggestions: [suggestedLower, suggestedHigher]
+    };
+  }
+  
+  return { valid: true };
+}
+
+// Usage
+const validation = validateTeamEvent(true, 4, 15);
+if (!validation.valid) {
+  console.error(validation.message);
+  console.log('Suggested values:', validation.suggestions); // [12, 16]
+}
+```
+
 ## Migration Notes
 
 - ✅ Existing API calls with `organizerId` continue to work
@@ -240,3 +389,5 @@ const event = await eventService.createEvent(eventData, creatorId, adminUser);
 - ✅ Backward compatibility maintained
 - ✅ No breaking changes to existing integrations
 - ✅ Additional validation for team events (may catch previously invalid data)
+- ✅ System-managed fields silently ignored (better UX)
+- ✅ Enhanced error messages with suggested values
