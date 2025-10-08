@@ -1,16 +1,15 @@
 import type {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyHandlerV2,
+  APIGatewayProxyHandlerV2
 } from 'aws-lambda';
 import { BadRequestError, withMiddleware } from '../../../shared';
-import { withAuth } from '../../../shared/auth/middleware';
+import { AuthenticatedEvent, withAuth } from '../../../shared/auth/middleware';
 import { createFeatureLogger } from '../../../shared/logger';
 import { eventService } from '../services';
 import { CreateEventData } from '../types/event.types';
 
 const logger = createFeatureLogger('events');
 
-const createEventHandler = async (event: APIGatewayProxyEventV2 & { user?: any }) => {
+const createEventHandler = async (event: AuthenticatedEvent) => {
   logger.debug('Creating new event');
 
   if (!event.body) {

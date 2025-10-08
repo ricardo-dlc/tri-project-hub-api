@@ -1,8 +1,7 @@
 import type {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyHandlerV2,
+  APIGatewayProxyHandlerV2
 } from 'aws-lambda';
-import { withAuth } from '../../../shared/auth/middleware';
+import { AuthenticatedEvent, withAuth } from '../../../shared/auth/middleware';
 import { BadRequestError } from '../../../shared/errors';
 import { createFeatureLogger } from '../../../shared/logger';
 import { withMiddleware } from '../../../shared/wrapper';
@@ -10,7 +9,7 @@ import { organizerService } from '../services';
 
 const logger = createFeatureLogger('organizers');
 
-const getOrganizerHandler = async (event: APIGatewayProxyEventV2 & { user?: any }) => {
+const getOrganizerHandler = async (event: AuthenticatedEvent) => {
   logger.debug('Getting organizer by ID');
 
   // Extract organizerId from path parameters

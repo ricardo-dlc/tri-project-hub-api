@@ -75,7 +75,7 @@ describe('updateOrganizer Handler', () => {
     organizerId: string = 'org_test123',
     body: any = {},
     user: any = mockUser
-  ): APIGatewayProxyEventV2 & { user?: any } => ({
+  ): AuthenticatedEvent => ({
     version: '2.0',
     routeKey: 'PUT /organizers/{organizerId}',
     rawPath: `/organizers/${organizerId}`,
