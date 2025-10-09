@@ -200,7 +200,7 @@
   - Include organizer data in response
   - _Requirements: 9.4_
 
-- [ ] 8.5 Write integration tests for updated event handlers
+- [x] 8.5 Write integration tests for updated event handlers
 
   - Test all CRUD operations with new model
   - Test organizer relationship validation
