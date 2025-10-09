@@ -207,20 +207,20 @@
   - Test slug-based event retrieval
   - _Requirements: 1.1, 1.3, 1.7, 2.1, 2.3, 3.1, 9.1, 9.4_
 
-- [ ] 9. Update API routing and infrastructure
-- [ ] 9.1 Add organizer routes to API configuration
+- [x] 9. Update API routing and infrastructure
+- [x] 9.1 Add organizer routes to API configuration
 
   - Register organizer CRUD endpoints in HttpApiConstruct
   - Configure proper HTTP methods and paths
   - _Requirements: 7.1, 8.1_
 
-- [ ] 9.2 Update event routes for new endpoints
+- [x] 9.2 Update event routes for new endpoints
 
   - Add slug-based event retrieval route
   - Update existing event routes if needed
   - _Requirements: 9.4_
 
-- [ ] 9.3 Deploy updated Lambda functions
+- [x] 9.3 Deploy updated Lambda functions
 
   - Deploy updated Lambda functions with organizer support
   - Verify all endpoints are accessible

@@ -129,7 +129,13 @@ export class LambdaFactory {
     lambda.addEnvironment('FUNCTION_TYPE', 'API');
     lambda.addEnvironment('API_TIMEOUT', apiTimeout.toSeconds().toString());
 
-    lambda.logGroup.applyRemovalPolicy(this.stageConfig.config.isProduction ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY);
+    // Apply removal policy to log group if it's a CfnResource
+    try {
+      lambda.logGroup.applyRemovalPolicy(this.stageConfig.config.isProduction ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY);
+    } catch (error) {
+      // Log group might not be a CfnResource, skip applying removal policy
+      console.warn(`Could not apply removal policy to log group for function ${config.functionName}: ${error}`);
+    }
 
     return lambda;
   }
