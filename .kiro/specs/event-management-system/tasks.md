@@ -194,7 +194,7 @@
   - Maintain registration dependency checks
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 8.4 Add getEventBySlug handler
+- [x] 8.4 Add getEventBySlug handler
 
   - Create GET /events/slug/{slug} endpoint
   - Include organizer data in response

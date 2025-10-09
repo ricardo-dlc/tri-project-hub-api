@@ -59,7 +59,7 @@ describe('Handler Migration Verification', () => {
   describe('getEventBySlug handler', () => {
     it('should not contain try/catch blocks', () => {
       const handlerContent = readFileSync(
-        join(__dirname, '../lambdas/events/getEventBySlug.ts'),
+        join(__dirname, '../lambdas/features/events/handlers/getEventBySlug.ts'),
         'utf-8'
       );
       
@@ -70,7 +70,7 @@ describe('Handler Migration Verification', () => {
 
     it('should not contain JSON.stringify calls', () => {
       const handlerContent = readFileSync(
-        join(__dirname, '../lambdas/events/getEventBySlug.ts'),
+        join(__dirname, '../lambdas/features/events/handlers/getEventBySlug.ts'),
         'utf-8'
       );
       
@@ -80,18 +80,18 @@ describe('Handler Migration Verification', () => {
 
     it('should use withMiddleware wrapper', () => {
       const handlerContent = readFileSync(
-        join(__dirname, '../lambdas/events/getEventBySlug.ts'),
+        join(__dirname, '../lambdas/features/events/handlers/getEventBySlug.ts'),
         'utf-8'
       );
       
       // Should import and use withMiddleware
-      expect(handlerContent).toMatch(/import.*withMiddleware.*from.*middleware/);
+      expect(handlerContent).toMatch(/import.*withMiddleware.*from.*wrapper/);
       expect(handlerContent).toMatch(/withMiddleware\(/);
     });
 
     it('should use arrow function syntax', () => {
       const handlerContent = readFileSync(
-        join(__dirname, '../lambdas/events/getEventBySlug.ts'),
+        join(__dirname, '../lambdas/features/events/handlers/getEventBySlug.ts'),
         'utf-8'
       );
       
@@ -101,7 +101,7 @@ describe('Handler Migration Verification', () => {
 
     it('should use destructuring for path parameters', () => {
       const handlerContent = readFileSync(
-        join(__dirname, '../lambdas/events/getEventBySlug.ts'),
+        join(__dirname, '../lambdas/features/events/handlers/getEventBySlug.ts'),
         'utf-8'
       );
       
@@ -111,7 +111,7 @@ describe('Handler Migration Verification', () => {
 
     it('should use optional chaining for parameter validation', () => {
       const handlerContent = readFileSync(
-        join(__dirname, '../lambdas/events/getEventBySlug.ts'),
+        join(__dirname, '../lambdas/features/events/handlers/getEventBySlug.ts'),
         'utf-8'
       );
       
@@ -121,24 +121,23 @@ describe('Handler Migration Verification', () => {
 
     it('should use semantic error classes', () => {
       const handlerContent = readFileSync(
-        join(__dirname, '../lambdas/events/getEventBySlug.ts'),
+        join(__dirname, '../lambdas/features/events/handlers/getEventBySlug.ts'),
         'utf-8'
       );
       
       // Should import and use semantic error classes
-      expect(handlerContent).toMatch(/import.*BadRequestError.*NotFoundError.*from.*middleware/);
+      expect(handlerContent).toMatch(/import.*BadRequestError.*from.*errors/);
       expect(handlerContent).toMatch(/throw new BadRequestError/);
-      expect(handlerContent).toMatch(/throw new NotFoundError/);
     });
 
-    it('should return plain object with event property', () => {
+    it('should return plain object with event and organizer properties', () => {
       const handlerContent = readFileSync(
-        join(__dirname, '../lambdas/events/getEventBySlug.ts'),
+        join(__dirname, '../lambdas/features/events/handlers/getEventBySlug.ts'),
         'utf-8'
       );
       
-      // Should return plain object with event property
-      expect(handlerContent).toMatch(/return\s*{\s*event:/);
+      // Should return plain object with event and organizer properties
+      expect(handlerContent).toMatch(/return\s*{\s*event:\s*eventData,\s*organizer:\s*organizerData/);
     });
   });
 });

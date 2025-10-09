@@ -1,25 +1,24 @@
+import { GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
-import { QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { withMiddleware } from '../lambdas/middleware/wrapper';
 import {
-  NotFoundError,
   BadRequestError,
-  ValidationError,
-  NotAuthorizedError,
-  ForbiddenError,
   ConflictError,
-} from '../lambdas/middleware/errors';
-import { MiddlewareOptions } from '../lambdas/middleware/types';
+  ForbiddenError,
+  NotAuthorizedError,
+  NotFoundError,
+  ValidationError,
+} from '../lambdas/shared/errors';
+import { withMiddleware } from '../lambdas/shared/wrapper';
 
 // Mock DynamoDB client
 const mockSend = jest.fn();
-jest.mock('../lambdas/utils/dynamo', () => ({
+jest.mock('../lambdas/shared/utils/dynamo', () => ({
   ddbDocClient: {
     send: mockSend,
   },
 }));
 
-import { ddbDocClient } from '../lambdas/utils/dynamo';
+import { ddbDocClient } from '../lambdas/shared/utils/dynamo';
 
 // Type for API Gateway v2 response
 interface APIGatewayProxyResultV2 {
@@ -230,13 +229,20 @@ describe('Middleware Integration Tests', () => {
   });
 
   describe('getEventBySlug handler integration', () => {
-    it('should successfully return event by slug using middleware wrapper', async () => {
-      const mockEvent = { id: '1', title: 'Test Event', slug: 'test-event' };
+    it('should successfully return event by slug with organizer data using middleware wrapper', async () => {
+      const mockEvent = { id: '1', title: 'Test Event', slug: 'test-event', organizerId: 'org-123' };
+      const mockOrganizer = { organizerId: 'org-123', name: 'Test Organizer', contact: 'test@example.com' };
 
+      // Mock event query response
       mockSend.mockResolvedValueOnce({
         Items: [mockEvent],
         Count: 1,
         ScannedCount: 1,
+      });
+
+      // Mock organizer get response
+      mockSend.mockResolvedValueOnce({
+        Item: mockOrganizer,
       });
 
       // Create middleware-wrapped version of getEventBySlug handler
@@ -247,20 +253,39 @@ describe('Middleware Integration Tests', () => {
           }
 
           const { slug } = event.pathParameters;
-          const command = new QueryCommand({
+
+          // Query event by slug
+          const eventCommand = new QueryCommand({
             TableName: process.env.EVENTS_TABLE_NAME,
             IndexName: 'SlugIndex',
             KeyConditionExpression: 'slug = :slug',
             ExpressionAttributeValues: { ':slug': slug },
           });
 
-          const response = await ddbDocClient.send(command);
+          const eventResponse = await ddbDocClient.send(eventCommand);
 
-          if (!response.Items || response.Items.length === 0) {
+          if (!eventResponse.Items || eventResponse.Items.length === 0) {
             throw new NotFoundError('Event not found');
           }
 
-          return { event: response.Items[0] };
+          const eventData = eventResponse.Items[0];
+
+          // Get organizer data
+          const organizerCommand = new GetCommand({
+            TableName: process.env.EVENTS_TABLE_NAME,
+            Key: { id: eventData.organizerId },
+          });
+
+          const organizerResponse = await ddbDocClient.send(organizerCommand);
+
+          if (!organizerResponse.Item) {
+            throw new NotFoundError('Organizer not found');
+          }
+
+          return {
+            event: eventData,
+            organizer: organizerResponse.Item
+          };
         }
       );
 
@@ -285,7 +310,10 @@ describe('Middleware Integration Tests', () => {
       const parsedBody = JSON.parse(result.body);
       expect(parsedBody).toEqual({
         success: true,
-        data: { event: mockEvent },
+        data: {
+          event: mockEvent,
+          organizer: mockOrganizer
+        },
       });
 
       // Verify DynamoDB was called correctly
