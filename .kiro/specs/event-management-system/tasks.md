@@ -188,7 +188,7 @@
   - Maintain organizer relationship validation
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
-- [ ] 8.3 Update deleteEvent handler
+- [x] 8.3 Update deleteEvent handler
 
   - Update to work with new event model structure
   - Maintain registration dependency checks
