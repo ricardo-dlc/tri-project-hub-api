@@ -10,24 +10,25 @@ import pino from 'pino';
  * - Performance optimized for Lambda cold starts
  */
 const createLogger = () => {
-  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const env = process.env.NODE_ENV || 'development';
+  const isTest = env === 'test';
+  const isDevelopment = env !== 'production' && !isTest;
 
   return pino({
-    level: process.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info'),
+    level: isTest
+      ? 'silent'
+      : process.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info'),
     formatters: {
-      level: (label) => {
-        return { level: label };
-      },
+      level: (label) => ({ level: label }),
     },
-    // Add timestamp in ISO format
     timestamp: pino.stdTimeFunctions.isoTime,
-    // Base fields for all logs
     base: {
       service: 'tri-project-hub-api',
       environment: process.env.STAGE || 'dev',
     },
   });
 };
+
 
 // Singleton logger instance
 export const logger = createLogger();
