@@ -5,7 +5,7 @@ import type {
 import { BadRequestError } from '../../../shared/errors';
 import { createFeatureLogger } from '../../../shared/logger';
 import { withMiddleware } from '../../../shared/wrapper';
-import { eventService } from '../services';
+import { eventService, organizerService } from '../services';
 
 const logger = createFeatureLogger('events');
 
@@ -18,13 +18,18 @@ const getEventBySlugHandler = async (event: APIGatewayProxyEventV2) => {
     throw new BadRequestError('Missing slug parameter');
   }
 
-  logger.debug({ slug }, 'Fetching event by slug');
+  logger.debug({ slug }, 'Fetching event by slug with organizer data');
 
+  // Fetch event data
   const eventData = await eventService.getEventBySlug(slug);
 
-  // Return plain object using object shorthand syntax
+  // Fetch organizer data using the organizerId from the event
+  const organizerData = await organizerService.getOrganizer(eventData.organizerId);
+
+  // Return event with organizer data included
   return {
     event: eventData,
+    organizer: organizerData,
   };
 };
 
