@@ -1,7 +1,6 @@
 // Mock environment variables FIRST
 process.env.CLERK_SECRET_KEY = 'test-clerk-secret-key';
 
-import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { organizerService } from '../../services';
 import { OrganizerItem, UpdateOrganizerData } from '../../types/organizer.types';
 
@@ -47,6 +46,7 @@ jest.mock('../../../../shared', () => ({
   },
 }));
 
+import { AuthenticatedEvent } from '../../../../shared/auth';
 import { handler } from '../updateOrganizer';
 
 const mockOrganizerService = organizerService as jest.Mocked<typeof organizerService>;
@@ -290,7 +290,7 @@ describe('updateOrganizer Handler', () => {
 
     it('should return BadRequestError when user is missing', async () => {
       const event = createMockEvent('org_test123', { name: 'Test' });
-      delete event.user; // Remove user property entirely
+      (event as any).user = undefined; // Remove user property
 
       const result = await handler(event, {} as any, {} as any);
 
