@@ -840,6 +840,7 @@ describe('EventService', () => {
           description: 'Updated description',
           eventId: 'hack-attempt-1',
           creatorId: 'hack-attempt-2',
+          organizerId: 'different-organizer-id', // Should be ignored
           createdAt: '1970-01-01T00:00:00Z',
           currentParticipants: -1,
           isTeamEvent: true, // Also silently ignored
@@ -849,6 +850,19 @@ describe('EventService', () => {
         const result = await eventService.updateEvent('test-event-id', updateData, mockUser);
 
         // Should succeed and only update title and description
+        expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: 'test-event-id' });
+        expect(result).toEqual(mockExistingEvent);
+      });
+
+      it('should silently ignore organizerId modification to maintain organizer relationship', async () => {
+        const updateData = {
+          title: 'Updated Title',
+          organizerId: 'different-organizer-id', // Should be silently ignored
+        };
+
+        const result = await eventService.updateEvent('test-event-id', updateData, mockUser);
+
+        // Should succeed and only update the title, organizerId should be ignored
         expect(mockEventEntity.update).toHaveBeenCalledWith({ eventId: 'test-event-id' });
         expect(result).toEqual(mockExistingEvent);
       });
