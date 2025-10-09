@@ -164,7 +164,7 @@ export class EventService {
 
     // Sanitize admin-only fields and silently ignored fields for non-admin users
     const adminOnlyFields = ['isFeatured'];
-    const silentlyIgnoredFields = ['isTeamEvent', 'eventId', 'creatorId', 'createdAt', 'currentParticipants', 'slug']; // Fields that are silently removed without error
+    const silentlyIgnoredFields = ['isTeamEvent', 'eventId', 'creatorId', 'organizerId', 'createdAt', 'currentParticipants', 'slug']; // Fields that are silently removed without error
 
     let updateData = validateAndSanitizeAdminOnlyFields(rawUpdateData, user, adminOnlyFields);
 

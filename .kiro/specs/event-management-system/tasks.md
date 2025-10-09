@@ -181,7 +181,7 @@
   - Update team event validation
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 1.10, 1.11_
 
-- [ ] 8.2 Update updateEvent handler
+- [x] 8.2 Update updateEvent handler
 
   - Remove slug from updatable fields
   - Update team event validation for updates
