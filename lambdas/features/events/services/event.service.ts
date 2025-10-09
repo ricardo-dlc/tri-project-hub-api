@@ -1,9 +1,10 @@
 import { ClerkUser } from '../../../shared/auth/clerk';
-import { BadRequestError, NotFoundError } from '../../../shared/errors';
+import { BadRequestError, ConflictError, NotFoundError } from '../../../shared/errors';
 import { logger } from '../../../shared/logger';
 import { PaginationOptions } from '../../../shared/types/common.types';
 import { executeWithPagination } from '../../../shared/utils/pagination';
 import { generateULID } from '../../../shared/utils/ulid';
+import { participantQueryService } from '../../registrations/services/participant-query.service';
 import { EventEntity } from '../models/event.model';
 import { CreateEventData, EventItem, UpdateEventData } from '../types/event.types';
 import {
@@ -295,6 +296,68 @@ export class EventService {
       return result as PaginatedEventsResult;
     } catch (error) {
       logger.error({ error, organizerId }, 'Failed to list events by organizer');
+      throw error;
+    }
+  }
+
+  /**
+   * Deletes an event after validating ownership and checking for existing registrations
+   * @param eventId - ID of the event to delete
+   * @param user - The authenticated user performing the deletion
+   * @returns Promise<void>
+   */
+  async deleteEvent(eventId: string, user: ClerkUser): Promise<void> {
+    logger.debug({ eventId, userId: user.id, userRole: user.role }, 'Deleting event');
+
+    // Get existing event first (validates event exists)
+    const existingEvent = await this.getEvent(eventId);
+
+    // Validate ownership (admins can delete any event)
+    validateEventOwnership(existingEvent, user);
+
+    // Check for existing registrations - prevent deletion if registrations exist
+    try {
+      const participantResult = await participantQueryService.getParticipantsByEvent(eventId, existingEvent.creatorId);
+
+      if (participantResult.totalCount > 0) {
+        logger.warn({
+          eventId,
+          participantCount: participantResult.totalCount,
+          registrationCount: participantResult.registrationSummary.totalRegistrations
+        }, 'Cannot delete event with existing registrations');
+
+        throw new ConflictError(
+          'Cannot delete event with existing registrations. Please contact participants to cancel their registrations first.',
+          {
+            eventId,
+            participantCount: participantResult.totalCount,
+            registrationCount: participantResult.registrationSummary.totalRegistrations
+          }
+        );
+      }
+    } catch (error) {
+      // If it's a ConflictError we threw, re-throw it
+      if (error instanceof ConflictError) {
+        throw error;
+      }
+
+      // For other errors (like access denied), we'll log but continue with deletion
+      // This handles cases where the event creator might not have access to query participants
+      // but an admin is deleting the event
+      logger.warn({ error, eventId, userRole: user.role }, 'Could not check registrations, proceeding with deletion');
+    }
+
+    try {
+      await EventEntity.delete({ eventId }).go();
+
+      logger.info({
+        eventId,
+        title: existingEvent.title,
+        deletedBy: user.id,
+        userRole: user.role
+      }, 'Event deleted successfully');
+    } catch (error) {
+      logger.error({ error, eventId }, 'Failed to delete event');
       throw error;
     }
   }
