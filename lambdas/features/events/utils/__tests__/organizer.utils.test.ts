@@ -75,9 +75,9 @@ describe('Organizer Utilities', () => {
       });
 
       it('should handle empty values', () => {
-        expect(sanitizeOrganizerWebsite('')).toBeUndefined();
-        expect(sanitizeOrganizerWebsite('   ')).toBeUndefined();
-        expect(sanitizeOrganizerWebsite(undefined)).toBeUndefined();
+        expect(sanitizeOrganizerWebsite('')).toBe(''); // Empty string should be preserved for clearing
+        expect(sanitizeOrganizerWebsite('   ')).toBe(''); // Whitespace-only should become empty string
+        expect(sanitizeOrganizerWebsite(undefined)).toBeUndefined(); // Undefined should remain undefined
       });
     });
   });
