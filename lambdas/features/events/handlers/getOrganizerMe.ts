@@ -24,10 +24,7 @@ const getOrganizerMeHandler = async (event: AuthenticatedEvent) => {
   logger.info({ organizerId: organizer.organizerId, clerkId: user.id }, 'Current user organizer retrieved successfully');
 
   return {
-    statusCode: 200,
-    body: {
-      organizer,
-    },
+    organizer,
   };
 };
 

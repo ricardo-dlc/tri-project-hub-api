@@ -41,8 +41,8 @@ export const OrganizerEntity = new Entity(
       OrganizerPrimaryIndex: {
         pk: { field: 'id', composite: ['organizerId'], casing: 'upper' },
       },
-      CreatorIndex: {
-        index: 'CreatorIndex',
+      ClerkIndex: {
+        index: 'ClerkIndex',
         pk: { field: 'clerkId', composite: ['clerkId'], casing: 'none' },
         sk: { field: 'createdAt', composite: ['createdAt'] },
       },

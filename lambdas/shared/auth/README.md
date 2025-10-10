@@ -54,7 +54,7 @@ export const handler = withMiddleware(
     
     // Query user's resources
     const userEvents = await EventEntity.query
-      .CreatorIndex({ creatorId: userId })
+      .CreatorIndex({ clerkId: userId })
       .go();
     
     return { events: userEvents.data };
