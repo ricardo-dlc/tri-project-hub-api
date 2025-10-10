@@ -187,16 +187,16 @@ describe('OrganizerEntity', () => {
       expect(primaryIndex.pk.casing).toBe('upper');
     });
 
-    it('should have correct CreatorIndex configuration', () => {
+    it('should have correct ClerkIndex configuration', () => {
       const indexes = OrganizerEntity.schema.indexes;
-      const creatorIndex = indexes.CreatorIndex;
+      const clerkIndex = indexes.ClerkIndex;
 
-      expect(creatorIndex.index).toBe('CreatorIndex');
-      expect(creatorIndex.pk.field).toBe('clerkId');
-      expect(creatorIndex.pk.composite).toEqual(['clerkId']);
-      expect(creatorIndex.pk.casing).toBe('none');
-      expect(creatorIndex.sk.field).toBe('createdAt');
-      expect(creatorIndex.sk.composite).toEqual(['createdAt']);
+      expect(clerkIndex.index).toBe('ClerkIndex');
+      expect(clerkIndex.pk.field).toBe('clerkId');
+      expect(clerkIndex.pk.composite).toEqual(['clerkId']);
+      expect(clerkIndex.pk.casing).toBe('none');
+      expect(clerkIndex.sk.field).toBe('createdAt');
+      expect(clerkIndex.sk.composite).toEqual(['createdAt']);
     });
   });
 
@@ -241,7 +241,7 @@ describe('OrganizerEntity', () => {
     it('should have query methods for indexes', () => {
       // Test that query methods exist for each index
       expect(OrganizerEntity.query.OrganizerPrimaryIndex).toBeDefined();
-      expect(OrganizerEntity.query.CreatorIndex).toBeDefined();
+      expect(OrganizerEntity.query.ClerkIndex).toBeDefined();
     });
   });
 

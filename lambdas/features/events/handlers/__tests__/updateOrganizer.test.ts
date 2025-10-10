@@ -17,15 +17,47 @@ jest.mock('../../../../shared/auth/middleware', () => ({
 }));
 
 // Mock the shared middleware
-jest.mock('../../../../shared', () => ({
+jest.mock('../../../../shared/wrapper', () => ({
   withMiddleware: (handlerFn: any) => async (event: any, context: any) => {
     try {
       const result = await handlerFn(event, context);
-      return result;
+      return {
+        statusCode: result.statusCode || 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: true,
+          data: result.body || result,
+        }),
+      };
     } catch (error: any) {
-      throw error;
+      let statusCode = 500;
+      const errorResponse: any = {
+        message: error.message,
+      };
+
+      if (error.name === 'NotFoundError') {
+        statusCode = 404;
+      } else if (error.name === 'BadRequestError') {
+        statusCode = 400;
+        errorResponse.code = 'BAD_REQUEST';
+      } else if (error.name === 'ForbiddenError') {
+        statusCode = 403;
+      }
+
+      return {
+        statusCode,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: false,
+          error: errorResponse,
+          data: null,
+        }),
+      };
     }
   },
+}));
+
+jest.mock('../../../../shared/errors', () => ({
   BadRequestError: class BadRequestError extends Error {
     constructor(message: string) {
       super(message);
@@ -52,7 +84,7 @@ import { handler } from '../updateOrganizer';
 const mockOrganizerService = organizerService as jest.Mocked<typeof organizerService>;
 
 // Get the mocked error classes
-const { BadRequestError, ForbiddenError, NotFoundError } = jest.requireMock('../../../../shared');
+const { BadRequestError, ForbiddenError, NotFoundError } = jest.requireMock('../../../../shared/errors');
 
 describe('updateOrganizer Handler', () => {
   const mockUser = {
@@ -123,16 +155,11 @@ describe('updateOrganizer Handler', () => {
 
       expect(result).toEqual({
         statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           success: true,
           data: {
-            statusCode: 200,
-            body: {
-              organizer: mockOrganizer,
-            },
+            organizer: mockOrganizer,
           },
         }),
       });
@@ -161,16 +188,11 @@ describe('updateOrganizer Handler', () => {
 
       expect(result).toEqual({
         statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           success: true,
           data: {
-            statusCode: 200,
-            body: {
-              organizer: partiallyUpdatedOrganizer,
-            },
+            organizer: partiallyUpdatedOrganizer,
           },
         }),
       });
@@ -199,16 +221,11 @@ describe('updateOrganizer Handler', () => {
 
       expect(result).toEqual({
         statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           success: true,
           data: {
-            statusCode: 200,
-            body: {
-              organizer: mockOrganizer,
-            },
+            organizer: mockOrganizer,
           },
         }),
       });

@@ -489,7 +489,7 @@ describe('Organizer Handlers Integration Tests', () => {
         expect(result.statusCode).toBe(200);
         const responseBody = JSON.parse(result.body);
         expect(responseBody.success).toBe(true);
-        expect(responseBody.data.body.organizer).toEqual(updatedOrganizer);
+        expect(responseBody.data.organizer).toEqual(updatedOrganizer);
 
         expect(mockOrganizerService.updateOrganizer).toHaveBeenCalledWith(
           '01ARZ3NDEKTSV4RRFFQ69G5FAV',
@@ -533,7 +533,7 @@ describe('Organizer Handlers Integration Tests', () => {
         expect(result.statusCode).toBe(200);
         const responseBody = JSON.parse(result.body);
         expect(responseBody.success).toBe(true);
-        expect(responseBody.data.body.organizer).toEqual(updatedOrganizer);
+        expect(responseBody.data.organizer).toEqual(updatedOrganizer);
 
         expect(mockOrganizerService.updateOrganizer).toHaveBeenCalledWith(
           '01ARZ3NDEKTSV4RRFFQ69G5FAV',
@@ -577,7 +577,7 @@ describe('Organizer Handlers Integration Tests', () => {
         expect(result.statusCode).toBe(200);
         const responseBody = JSON.parse(result.body);
         expect(responseBody.success).toBe(true);
-        expect(responseBody.data.body.organizer).toEqual(updatedOrganizer);
+        expect(responseBody.data.organizer).toEqual(updatedOrganizer);
       });
     });
 
@@ -696,7 +696,7 @@ describe('Organizer Handlers Integration Tests', () => {
         expect(result.statusCode).toBe(200);
         const responseBody = JSON.parse(result.body);
         expect(responseBody.success).toBe(true);
-        expect(responseBody.data.body.organizer).toEqual(mockOrganizerData);
+        expect(responseBody.data.organizer).toEqual(mockOrganizerData);
 
         expect(mockOrganizerService.validateOrganizerExists).toHaveBeenCalledWith(
           '01ARZ3NDEKTSV4RRFFQ69G5FAV',
@@ -734,7 +734,7 @@ describe('Organizer Handlers Integration Tests', () => {
         expect(result.statusCode).toBe(200);
         const responseBody = JSON.parse(result.body);
         expect(responseBody.success).toBe(true);
-        expect(responseBody.data.body.organizer).toEqual(differentOrganizerData);
+        expect(responseBody.data.organizer).toEqual(differentOrganizerData);
 
         expect(mockOrganizerService.validateOrganizerExists).toHaveBeenCalledWith(
           '01ARZ3NDEKTSV4RRFFQ69G5FAV',
@@ -812,7 +812,7 @@ describe('Organizer Handlers Integration Tests', () => {
         expect(result.statusCode).toBe(200);
         const responseBody = JSON.parse(result.body);
         expect(responseBody.success).toBe(true);
-        expect(responseBody.data.body.organizer).toEqual(mockOrganizerData);
+        expect(responseBody.data.organizer).toEqual(mockOrganizerData);
 
         expect(mockOrganizerService.getOrganizerByClerkId).toHaveBeenCalledWith(
           mockOrganizerUser.id
@@ -849,7 +849,7 @@ describe('Organizer Handlers Integration Tests', () => {
         expect(result.statusCode).toBe(200);
         const responseBody = JSON.parse(result.body);
         expect(responseBody.success).toBe(true);
-        expect(responseBody.data.body.organizer).toEqual(adminOrganizerData);
+        expect(responseBody.data.organizer).toEqual(adminOrganizerData);
 
         expect(mockOrganizerService.getOrganizerByClerkId).toHaveBeenCalledWith(
           mockAdminUser.id

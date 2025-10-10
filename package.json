@@ -7,7 +7,9 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "jest",
+    "test": "jest lambdas/",
+    "test:all": "jest",
+    "test:cdk": "jest test/",
     "cdk": "cdk",
     "deploy": "cdk deploy",
     "deploy:dev": "cdk deploy -c stage=dev --require-approval never",
