@@ -138,7 +138,7 @@ export const validateUpdateOrganizerData = (data: UpdateOrganizerData): void => 
       throw new ValidationError('Website must be 500 characters or less');
     }
 
-    // Basic URL validation for non-empty strings
+    // Basic URL validation for non-empty strings (allow empty string for clearing)
     if (data.website.trim().length > 0) {
       const urlPattern = /^https?:\/\/.+/i;
       if (!urlPattern.test(data.website)) {
@@ -155,5 +155,6 @@ export const validateUpdateOrganizerData = (data: UpdateOrganizerData): void => 
     if (data.description.length > 1000) {
       throw new ValidationError('Description must be 1000 characters or less');
     }
+    // Allow empty string for clearing the description
   }
 };

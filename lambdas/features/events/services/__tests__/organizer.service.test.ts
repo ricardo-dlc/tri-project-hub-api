@@ -274,6 +274,55 @@ describe('OrganizerService', () => {
 
       expect(result.name).toBe('Updated Organizer');
     });
+
+    it('should clear optional fields when empty strings are provided', async () => {
+      const clearFieldsData: UpdateOrganizerData = {
+        website: '',
+        description: '',
+      };
+
+      // Mock get organizer
+      mockOrganizerEntity.get = jest.fn().mockReturnValue({
+        go: jest.fn().mockResolvedValue({
+          data: mockOrganizerItem,
+        }),
+      });
+
+      // Mock update with remove method
+      const mockGo = jest.fn().mockResolvedValue({
+        data: {
+          ...mockOrganizerItem,
+          website: undefined,
+          description: undefined,
+          updatedAt: mockTimestamp,
+        },
+      });
+
+      const mockRemove = jest.fn().mockReturnValue({
+        go: mockGo,
+      });
+
+      const mockSet = jest.fn().mockReturnValue({
+        remove: mockRemove,
+      });
+
+      mockOrganizerEntity.update = jest.fn().mockReturnValue({
+        set: mockSet,
+      });
+
+      const result = await service.updateOrganizer(validOrganizerId, clearFieldsData, mockUser);
+
+      // Verify that set was called with only updatedAt
+      expect(mockSet).toHaveBeenCalledWith({
+        updatedAt: mockTimestamp,
+      });
+
+      // Verify that remove was called with the fields to clear
+      expect(mockRemove).toHaveBeenCalledWith(['website', 'description']);
+
+      expect(result.website).toBeUndefined();
+      expect(result.description).toBeUndefined();
+    });
   });
 
   describe('deleteOrganizer', () => {

@@ -69,13 +69,14 @@ export const sanitizeOrganizerContact = (contact: string): string => {
 /**
  * Sanitize organizer website URL
  * @param website The website URL to sanitize
- * @returns Sanitized website URL or undefined
+ * @returns Sanitized website URL, empty string for clearing, or undefined if not provided
  */
 export const sanitizeOrganizerWebsite = (website?: string): string | undefined => {
-  if (!website) return undefined;
+  if (website === undefined) return undefined;
+  if (website === null) return undefined;
 
   const trimmed = website.trim();
-  if (trimmed.length === 0) return undefined;
+  if (trimmed.length === 0) return ''; // Return empty string to allow clearing
 
   // Ensure URL has protocol
   if (!/^https?:\/\//i.test(trimmed)) {
@@ -88,13 +89,14 @@ export const sanitizeOrganizerWebsite = (website?: string): string | undefined =
 /**
  * Sanitize organizer description
  * @param description The description to sanitize
- * @returns Sanitized description or undefined
+ * @returns Sanitized description, empty string for clearing, or undefined if not provided
  */
 export const sanitizeOrganizerDescription = (description?: string): string | undefined => {
-  if (!description) return undefined;
+  if (description === undefined) return undefined;
+  if (description === null) return undefined;
 
   const trimmed = description.trim();
-  return trimmed.length === 0 ? undefined : trimmed;
+  return trimmed.length === 0 ? '' : trimmed; // Return empty string to allow clearing
 };
 
 /**

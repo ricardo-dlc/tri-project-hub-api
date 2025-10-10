@@ -132,6 +132,9 @@ export class OrganizerService {
         updatedAt: timestamp,
       };
 
+      // Track fields to remove (when empty string is provided)
+      const fieldsToRemove: ('website' | 'description')[] = [];
+
       if (sanitizedData.name !== undefined) {
         updateData.name = sanitizedData.name;
       }
@@ -139,18 +142,34 @@ export class OrganizerService {
         updateData.contact = sanitizedData.contact;
       }
       if (sanitizedData.website !== undefined) {
-        updateData.website = sanitizedData.website;
+        if (sanitizedData.website === '') {
+          // Empty string means remove the field
+          fieldsToRemove.push('website');
+        } else {
+          updateData.website = sanitizedData.website;
+        }
       }
       if (sanitizedData.description !== undefined) {
-        updateData.description = sanitizedData.description;
+        if (sanitizedData.description === '') {
+          // Empty string means remove the field
+          fieldsToRemove.push('description');
+        } else {
+          updateData.description = sanitizedData.description;
+        }
       }
 
-      logger.debug({ organizerId, clerkId: user.id, updateData }, 'Update data built');
+      logger.debug({ organizerId, clerkId: user.id, updateData, fieldsToRemove }, 'Update data built');
 
-      // Update organizer entity
-      const result = await OrganizerEntity.update({ organizerId })
-        .set(updateData)
-        .go();
+      // Build the update query
+      let updateQuery = OrganizerEntity.update({ organizerId }).set(updateData);
+
+      // Remove fields if needed
+      if (fieldsToRemove.length > 0) {
+        updateQuery = updateQuery.remove(fieldsToRemove);
+      }
+
+      // Execute the update
+      const result = await updateQuery.go();
 
       const updatedOrganizer: OrganizerItem = {
         organizerId: result.data.organizerId as string,
