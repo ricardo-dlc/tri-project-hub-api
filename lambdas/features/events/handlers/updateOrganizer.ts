@@ -41,10 +41,7 @@ const updateOrganizerHandler = async (event: AuthenticatedEvent) => {
   logger.info({ organizerId, clerkId: user.id }, 'Organizer updated successfully');
 
   return {
-    statusCode: 200,
-    body: {
-      organizer: updatedOrganizer,
-    },
+    organizer: updatedOrganizer,
   };
 };
 

@@ -168,7 +168,7 @@ describe('getOrganizer handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.data.body.organizer).toEqual(mockOrganizer);
+      expect(responseBody.data.organizer).toEqual(mockOrganizer);
 
       // Verify service was called with correct parameters
       expect(mockOrganizerService.validateOrganizerExists).toHaveBeenCalledWith(
@@ -210,7 +210,7 @@ describe('getOrganizer handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.data.body.organizer).toEqual(mockOrganizer);
+      expect(responseBody.data.organizer).toEqual(mockOrganizer);
 
       // Verify service was called with correct parameters
       expect(mockOrganizerService.validateOrganizerExists).toHaveBeenCalledWith(

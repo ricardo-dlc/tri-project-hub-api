@@ -73,7 +73,8 @@ describe('OrganizerService', () => {
     it('should create a new organizer successfully', async () => {
       // Mock that organizer doesn't exist
       mockOrganizerEntity.query = {
-        CreatorIndex: jest.fn().mockReturnValue({
+        ClerkIndex: jest.fn().mockReturnValue({
+          params: jest.fn().mockReturnValue({}),
           go: jest.fn().mockResolvedValue({ data: [] }),
         }),
       } as any;
@@ -112,7 +113,8 @@ describe('OrganizerService', () => {
     it('should return existing organizer if one already exists for the Clerk ID', async () => {
       // Mock that organizer already exists
       mockOrganizerEntity.query = {
-        CreatorIndex: jest.fn().mockReturnValue({
+        ClerkIndex: jest.fn().mockReturnValue({
+          params: jest.fn().mockReturnValue({}),
           go: jest.fn().mockResolvedValue({
             data: [mockOrganizerItem],
           }),
@@ -171,7 +173,8 @@ describe('OrganizerService', () => {
   describe('getOrganizerByClerkId', () => {
     it('should return organizer by Clerk ID successfully', async () => {
       mockOrganizerEntity.query = {
-        CreatorIndex: jest.fn().mockReturnValue({
+        ClerkIndex: jest.fn().mockReturnValue({
+          params: jest.fn().mockReturnValue({}),
           go: jest.fn().mockResolvedValue({
             data: [mockOrganizerItem],
           }),
@@ -185,7 +188,8 @@ describe('OrganizerService', () => {
 
     it('should throw NotFoundError if organizer does not exist', async () => {
       mockOrganizerEntity.query = {
-        CreatorIndex: jest.fn().mockReturnValue({
+        ClerkIndex: jest.fn().mockReturnValue({
+          params: jest.fn().mockReturnValue({}),
           go: jest.fn().mockResolvedValue({ data: [] }),
         }),
       } as any;
