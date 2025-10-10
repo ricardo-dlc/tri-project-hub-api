@@ -40,7 +40,7 @@ const updateEventHandler = async (event: AuthenticatedEvent) => {
 
   return {
     statusCode: 200,
-    body: {
+    data: {
       event: updatedEvent,
     },
   };

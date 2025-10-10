@@ -88,9 +88,7 @@ const createEventHandler = async (event: AuthenticatedEvent) => {
 
   return {
     statusCode: 201,
-    body: {
-      event: createdEvent,
-    },
+    data: { event: createdEvent },
   };
 };
 

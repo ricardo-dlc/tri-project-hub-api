@@ -20,10 +20,21 @@ jest.mock('../../../../shared', () => ({
   withMiddleware: (handlerFn: any) => async (event: any, context: any) => {
     try {
       const result = await handlerFn(event, context);
+      // Check if result has statusCode and data properties (HandlerResponse)
+      const isHandlerResponse = result && typeof result === 'object' && 'data' in result;
+      const statusCode = isHandlerResponse ? result.statusCode || 200 : 200;
+      const data = isHandlerResponse ? result.data : result;
+
+      // Format the success response like the real middleware
+      const response = {
+        success: true,
+        data,
+      };
+
       return {
-        statusCode: result.statusCode || 200,
+        statusCode,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result.body || result),
+        body: JSON.stringify(response),
       };
     } catch (error: any) {
       return {
@@ -202,7 +213,8 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockUpdatedEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockUpdatedEvent);
 
       // Verify service was called with correct parameters
       expect(mockEventService.updateEvent).toHaveBeenCalledWith(
@@ -232,7 +244,8 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockUpdatedEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockUpdatedEvent);
 
       expect(mockEventService.updateEvent).toHaveBeenCalledWith(
         'test-event-id',
@@ -266,7 +279,8 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockUpdatedEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockUpdatedEvent);
 
       expect(mockEventService.updateEvent).toHaveBeenCalledWith(
         'test-event-id',
@@ -300,7 +314,8 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockUpdatedEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockUpdatedEvent);
     });
 
     it('should silently ignore immutable fields like slug and organizerId', async () => {
@@ -327,7 +342,8 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockUpdatedEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockUpdatedEvent);
 
       // Service should be called with the update data (service handles filtering)
       expect(mockEventService.updateEvent).toHaveBeenCalledWith(
@@ -368,7 +384,8 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockUpdatedEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockUpdatedEvent);
     });
   });
 
@@ -563,7 +580,8 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockUpdatedEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockUpdatedEvent);
 
       expect(mockEventService.updateEvent).toHaveBeenCalledWith(
         'test-event-id',
@@ -618,7 +636,7 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event.registrationFee).toBe(0);
+      expect(responseBody.data.event.registrationFee).toBe(0);
     });
 
     it('should handle empty tags array', async () => {
@@ -640,7 +658,7 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event.tags).toEqual([]);
+      expect(responseBody.data.event.tags).toEqual([]);
     });
 
     it('should handle boolean fields correctly', async () => {
@@ -666,8 +684,8 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event.isEnabled).toBe(false);
-      expect(responseBody.event.isRelay).toBe(true);
+      expect(responseBody.data.event.isEnabled).toBe(false);
+      expect(responseBody.data.event.isRelay).toBe(true);
     });
   });
 
@@ -691,9 +709,10 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockUpdatedEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockUpdatedEvent);
       // The organizerId should remain unchanged (handled by service layer)
-      expect(responseBody.event.organizerId).toBe('org_01ARZ3NDEKTSV4RRFFQ69G5FAV');
+      expect(responseBody.data.event.organizerId).toBe('org_01ARZ3NDEKTSV4RRFFQ69G5FAV');
     });
   });
 
@@ -738,7 +757,7 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event.maxParticipants).toBe(16);
+      expect(responseBody.data.event.maxParticipants).toBe(16);
     });
   });
 
@@ -767,7 +786,7 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event.isFeatured).toBe(true);
+      expect(responseBody.data.event.isFeatured).toBe(true);
     });
 
     it('should silently ignore isFeatured field for non-admin users', async () => {
@@ -797,7 +816,7 @@ describe('updateEvent handler', () => {
       expect(result.statusCode).toBe(200);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event.isFeatured).toBe(false);
+      expect(responseBody.data.event.isFeatured).toBe(false);
     });
   });
 });

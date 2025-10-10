@@ -10,7 +10,6 @@ export const EventEntity = new Entity(
       service: 'events',
     },
     attributes: {
-      id: { type: 'string', required: true },
       eventId: {
         type: 'string',
         required: true,
@@ -57,31 +56,31 @@ export const EventEntity = new Entity(
       // Flattened keys
       slugDate: {
         type: 'string',
-        required: true,
+        // required: true,
         watch: ['slug', 'date'],
         set: (val, item) => `${item.slug}#${item.date}`,
       },
       creatorDate: {
         type: 'string',
-        required: true,
+        // required: true,
         watch: ['creatorId', 'date'],
         set: (val, item) => `${item.creatorId}#${item.date}`,
       },
       organizerDate: {
         type: 'string',
-        required: true,
+        // required: true,
         watch: ['organizerId', 'date'],
         set: (val, item) => `${item.organizerId}#${item.date}`,
       },
       typeDate: {
         type: 'string',
-        required: true,
+        // required: true,
         watch: ['type', 'date'],
         set: (val, item) => `${item.type}#${item.date}`,
       },
       difficultyDate: {
         type: 'string',
-        required: true,
+        // required: true,
         watch: ['difficulty', 'date'],
         set: (val, item) => `${item.difficulty}#${item.date}`,
       },
@@ -104,7 +103,7 @@ export const EventEntity = new Entity(
     },
     indexes: {
       EventPrimaryIndex: {
-        pk: { field: 'id', composite: ['eventId'], template: '${eventId}', casing: 'upper' },
+        pk: { field: 'id', composite: ['eventId'], casing: 'upper' },
       },
       CreatorIndex: {
         index: 'CreatorIndex',
