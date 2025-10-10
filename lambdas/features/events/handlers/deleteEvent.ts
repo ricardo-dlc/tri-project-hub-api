@@ -30,7 +30,7 @@ const deleteEventHandler = async (event: AuthenticatedEvent) => {
 
   return {
     statusCode: 204,
-    body: null,
+    data: null,
   };
 };
 

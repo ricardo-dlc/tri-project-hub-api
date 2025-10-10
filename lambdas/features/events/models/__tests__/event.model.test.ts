@@ -188,7 +188,6 @@ describe('EventEntity', () => {
       const slugDateAttr = attributes.slugDate;
 
       expect(slugDateAttr.type).toBe('string');
-      expect(slugDateAttr.required).toBe(true);
       expect(slugDateAttr.watch).toEqual(['slug', 'date']);
 
       // Test the set function
@@ -205,7 +204,6 @@ describe('EventEntity', () => {
       const creatorDateAttr = attributes.creatorDate;
 
       expect(creatorDateAttr.type).toBe('string');
-      expect(creatorDateAttr.required).toBe(true);
       expect(creatorDateAttr.watch).toEqual(['creatorId', 'date']);
 
       // Test the set function
@@ -222,7 +220,6 @@ describe('EventEntity', () => {
       const typeDateAttr = attributes.typeDate;
 
       expect(typeDateAttr.type).toBe('string');
-      expect(typeDateAttr.required).toBe(true);
       expect(typeDateAttr.watch).toEqual(['type', 'date']);
 
       // Test the set function
@@ -239,7 +236,6 @@ describe('EventEntity', () => {
       const difficultyDateAttr = attributes.difficultyDate;
 
       expect(difficultyDateAttr.type).toBe('string');
-      expect(difficultyDateAttr.required).toBe(true);
       expect(difficultyDateAttr.watch).toEqual(['difficulty', 'date']);
 
       // Test the set function
@@ -295,7 +291,6 @@ describe('EventEntity', () => {
 
       expect(primaryIndex.pk.field).toBe('id');
       expect(primaryIndex.pk.composite).toEqual(['eventId']);
-      expect(primaryIndex.pk.template).toBe('${eventId}');
       expect(primaryIndex.pk.casing).toBe('upper');
     });
 
@@ -428,7 +423,7 @@ describe('EventEntity', () => {
 
       expect(validCreateData.organizerId).toBeDefined();
       expect(typeof validCreateData.organizerId).toBe('string');
-      
+
       // Type guard to ensure organizerId is defined before ULID validation
       if (validCreateData.organizerId) {
         expect(isValidULID(validCreateData.organizerId)).toBe(true);

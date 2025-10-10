@@ -88,7 +88,6 @@ export class EventService {
 
     try {
       const result = await EventEntity.create({
-        id: eventId, // Primary key field
         eventId,
         creatorId,
         organizerId,

@@ -119,7 +119,6 @@ describe('EventService', () => {
       expect(mockGenerateULID).toHaveBeenCalled();
       expect(mockEventEntity.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          id: 'test-event-id',
           eventId: 'test-event-id',
           creatorId: 'test-creator-id',
           organizerId: 'test-organizer-id',

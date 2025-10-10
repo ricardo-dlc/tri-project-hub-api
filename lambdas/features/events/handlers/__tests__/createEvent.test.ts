@@ -21,10 +21,21 @@ jest.mock('../../../../shared', () => ({
   withMiddleware: (handlerFn: any) => async (event: any, context: any) => {
     try {
       const result = await handlerFn(event, context);
+      // Check if result has statusCode and data properties (HandlerResponse)
+      const isHandlerResponse = result && typeof result === 'object' && 'data' in result;
+      const statusCode = isHandlerResponse ? result.statusCode || 200 : 200;
+      const data = isHandlerResponse ? result.data : result;
+
+      // Format the success response like the real middleware
+      const response = {
+        success: true,
+        data,
+      };
+
       return {
-        statusCode: result.statusCode || 200,
+        statusCode,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result.body || result),
+        body: JSON.stringify(response),
       };
     } catch (error: any) {
       return {
@@ -190,7 +201,8 @@ describe('createEvent handler', () => {
       expect(result.statusCode).toBe(201);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockEvent);
 
       // Verify service was called with correct parameters
       expect(mockEventService.createEvent).toHaveBeenCalledWith(
@@ -236,7 +248,8 @@ describe('createEvent handler', () => {
       expect(result.statusCode).toBe(201);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockEvent);
     });
 
     it('should create event with optional fields', async () => {
@@ -270,7 +283,8 @@ describe('createEvent handler', () => {
       expect(result.statusCode).toBe(201);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockEvent);
     });
   });
 
@@ -350,8 +364,9 @@ describe('createEvent handler', () => {
       expect(result.statusCode).toBe(201);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockEvent);
-      expect(responseBody.event.organizerId).toBe('org_auto_injected_123');
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockEvent);
+      expect(responseBody.data.event.organizerId).toBe('org_auto_injected_123');
 
       // Verify service was called with data without organizerId
       expect(mockEventService.createEvent).toHaveBeenCalledWith(
@@ -715,7 +730,8 @@ describe('createEvent handler', () => {
       expect(result.statusCode).toBe(201);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event.registrationFee).toBe(0);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event.registrationFee).toBe(0);
     });
 
     it('should handle empty tags array', async () => {
@@ -745,7 +761,8 @@ describe('createEvent handler', () => {
       expect(result.statusCode).toBe(201);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event.tags).toEqual([]);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event.tags).toEqual([]);
     });
 
     it('should handle missing tags field', async () => {
@@ -777,7 +794,8 @@ describe('createEvent handler', () => {
       expect(result.statusCode).toBe(201);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockEvent);
     });
   });
 
@@ -812,7 +830,8 @@ describe('createEvent handler', () => {
       expect(result.statusCode).toBe(201);
 
       const responseBody = JSON.parse(result.body);
-      expect(responseBody.event).toEqual(mockEvent);
+      expect(responseBody.success).toBe(true);
+      expect(responseBody.data.event).toEqual(mockEvent);
 
       // Verify service was called with admin user
       expect(mockEventService.createEvent).toHaveBeenCalledWith(

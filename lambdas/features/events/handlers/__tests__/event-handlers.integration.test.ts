@@ -25,12 +25,17 @@ jest.mock('../../../../shared', () => ({
   withMiddleware: (handlerFn: any) => async (event: any, context: any) => {
     try {
       const result = await handlerFn(event, context);
+      // Check if result has statusCode and data properties (HandlerResponse)
+      const isHandlerResponse = result && typeof result === 'object' && 'data' in result;
+      const statusCode = isHandlerResponse ? result.statusCode || 200 : 200;
+      const data = isHandlerResponse ? result.data : result;
+
       return {
-        statusCode: result.statusCode || 200,
+        statusCode,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           success: true,
-          data: result.body || result,
+          data,
         }),
       };
     } catch (error: any) {
