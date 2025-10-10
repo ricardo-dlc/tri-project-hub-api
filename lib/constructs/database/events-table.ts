@@ -79,6 +79,21 @@ export class EventsTable extends Construct {
       projectionType: ProjectionType.ALL,
     });
 
+    // ClerkIndex - for querying organizers by clerkId with creation date sorting
+    this.table.addGlobalSecondaryIndex({
+      indexName: 'ClerkIndex',
+      partitionKey: {
+        name: 'clerkId',
+        type: AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'createdAt',
+        type: AttributeType.STRING,
+      },
+      projectionType: ProjectionType.ALL,
+    });
+
+
     // SlugIndex - for querying events by slug
     this.table.addGlobalSecondaryIndex({
       indexName: 'SlugIndex',

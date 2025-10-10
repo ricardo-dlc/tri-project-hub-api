@@ -145,6 +145,8 @@ export class OrganizerService {
         updateData.description = sanitizedData.description;
       }
 
+      logger.debug({ organizerId, clerkId: user.id, updateData }, 'Update data built');
+
       // Update organizer entity
       const result = await OrganizerEntity.update({ organizerId })
         .set(updateData)
@@ -251,8 +253,14 @@ export class OrganizerService {
     this.validateClerkIdFormat(clerkId);
 
     try {
+
+      logger.debug({
+        params: OrganizerEntity.query
+          .ClerkIndex({ clerkId }).params(),
+      }, "Query")
+
       const result = await OrganizerEntity.query
-        .CreatorIndex({ clerkId })
+        .ClerkIndex({ clerkId })
         .go();
 
       if (!result.data || result.data.length === 0) {
