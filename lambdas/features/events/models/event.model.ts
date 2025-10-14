@@ -108,37 +108,39 @@ export const EventEntity = new Entity(
       CreatorIndex: {
         index: 'CreatorIndex',
         pk: { field: 'creatorId', composite: ['creatorId'], casing: 'none' },
-        sk: { field: 'date', composite: ['date'] },
+        sk: { field: 'date', composite: ['date'], casing: 'none' },
       },
       OrganizerIndex: {
         index: 'OrganizerIndex',
         pk: { field: 'organizerId', composite: ['organizerId'], casing: 'none' },
-        sk: { field: 'organizerDate', composite: ['organizerDate'] },
+        sk: { field: 'organizerDate', composite: ['organizerDate'], casing: 'none' },
       },
       SlugIndex: {
         index: 'SlugIndex',
-        pk: { field: 'slug', composite: ['slug'] },
-        sk: { field: 'slugDate', composite: ['slugDate'] },
+        pk: { field: 'slug', composite: ['slug'], casing: 'none' },
+        sk: { field: 'slugDate', composite: ['slugDate'], casing: 'none' },
       },
       TypeIndex: {
         index: 'TypeIndex',
-        pk: { field: 'type', composite: ['type'] },
-        sk: { field: 'typeDate', composite: ['typeDate'] },
+        pk: { field: 'type', composite: ['type'], casing: 'none' },
+        sk: { field: 'typeDate', composite: ['typeDate'], casing: 'none' },
       },
       DifficultyIndex: {
         index: 'DifficultyIndex',
-        pk: { field: 'difficulty', composite: ['difficulty'] },
-        sk: { field: 'difficultyDate', composite: ['difficultyDate'] },
+        pk: { field: 'difficulty', composite: ['difficulty'], casing: 'none' },
+        sk: { field: 'difficultyDate', composite: ['difficultyDate'], casing: 'none' },
       },
       FeaturedIndex: {
         index: 'FeaturedIndex',
         pk: {
           field: 'featuredStatus',
           composite: ['featuredStatus'],
+          casing: 'none',
         },
         sk: {
           field: 'date',
           composite: ['date'],
+          casing: 'none',
         },
       },
       EnabledIndex: {
@@ -146,10 +148,12 @@ export const EventEntity = new Entity(
         pk: {
           field: 'enabledStatus',
           composite: ['enabledStatus'], // The new attribute
+          casing: 'none',
         },
         sk: {
           field: 'date',
           composite: ['date'], // Use date for sorting enabled events
+          casing: 'none',
         },
       },
     },
