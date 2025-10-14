@@ -211,8 +211,10 @@ describe('getEventBySlug handler', () => {
 
       const responseBody = JSON.parse(result.body);
       expect(responseBody.success).toBe(true);
-      expect(responseBody.data.event).toEqual(mockEvent);
-      expect(responseBody.data.organizer).toEqual(mockOrganizer);
+      expect(responseBody.data.event).toEqual({
+        ...mockEvent,
+        organizer: mockOrganizer,
+      });
 
       // Verify services were called with correct parameters
       expect(mockEventService.getEventBySlug).toHaveBeenCalledWith('test-event-slug');
@@ -268,8 +270,10 @@ describe('getEventBySlug handler', () => {
 
       const responseBody = JSON.parse(result.body);
       expect(responseBody.success).toBe(true);
-      expect(responseBody.data.event).toEqual(mockEvent);
-      expect(responseBody.data.organizer).toEqual(mockOrganizer);
+      expect(responseBody.data.event).toEqual({
+        ...mockEvent,
+        organizer: mockOrganizer,
+      });
     });
 
     it('should handle team events with organizer data', async () => {
@@ -327,8 +331,10 @@ describe('getEventBySlug handler', () => {
 
       const responseBody = JSON.parse(result.body);
       expect(responseBody.success).toBe(true);
-      expect(responseBody.data.event).toEqual(mockTeamEvent);
-      expect(responseBody.data.organizer).toEqual(mockOrganizer);
+      expect(responseBody.data.event).toEqual({
+        ...mockTeamEvent,
+        organizer: mockOrganizer,
+      });
 
       // Verify services were called with correct parameters
       expect(mockEventService.getEventBySlug).toHaveBeenCalledWith('team-triathlon-event');
@@ -610,8 +616,10 @@ describe('getEventBySlug handler', () => {
 
       const responseBody = JSON.parse(result.body);
       expect(responseBody.success).toBe(true);
-      expect(responseBody.data.event).toEqual(mockEvent);
-      expect(responseBody.data.organizer).toEqual(mockOrganizer);
+      expect(responseBody.data.event).toEqual({
+        ...mockEvent,
+        organizer: mockOrganizer,
+      });
 
       // Verify services were called with correct parameters
       expect(mockEventService.getEventBySlug).toHaveBeenCalledWith('test-event-with-special-characters');
@@ -672,8 +680,10 @@ describe('getEventBySlug handler', () => {
 
       const responseBody = JSON.parse(result.body);
       expect(responseBody.success).toBe(true);
-      expect(responseBody.data.event).toEqual(mockEvent);
-      expect(responseBody.data.organizer).toEqual(mockOrganizer);
+      expect(responseBody.data.event).toEqual({
+        ...mockEvent,
+        organizer: mockOrganizer,
+      });
 
       // Verify services were called with correct parameters
       expect(mockEventService.getEventBySlug).toHaveBeenCalledWith(longSlug);
@@ -733,13 +743,12 @@ describe('getEventBySlug handler', () => {
       expect(result.headers).toEqual({ 'Content-Type': 'application/json' });
 
       const responseBody = JSON.parse(result.body);
-      
+
       // Validate response structure
       expect(responseBody).toHaveProperty('success', true);
       expect(responseBody).toHaveProperty('data');
       expect(responseBody.data).toHaveProperty('event');
-      expect(responseBody.data).toHaveProperty('organizer');
-      
+
       // Validate event data structure
       expect(responseBody.data.event).toMatchObject({
         eventId: expect.any(String),
@@ -765,10 +774,11 @@ describe('getEventBySlug handler', () => {
         isEnabled: expect.any(Boolean),
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
+        organizer: expect.any(Object),
       });
-      
-      // Validate organizer data structure
-      expect(responseBody.data.organizer).toMatchObject({
+
+      // Validate organizer data structure (nested in event)
+      expect(responseBody.data.event.organizer).toMatchObject({
         organizerId: expect.any(String),
         clerkId: expect.any(String),
         name: expect.any(String),
@@ -778,7 +788,7 @@ describe('getEventBySlug handler', () => {
       });
 
       // Validate that organizerId matches between event and organizer
-      expect(responseBody.data.event.organizerId).toBe(responseBody.data.organizer.organizerId);
+      expect(responseBody.data.event.organizerId).toBe(responseBody.data.event.organizer.organizerId);
     });
   });
 });

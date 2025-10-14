@@ -687,8 +687,10 @@ describe('Event Handlers Integration Tests - New Model', () => {
 
       const responseBody = JSON.parse(result.body);
       expect(responseBody.success).toBe(true);
-      expect(responseBody.data.event).toEqual(mockEvent);
-      expect(responseBody.data.organizer).toEqual(mockOrganizer);
+      expect(responseBody.data.event).toEqual({
+        ...mockEvent,
+        organizer: mockOrganizer,
+      });
 
       // Verify services were called correctly
       expect(mockEventService.getEventBySlug).toHaveBeenCalledWith('test-marathon-event');
@@ -759,7 +761,7 @@ describe('Event Handlers Integration Tests - New Model', () => {
       expect(responseBody.data.event.isRelay).toBe(true);
       expect(responseBody.data.event.requiredParticipants).toBe(3);
       expect(responseBody.data.event.maxParticipants).toBe(30);
-      expect(responseBody.data.organizer.name).toBe('Triathlon Team Organizer');
+      expect(responseBody.data.event.organizer.name).toBe('Triathlon Team Organizer');
     });
 
     it('should return 404 when event slug not found', async () => {
@@ -923,7 +925,7 @@ describe('Event Handlers Integration Tests - New Model', () => {
       // Verify organizer relationship consistency
       expect(getResponseBody.data.event.eventId).toBe(createdEventId);
       expect(getResponseBody.data.event.organizerId).toBe(createdOrganizerId);
-      expect(getResponseBody.data.organizer.organizerId).toBe(createdOrganizerId);
+      expect(getResponseBody.data.event.organizer.organizerId).toBe(createdOrganizerId);
     });
 
     it('should handle admin override for organizer validation', async () => {

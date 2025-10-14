@@ -3,11 +3,16 @@ process.env.EVENTS_TABLE_NAME = 'test-events-table';
 
 import type { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { EventEntity } from '../../models/event.model';
+import { OrganizerEntity } from '../../models/organizer.model';
 import { handler as getEventsHandler } from '../getEvents';
 
 // Mock the EventEntity
 jest.mock('../../models/event.model');
 const mockEventEntity = EventEntity as jest.Mocked<typeof EventEntity>;
+
+// Mock the OrganizerEntity
+jest.mock('../../models/organizer.model');
+const mockOrganizerEntity = OrganizerEntity as jest.Mocked<typeof OrganizerEntity>;
 
 // Mock the shared middleware
 jest.mock('../../../../shared', () => ({
@@ -132,6 +137,11 @@ beforeEach(() => {
   console.log = jest.fn();
   console.debug = jest.fn();
   jest.clearAllMocks();
+
+  // Mock OrganizerEntity.get() to return no organizer data (null)
+  mockOrganizerEntity.get = jest.fn().mockReturnValue({
+    go: jest.fn().mockResolvedValue({ data: null }),
+  }) as any;
 });
 
 afterEach(() => {
@@ -214,6 +224,7 @@ const createMockEventData = (overrides: any = {}) => ({
   isEnabled: true,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
+  organizer: null, // Added organizer field
   ...overrides,
 });
 
