@@ -26,10 +26,12 @@ const getEventBySlugHandler = async (event: APIGatewayProxyEventV2) => {
   // Fetch organizer data using the organizerId from the event
   const organizerData = await organizerService.getOrganizer(eventData.organizerId);
 
-  // Return event with organizer data included
+  // Return event with organizer data nested
   return {
-    event: eventData,
-    organizer: organizerData,
+    event: {
+      ...eventData,
+      organizer: organizerData,
+    }
   };
 };
 

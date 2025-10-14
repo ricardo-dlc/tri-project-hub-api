@@ -6,7 +6,8 @@ import { createFeatureLogger } from '../../../shared/logger';
 import { executeWithPagination } from '../../../shared/utils/pagination';
 import { withMiddleware } from '../../../shared/wrapper';
 import { EventEntity } from '../models/event.model';
-import { PaginationQueryParams } from '../types/event.types';
+import { OrganizerEntity } from '../models/organizer.model';
+import { EventItem, PaginationQueryParams } from '../types/event.types';
 
 const logger = createFeatureLogger('events');
 
@@ -40,14 +41,38 @@ const getEventsHandler = async (event: APIGatewayProxyEventV2) => {
     query = EventEntity.query.EnabledIndex({ enabledStatus: 'enabled' });
   }
 
-  const result = await executeWithPagination(query, {
+  const result = await executeWithPagination<EventItem>(query, {
     limit: limit ? parseInt(limit, 10) : undefined,
     nextToken,
     defaultLimit: 20,
   });
 
+  // Get unique organizer IDs
+  const organizerIds = [...new Set(result.data.map(e => e.organizerId))];
+
+  // Batch fetch organizers
+  const organizerMap = new Map();
+  await Promise.all(
+    organizerIds.map(async (organizerId) => {
+      try {
+        const organizer = await OrganizerEntity.get({ organizerId }).go();
+        if (organizer.data) {
+          organizerMap.set(organizerId, organizer.data);
+        }
+      } catch (error) {
+        logger.warn({ organizerId, error }, 'Failed to fetch organizer');
+      }
+    })
+  );
+
+  // Enrich events with organizer data
+  const eventsWithOrganizers = result.data.map(event => ({
+    ...event,
+    organizer: organizerMap.get(event.organizerId) || null,
+  }));
+
   return {
-    events: result.data,
+    events: eventsWithOrganizers,
     pagination: result.pagination,
   };
 };

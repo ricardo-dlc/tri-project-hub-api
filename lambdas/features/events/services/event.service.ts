@@ -87,6 +87,33 @@ export class EventService {
     const now = new Date().toISOString();
 
     try {
+      logger.debug({
+        eventId,
+        creatorId,
+        organizerId,
+        title: data.title,
+        slug, // Generated slug - immutable after creation
+        type: data.type,
+        date: data.date,
+        isFeatured: false, // Always defaults to false - only admins can modify via updates
+        isTeamEvent: data.isTeamEvent,
+        isRelay: data.isRelay,
+        requiredParticipants: data.requiredParticipants,
+        maxParticipants: data.maxParticipants,
+        currentParticipants: 0, // Always start at 0
+        location: data.location,
+        description: data.description,
+        distance: data.distance,
+        registrationFee: data.registrationFee,
+        registrationDeadline: data.registrationDeadline,
+        image: data.image,
+        difficulty: data.difficulty,
+        tags: data.tags || [],
+        isEnabled: true, // Default to enabled
+        createdAt: now,
+        updatedAt: now,
+      }, 'Attempting to create event');
+
       const result = await EventEntity.create({
         eventId,
         creatorId,
