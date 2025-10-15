@@ -23,7 +23,11 @@
     "isolatedModules": true,
     "typeRoots": [
       "./node_modules/@types"
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["lambdas/*"]
+    }
   },
   "exclude": [
     "node_modules",
