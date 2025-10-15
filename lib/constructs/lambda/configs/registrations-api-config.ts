@@ -33,5 +33,8 @@ export const registrationsApiLambdaConfigs: Record<string, LambdaCreationConfig>
         permission: 'read',
       },
     ],
+    environment: {
+      CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || '',
+    }
   },
 };
