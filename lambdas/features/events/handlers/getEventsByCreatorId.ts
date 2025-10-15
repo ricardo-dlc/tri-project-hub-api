@@ -1,10 +1,10 @@
 import type { APIGatewayProxyHandlerV2 } from 'aws-lambda';
-import type { AuthenticatedEvent } from '../../../shared';
-import { withAuth, withMiddleware } from '../../../shared';
-import { createFeatureLogger } from '../../../shared/logger';
-import { executeWithPagination } from '../../../shared/utils/pagination';
+import type { AuthenticatedEvent } from '@/shared';
+import { withAuth, withMiddleware } from '@/shared';
+import { createFeatureLogger } from '@/shared/logger';
+import { executeWithPagination } from '@/shared/utils/pagination';
 import { EventEntity } from '../models/event.model';
-import { PaginationQueryParams } from '../types/event.types';
+import { PaginationQueryParams } from '@/features/events/types/event.types';
 
 const logger = createFeatureLogger('events');
 

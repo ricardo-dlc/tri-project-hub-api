@@ -1,5 +1,5 @@
-import { ClerkUser } from '../../../../shared/auth/clerk';
-import { BadRequestError, ForbiddenError } from '../../../../shared/errors';
+import { ClerkUser } from '@/shared/auth/clerk';
+import { BadRequestError, ForbiddenError } from '@/shared/errors';
 import { EventItem } from '../../types/event.types';
 import {
   validateAndSanitizeAdminOnlyFields,
@@ -11,7 +11,7 @@ import {
 } from '../event.utils';
 
 // Mock logger to avoid console output during tests
-jest.mock('../../../../shared/logger', () => ({
+jest.mock('@/shared/logger', () => ({
   logger: {
     debug: jest.fn(),
     warn: jest.fn(),

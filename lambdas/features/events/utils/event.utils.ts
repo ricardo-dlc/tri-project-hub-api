@@ -1,7 +1,7 @@
-import { ClerkUser } from '../../../shared/auth/clerk';
-import { BadRequestError, ForbiddenError } from '../../../shared/errors';
-import { logger } from '../../../shared/logger';
-import { isValidULID } from '../../../shared/utils/ulid';
+import { ClerkUser } from '@/shared/auth/clerk';
+import { BadRequestError, ForbiddenError } from '@/shared/errors';
+import { logger } from '@/shared/logger';
+import { isValidULID } from '@/shared/utils/ulid';
 import { EventItem } from '../types/event.types';
 
 /**

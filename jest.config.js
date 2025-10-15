@@ -5,6 +5,19 @@ module.exports = {
   transform: {
     '^.+\\.tsx?$': 'ts-jest'
   },
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/lambdas/$1'
+  },
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        baseUrl: '.',
+        paths: {
+          '@/*': ['lambdas/*']
+        }
+      }
+    }
+  },
   testTimeout: 10000, // 10 second timeout per test
   maxWorkers: '50%', // Limit CPU usage
   forceExit: true, // Force exit after tests complete

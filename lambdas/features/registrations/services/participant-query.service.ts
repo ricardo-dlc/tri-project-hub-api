@@ -1,9 +1,9 @@
-import { BadRequestError, NotFoundError } from '../../../shared/errors';
-import { createFeatureLogger } from '../../../shared/logger';
-import { isValidULID } from '../../../shared/utils/ulid';
-import { EventEntity } from '../../events/models/event.model';
-import { ParticipantEntity, ParticipantItem } from '../models/participant.model';
-import { RegistrationEntity } from '../models/registration.model';
+import { BadRequestError, NotFoundError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { isValidULID } from '@/shared/utils/ulid';
+import { EventEntity } from '@/features/events/models/event.model';
+import { ParticipantEntity, ParticipantItem } from '@/features/registrations/models/participant.model';
+import { RegistrationEntity } from '@/features/registrations/models/registration.model';
 
 const logger = createFeatureLogger('registrations');
 

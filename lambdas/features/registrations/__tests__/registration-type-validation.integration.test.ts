@@ -4,12 +4,12 @@
  * were allowed on team events and vice versa.
  */
 
-import { ConflictError } from '../../../shared/errors';
-import { EventEntity } from '../../events/models/event.model';
+import { ConflictError } from '@/shared/errors';
+import { EventEntity } from '@/features/events/models/event.model';
 import { BaseRegistrationService } from '../services/base-registration.service';
 
 // Mock the EventEntity
-jest.mock('../../events/models/event.model');
+jest.mock('@/features/events/models/event.model');
 const mockEventEntity = EventEntity as jest.Mocked<typeof EventEntity>;
 
 // Create a test service that extends BaseRegistrationService to test the validation directly

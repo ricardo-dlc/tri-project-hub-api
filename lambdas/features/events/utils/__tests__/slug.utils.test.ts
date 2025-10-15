@@ -1,8 +1,8 @@
-import { EventEntity } from '../../models/event.model';
+import { EventEntity } from '@/features/events/models/event.model';
 import { generateUniqueSlug, isValidSlug, sanitizeSlug, slugExists } from '../slug.utils';
 
 // Mock the EventEntity
-jest.mock('../../models/event.model', () => ({
+jest.mock('@/features/events/models/event.model', () => ({
   EventEntity: {
     query: {
       SlugIndex: jest.fn(),
@@ -11,7 +11,7 @@ jest.mock('../../models/event.model', () => ({
 }));
 
 // Mock the logger
-jest.mock('../../../../shared/logger', () => ({
+jest.mock('@/shared/logger', () => ({
   logger: {
     debug: jest.fn(),
     error: jest.fn(),

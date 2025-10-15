@@ -4,14 +4,14 @@ process.env.CLERK_SECRET_KEY = 'test-clerk-secret-key';
 import type { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { eventService } from '../../services/event.service';
 import { EventItem, UpdateEventData } from '../../types/event.types';
-import { AuthenticatedEvent } from '../../../../shared/auth/middleware';
+import { AuthenticatedEvent } from '@/shared/auth/middleware';
 
 // Mock the event service
-jest.mock('../../services/event.service');
+jest.mock('@/features/events/services/event.service');
 const mockEventService = eventService as jest.Mocked<typeof eventService>;
 
 // Mock the auth middleware
-jest.mock('../../../../shared/auth/middleware', () => ({
+jest.mock('@/shared/auth/middleware', () => ({
   withAuth: (handlerFn: any) => handlerFn,
 }));
 

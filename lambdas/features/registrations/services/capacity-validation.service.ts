@@ -1,6 +1,6 @@
-import { ConflictError, NotFoundError } from '../../../shared/errors';
-import { createFeatureLogger } from '../../../shared/logger';
-import { EventEntity } from '../../events/models/event.model';
+import { ConflictError, NotFoundError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { EventEntity } from '@/features/events/models/event.model';
 
 const logger = createFeatureLogger('registrations');
 

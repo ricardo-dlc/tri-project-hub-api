@@ -1,18 +1,18 @@
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { eventService } from '../../services/event.service';
 import { handler } from '../createEvent';
-import { AuthenticatedEvent } from '../../../../shared/auth/middleware';
-import { BadRequestError } from '../../../../shared/errors';
+import { AuthenticatedEvent } from '@/shared/auth/middleware';
+import { BadRequestError } from '@/shared/errors';
 
 // Mock environment variables
 process.env.CLERK_SECRET_KEY = 'test-clerk-secret-key';
 
 // Mock the event service
-jest.mock('../../services/event.service');
+jest.mock('@/features/events/services/event.service');
 const mockEventService = eventService as jest.Mocked<typeof eventService>;
 
 // Mock the auth middleware
-jest.mock('../../../../shared/auth/middleware', () => ({
+jest.mock('@/shared/auth/middleware', () => ({
   withAuth: (handlerFn: any) => handlerFn,
 }));
 

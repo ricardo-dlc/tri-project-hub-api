@@ -1,6 +1,6 @@
-import { ClerkUser } from '../../../../shared/auth/clerk';
-import { BadRequestError, ForbiddenError, NotFoundError } from '../../../../shared/errors';
-import { generateOrganizerId, isValidOrganizerId } from '../../../../shared/utils/ulid';
+import { ClerkUser } from '@/shared/auth/clerk';
+import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/errors';
+import { generateOrganizerId, isValidOrganizerId } from '@/shared/utils/ulid';
 import { CreateOrganizerData, OrganizerItem } from '../../types/organizer.types';
 import {
   isValidClerkId,

@@ -1,12 +1,12 @@
 import type {
   APIGatewayProxyHandlerV2
 } from 'aws-lambda';
-import { AuthenticatedEvent, withAuth } from '../../../shared/auth/middleware';
-import { BadRequestError } from '../../../shared/errors';
-import { createFeatureLogger } from '../../../shared/logger';
-import { isValidULID } from '../../../shared/utils/ulid';
-import { withMiddleware } from '../../../shared/wrapper';
-import { participantQueryService, ParticipantWithRegistration } from '../services/participant-query.service';
+import { AuthenticatedEvent, withAuth } from '@/shared/auth/middleware';
+import { BadRequestError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { isValidULID } from '@/shared/utils/ulid';
+import { withMiddleware } from '@/shared/wrapper';
+import { participantQueryService, ParticipantWithRegistration } from '@/features/registrations/services/participant-query.service';
 
 const logger = createFeatureLogger('registrations');
 

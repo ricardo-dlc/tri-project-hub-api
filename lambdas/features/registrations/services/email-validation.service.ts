@@ -1,6 +1,6 @@
-import { ConflictError } from '../../../shared/errors';
-import { createFeatureLogger } from '../../../shared/logger';
-import { ParticipantEntity } from '../models/participant.model';
+import { ConflictError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { ParticipantEntity } from '@/features/registrations/models/participant.model';
 
 const logger = createFeatureLogger('registrations');
 

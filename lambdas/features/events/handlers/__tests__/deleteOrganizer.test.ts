@@ -1,7 +1,7 @@
 // Mock environment variables FIRST
 process.env.CLERK_SECRET_KEY = 'test-clerk-secret-key';
 
-import { AuthenticatedEvent } from '../../../../shared/auth/middleware';
+import { AuthenticatedEvent } from '@/shared/auth/middleware';
 import { organizerService } from '../../services';
 
 // Mock the organizer service
@@ -12,7 +12,7 @@ jest.mock('../../services', () => ({
 }));
 
 // Mock the auth middleware
-jest.mock('../../../../shared/auth/middleware', () => ({
+jest.mock('@/shared/auth/middleware', () => ({
   withAuth: (handlerFn: any) => handlerFn,
 }));
 

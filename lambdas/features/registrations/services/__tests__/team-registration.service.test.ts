@@ -1,18 +1,18 @@
-import { ConflictError, NotFoundError, ValidationError } from '../../../../shared/errors';
-import { generateParticipantId } from '../../../../shared/utils/ulid';
-import { EventEntity } from '../../../events/models/event.model';
-import { ParticipantEntity } from '../../models/participant.model';
-import { RegistrationEntity } from '../../models/registration.model';
+import { ConflictError, NotFoundError, ValidationError } from '@/shared/errors';
+import { generateParticipantId } from '@/shared/utils/ulid';
+import { EventEntity } from '@/features/events/models/event.model';
+import { ParticipantEntity } from '@/features/registrations/models/participant.model';
+import { RegistrationEntity } from '@/features/registrations/models/registration.model';
 import { capacityValidationService } from '../capacity-validation.service';
 import { emailValidationService } from '../email-validation.service';
 import { reservationIdService } from '../reservation-id.service';
 import { TeamParticipantData, TeamRegistrationData, TeamRegistrationService } from '../team-registration.service';
 
 // Mock dependencies
-jest.mock('../../../../shared/utils/ulid');
-jest.mock('../../../events/models/event.model');
-jest.mock('../../models/participant.model');
-jest.mock('../../models/registration.model');
+jest.mock('@/shared/utils/ulid');
+jest.mock('@/features/events/models/event.model');
+jest.mock('@/features/registrations/models/participant.model');
+jest.mock('@/features/registrations/models/registration.model');
 jest.mock('../base-registration.service');
 jest.mock('../capacity-validation.service');
 jest.mock('../email-validation.service');

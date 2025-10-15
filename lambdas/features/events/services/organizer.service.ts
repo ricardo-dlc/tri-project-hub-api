@@ -1,9 +1,9 @@
-import { ClerkUser } from '../../../shared/auth/clerk';
-import { BadRequestError, ConflictError, NotFoundError } from '../../../shared/errors';
-import { createFeatureLogger } from '../../../shared/logger';
-import { generateOrganizerId } from '../../../shared/utils/ulid';
-import { EventEntity } from '../models/event.model';
-import { OrganizerEntity } from '../models/organizer.model';
+import { ClerkUser } from '@/shared/auth/clerk';
+import { BadRequestError, ConflictError, NotFoundError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { generateOrganizerId } from '@/shared/utils/ulid';
+import { EventEntity } from '@/features/events/models/event.model';
+import { OrganizerEntity } from '@/features/events/models/organizer.model';
 import {
   CreateOrganizerData,
   OrganizerItem,

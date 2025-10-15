@@ -1,15 +1,15 @@
-import { ConflictError, NotFoundError } from '../../../../shared/errors';
+import { ConflictError, NotFoundError } from '@/shared/errors';
 import { CapacityValidationService } from '../capacity-validation.service';
 
 // Mock the EventEntity
-jest.mock('../../../events/models/event.model', () => ({
+jest.mock('@/features/events/models/event.model', () => ({
   EventEntity: {
     get: jest.fn(),
   },
 }));
 
 // Import after mocking
-import { EventEntity } from '../../../events/models/event.model';
+import { EventEntity } from '@/features/events/models/event.model';
 
 const mockEventEntity = EventEntity as jest.Mocked<typeof EventEntity>;
 

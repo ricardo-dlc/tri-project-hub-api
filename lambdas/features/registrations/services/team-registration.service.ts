@@ -1,5 +1,5 @@
-import { ValidationError } from '../../../shared/errors';
-import { createFeatureLogger } from '../../../shared/logger';
+import { ValidationError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
 import { BaseRegistrationService } from './base-registration.service';
 import { capacityValidationService } from './capacity-validation.service';
 import { emailValidationService } from './email-validation.service';

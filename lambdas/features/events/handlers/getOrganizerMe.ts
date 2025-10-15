@@ -1,11 +1,11 @@
 import type {
   APIGatewayProxyHandlerV2
 } from 'aws-lambda';
-import { AuthenticatedEvent, withAuth } from '../../../shared/auth/middleware';
-import { BadRequestError } from '../../../shared/errors';
-import { createFeatureLogger } from '../../../shared/logger';
-import { withMiddleware } from '../../../shared/wrapper';
-import { organizerService } from '../services';
+import { AuthenticatedEvent, withAuth } from '@/shared/auth/middleware';
+import { BadRequestError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { withMiddleware } from '@/shared/wrapper';
+import { organizerService } from '@/features/events/services';
 
 const logger = createFeatureLogger('organizers');
 

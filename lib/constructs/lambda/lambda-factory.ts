@@ -94,6 +94,7 @@ export class LambdaFactory {
         sourceMap: true,
         minify: this.stageConfig.config.isProduction,
         externalModules: ['@aws-sdk/*', '@clerk/*', 'electrodb', 'pino', 'ulid'],
+        tsconfig: 'tsconfig.lambdas.json',
       },
     };
 

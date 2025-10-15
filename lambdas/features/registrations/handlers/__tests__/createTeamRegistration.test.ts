@@ -1,14 +1,14 @@
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
-import { isValidULID } from '../../../../shared/utils/ulid';
+import { isValidULID } from '@/shared/utils/ulid';
 import { teamRegistrationService } from '../../services/team-registration.service';
 import { handler } from '../createTeamRegistration';
 
 // Mock the team registration service
-jest.mock('../../services/team-registration.service');
+jest.mock('@/features/registrations/services/team-registration.service');
 const mockTeamRegistrationService = teamRegistrationService as jest.Mocked<typeof teamRegistrationService>;
 
 // Mock ULID validation
-jest.mock('../../../../shared/utils/ulid');
+jest.mock('@/shared/utils/ulid');
 const mockIsValidULID = isValidULID as jest.MockedFunction<typeof isValidULID>;
 
 // Type for API Gateway v2 response

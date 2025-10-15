@@ -1,8 +1,8 @@
-import { ConflictError } from '../../../../shared/errors';
+import { ConflictError } from '@/shared/errors';
 import { EmailValidationService } from '../email-validation.service';
 
 // Mock the ParticipantEntity
-jest.mock('../../models/participant.model', () => ({
+jest.mock('@/features/registrations/models/participant.model', () => ({
   ParticipantEntity: {
     query: {
       EventParticipantIndex: jest.fn(),
@@ -11,7 +11,7 @@ jest.mock('../../models/participant.model', () => ({
 }));
 
 // Import after mocking
-import { ParticipantEntity } from '../../models/participant.model';
+import { ParticipantEntity } from '@/features/registrations/models/participant.model';
 
 const mockParticipantEntity = ParticipantEntity as jest.Mocked<typeof ParticipantEntity>;
 

@@ -5,7 +5,7 @@
  */
 
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
-import { AuthenticatedEvent } from '../../../../shared/auth/middleware';
+import { AuthenticatedEvent } from '@/shared/auth/middleware';
 import { organizerService } from '../../services/organizer.service';
 import { CreateOrganizerData, OrganizerItem, UpdateOrganizerData } from '../../types/organizer.types';
 
@@ -21,11 +21,11 @@ process.env.CLERK_SECRET_KEY = 'test-clerk-secret-key';
 process.env.EVENTS_TABLE_NAME = 'test-events-table';
 
 // Mock the organizer service
-jest.mock('../../services/organizer.service');
+jest.mock('@/features/events/services/organizer.service');
 const mockOrganizerService = organizerService as jest.Mocked<typeof organizerService>;
 
 // Mock the auth middleware to pass through the handler function
-jest.mock('../../../../shared/auth/middleware', () => ({
+jest.mock('@/shared/auth/middleware', () => ({
   withAuth: (handlerFn: any, options?: any) => handlerFn,
 }));
 

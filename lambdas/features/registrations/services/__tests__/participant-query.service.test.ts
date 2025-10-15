@@ -1,8 +1,8 @@
-import { BadRequestError, NotFoundError } from '../../../../shared/errors';
+import { BadRequestError, NotFoundError } from '@/shared/errors';
 import { ParticipantQueryService } from '../participant-query.service';
 
 // Mock the entities and utilities
-jest.mock('../../models/participant.model', () => ({
+jest.mock('@/features/registrations/models/participant.model', () => ({
   ParticipantEntity: {
     query: {
       EventParticipantIndex: jest.fn(),
@@ -10,27 +10,27 @@ jest.mock('../../models/participant.model', () => ({
   },
 }));
 
-jest.mock('../../models/registration.model', () => ({
+jest.mock('@/features/registrations/models/registration.model', () => ({
   RegistrationEntity: {
     get: jest.fn(),
   },
 }));
 
-jest.mock('../../../events/models/event.model', () => ({
+jest.mock('@/features/events/models/event.model', () => ({
   EventEntity: {
     get: jest.fn(),
   },
 }));
 
-jest.mock('../../../../shared/utils/ulid', () => ({
+jest.mock('@/shared/utils/ulid', () => ({
   isValidULID: jest.fn(),
 }));
 
 // Import after mocking
-import { ParticipantEntity } from '../../models/participant.model';
-import { RegistrationEntity } from '../../models/registration.model';
-import { EventEntity } from '../../../events/models/event.model';
-import { isValidULID } from '../../../../shared/utils/ulid';
+import { ParticipantEntity } from '@/features/registrations/models/participant.model';
+import { RegistrationEntity } from '@/features/registrations/models/registration.model';
+import { EventEntity } from '@/features/events/models/event.model';
+import { isValidULID } from '@/shared/utils/ulid';
 
 const mockParticipantEntity = ParticipantEntity as jest.Mocked<typeof ParticipantEntity>;
 const mockRegistrationEntity = RegistrationEntity as jest.Mocked<typeof RegistrationEntity>;

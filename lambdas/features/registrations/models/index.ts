@@ -10,4 +10,4 @@ export {
   isValidReservationId,
   isValidParticipantId,
   isValidEventId
-} from '../../../shared/utils/ulid';
+} from '@/shared/utils/ulid';

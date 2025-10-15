@@ -7,11 +7,11 @@ import { handler } from '../getEventBySlug';
 process.env.CLERK_SECRET_KEY = 'test-clerk-secret-key';
 
 // Mock the event service
-jest.mock('../../services/event.service');
+jest.mock('@/features/events/services/event.service');
 const mockEventService = eventService as jest.Mocked<typeof eventService>;
 
 // Mock the organizer service
-jest.mock('../../services/organizer.service');
+jest.mock('@/features/events/services/organizer.service');
 const mockOrganizerService = organizerService as jest.Mocked<typeof organizerService>;
 
 // Mock the shared middleware

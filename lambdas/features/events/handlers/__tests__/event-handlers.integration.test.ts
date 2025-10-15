@@ -5,18 +5,18 @@ process.env.EVENTS_TABLE_NAME = 'test-events-table';
 import type { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { eventService } from '../../services/event.service';
 import { organizerService } from '../../services/organizer.service';
-import { AuthenticatedEvent } from '../../../../shared/auth/middleware';
+import { AuthenticatedEvent } from '@/shared/auth/middleware';
 import { EventItem, CreateEventData, UpdateEventData } from '../../types/event.types';
 import { OrganizerItem } from '../../types/organizer.types';
 
 // Mock the services
-jest.mock('../../services/event.service');
-jest.mock('../../services/organizer.service');
+jest.mock('@/features/events/services/event.service');
+jest.mock('@/features/events/services/organizer.service');
 const mockEventService = eventService as jest.Mocked<typeof eventService>;
 const mockOrganizerService = organizerService as jest.Mocked<typeof organizerService>;
 
 // Mock the auth middleware
-jest.mock('../../../../shared/auth/middleware', () => ({
+jest.mock('@/shared/auth/middleware', () => ({
   withAuth: (handlerFn: any) => handlerFn,
 }));
 
