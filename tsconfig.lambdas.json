@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["lambdas/*"]
+    }
+  },
+  "include": [
+    "lambdas/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "cdk.out",
+    "lib",
+    "bin"
+  ]
+}
