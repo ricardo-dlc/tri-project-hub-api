@@ -1,6 +1,6 @@
 import { Entity } from 'electrodb';
-import { ddbDocClient } from '../../../shared/utils/dynamo';
-import { isValidULID } from '../../../shared/utils/ulid';
+import { ddbDocClient } from '@/shared/utils/dynamo';
+import { isValidULID } from '@/shared/utils/ulid';
 
 export const RegistrationEntity = new Entity(
   {

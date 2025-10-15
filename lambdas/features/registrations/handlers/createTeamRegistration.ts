@@ -2,11 +2,11 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
-import { BadRequestError, ValidationError } from '../../../shared/errors';
-import { createFeatureLogger } from '../../../shared/logger';
-import { isValidULID } from '../../../shared/utils/ulid';
-import { withMiddleware } from '../../../shared/wrapper';
-import { TeamParticipantData, TeamRegistrationData, teamRegistrationService } from '../services/team-registration.service';
+import { BadRequestError, ValidationError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { isValidULID } from '@/shared/utils/ulid';
+import { withMiddleware } from '@/shared/wrapper';
+import { TeamParticipantData, TeamRegistrationData, teamRegistrationService } from '@/features/registrations/services/team-registration.service';
 
 const logger = createFeatureLogger('registrations');
 

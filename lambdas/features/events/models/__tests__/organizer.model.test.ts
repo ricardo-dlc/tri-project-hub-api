@@ -1,9 +1,9 @@
-import { generateULID, isValidULID } from '../../../../shared/utils/ulid';
+import { generateULID, isValidULID } from '@/shared/utils/ulid';
 import { CreateOrganizerData, OrganizerItem } from '../../types/organizer.types';
 import { OrganizerEntity } from '../organizer.model';
 
 // Mock the DynamoDB client
-jest.mock('../../../../shared/utils/dynamo', () => ({
+jest.mock('@/shared/utils/dynamo', () => ({
   ddbDocClient: {
     send: jest.fn(),
   },

@@ -2,12 +2,12 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
-import { createFeatureLogger } from '../../../shared/logger';
-import { executeWithPagination } from '../../../shared/utils/pagination';
-import { withMiddleware } from '../../../shared/wrapper';
+import { createFeatureLogger } from '@/shared/logger';
+import { executeWithPagination } from '@/shared/utils/pagination';
+import { withMiddleware } from '@/shared/wrapper';
 import { EventEntity } from '../models/event.model';
 import { OrganizerEntity } from '../models/organizer.model';
-import { EventItem, PaginationQueryParams } from '../types/event.types';
+import { EventItem, PaginationQueryParams } from '@/features/events/types/event.types';
 
 const logger = createFeatureLogger('events');
 

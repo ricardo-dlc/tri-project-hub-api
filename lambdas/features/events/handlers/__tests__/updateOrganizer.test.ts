@@ -12,12 +12,12 @@ jest.mock('../../services', () => ({
 }));
 
 // Mock the auth middleware
-jest.mock('../../../../shared/auth/middleware', () => ({
+jest.mock('@/shared/auth/middleware', () => ({
   withAuth: (handlerFn: any) => handlerFn,
 }));
 
 // Mock the shared middleware
-jest.mock('../../../../shared/wrapper', () => ({
+jest.mock('@/shared/wrapper', () => ({
   withMiddleware: (handlerFn: any) => async (event: any, context: any) => {
     try {
       const result = await handlerFn(event, context);
@@ -57,7 +57,7 @@ jest.mock('../../../../shared/wrapper', () => ({
   },
 }));
 
-jest.mock('../../../../shared/errors', () => ({
+jest.mock('@/shared/errors', () => ({
   BadRequestError: class BadRequestError extends Error {
     constructor(message: string) {
       super(message);
@@ -78,7 +78,7 @@ jest.mock('../../../../shared/errors', () => ({
   },
 }));
 
-import { AuthenticatedEvent } from '../../../../shared/auth';
+import { AuthenticatedEvent } from '@/shared/auth';
 import { handler } from '../updateOrganizer';
 
 const mockOrganizerService = organizerService as jest.Mocked<typeof organizerService>;

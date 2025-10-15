@@ -1,15 +1,15 @@
-import { ClerkUser } from '../../../../shared/auth/clerk';
-import { BadRequestError, ForbiddenError, NotFoundError } from '../../../../shared/errors';
-import { generateULID } from '../../../../shared/utils/ulid';
-import { EventEntity } from '../../models/event.model';
+import { ClerkUser } from '@/shared/auth/clerk';
+import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/errors';
+import { generateULID } from '@/shared/utils/ulid';
+import { EventEntity } from '@/features/events/models/event.model';
 import { generateUniqueSlug } from '../../utils/slug.utils';
 import { EventService } from '../event.service';
 import { organizerService } from '../organizer.service';
 
 // Mock dependencies
-jest.mock('../../models/event.model');
+jest.mock('@/features/events/models/event.model');
 jest.mock('../../utils/slug.utils');
-jest.mock('../../../../shared/utils/ulid');
+jest.mock('@/shared/utils/ulid');
 jest.mock('../organizer.service');
 
 const mockEventEntity = EventEntity as jest.Mocked<typeof EventEntity>;

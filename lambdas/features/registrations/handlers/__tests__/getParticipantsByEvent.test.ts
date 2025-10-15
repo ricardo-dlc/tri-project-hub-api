@@ -1,24 +1,24 @@
 import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
-import { isValidULID } from '../../../../shared/utils/ulid';
+import { isValidULID } from '@/shared/utils/ulid';
 import { participantQueryService } from '../../services/participant-query.service';
 import { handler } from '../getParticipantsByEvent';
-import { AuthenticatedEvent } from '../../../../shared/auth/middleware';
+import { AuthenticatedEvent } from '@/shared/auth/middleware';
 
 // Mock the participant query service
-jest.mock('../../services/participant-query.service');
+jest.mock('@/features/registrations/services/participant-query.service');
 const mockParticipantQueryService = participantQueryService as jest.Mocked<typeof participantQueryService>;
 
 // Mock ULID validation
-jest.mock('../../../../shared/utils/ulid');
+jest.mock('@/shared/utils/ulid');
 const mockIsValidULID = isValidULID as jest.MockedFunction<typeof isValidULID>;
 
 // Mock auth middleware
-jest.mock('../../../../shared/auth/middleware', () => ({
+jest.mock('@/shared/auth/middleware', () => ({
   withAuth: (handler: any, options: any) => handler,
 }));
 
 // Mock Clerk authentication
-jest.mock('../../../../shared/auth/clerk', () => ({
+jest.mock('@/shared/auth/clerk', () => ({
   authenticateUser: jest.fn(),
   requireRole: jest.fn(),
 }));

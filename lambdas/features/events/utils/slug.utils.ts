@@ -1,5 +1,5 @@
-import { logger } from '../../../shared/logger';
-import { EventEntity } from '../models/event.model';
+import { logger } from '@/shared/logger';
+import { EventEntity } from '@/features/events/models/event.model';
 
 /**
  * Sanitizes a title to create a URL-friendly slug

@@ -1,8 +1,8 @@
-import { generateULID, isValidULID } from '../../../../shared/utils/ulid';
+import { generateULID, isValidULID } from '@/shared/utils/ulid';
 import { CreateRegistrationData, RegistrationEntity } from '../registration.model';
 
 // Mock the DynamoDB client
-jest.mock('../../../../shared/utils/dynamo', () => ({
+jest.mock('@/shared/utils/dynamo', () => ({
   ddbDocClient: {
     send: jest.fn(),
   },

@@ -1,15 +1,15 @@
-import { ClerkUser } from '../../../../shared/auth/clerk';
-import { BadRequestError, ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../../../shared/errors';
-import { generateOrganizerId } from '../../../../shared/utils/ulid';
-import { EventEntity } from '../../models/event.model';
-import { OrganizerEntity } from '../../models/organizer.model';
+import { ClerkUser } from '@/shared/auth/clerk';
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@/shared/errors';
+import { generateOrganizerId } from '@/shared/utils/ulid';
+import { EventEntity } from '@/features/events/models/event.model';
+import { OrganizerEntity } from '@/features/events/models/organizer.model';
 import { CreateOrganizerData, OrganizerItem, UpdateOrganizerData } from '../../types/organizer.types';
 import { OrganizerService } from '../organizer.service';
 
 // Mock all dependencies
-jest.mock('../../models/organizer.model');
-jest.mock('../../models/event.model');
-jest.mock('../../../../shared/utils/ulid');
+jest.mock('@/features/events/models/organizer.model');
+jest.mock('@/features/events/models/event.model');
+jest.mock('@/shared/utils/ulid');
 
 describe('OrganizerService', () => {
   let service: OrganizerService;

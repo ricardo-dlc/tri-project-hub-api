@@ -2,7 +2,7 @@
 process.env.EVENTS_TABLE_NAME = 'test-events-table';
 
 import type { APIGatewayProxyEventV2, Context } from 'aws-lambda';
-import { EventEntity } from '../../models/event.model';
+import { EventEntity } from '@/features/events/models/event.model';
 import { handler as getEventByIdHandler } from '../getEventById';
 
 // Mock the EventEntity
@@ -60,7 +60,7 @@ jest.mock('../../../../shared', () => ({
 }));
 
 // Mock the logger
-jest.mock('../../../../shared/logger', () => ({
+jest.mock('@/shared/logger', () => ({
   createFeatureLogger: () => ({
     debug: jest.fn(),
     info: jest.fn(),

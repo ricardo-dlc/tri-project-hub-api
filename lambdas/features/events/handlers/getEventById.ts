@@ -2,8 +2,8 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
-import { BadRequestError, NotFoundError, withMiddleware } from '../../../shared';
-import { createFeatureLogger } from '../../../shared/logger';
+import { BadRequestError, NotFoundError, withMiddleware } from '@/shared';
+import { createFeatureLogger } from '@/shared/logger';
 import { EventEntity } from '../models/event.model';
 
 const logger = createFeatureLogger('events');

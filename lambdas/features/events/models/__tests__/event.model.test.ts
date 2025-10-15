@@ -1,9 +1,9 @@
-import { generateULID, isValidULID } from '../../../../shared/utils/ulid';
+import { generateULID, isValidULID } from '@/shared/utils/ulid';
 import { CreateEventData, EventItem } from '../../types/event.types';
 import { EventEntity } from '../event.model';
 
 // Mock the DynamoDB client
-jest.mock('../../../../shared/utils/dynamo', () => ({
+jest.mock('@/shared/utils/dynamo', () => ({
   ddbDocClient: {
     send: jest.fn(),
   },

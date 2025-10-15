@@ -1,10 +1,10 @@
-import { BadRequestError, ConflictError, NotFoundError, ValidationError } from '../../../shared/errors';
-import { createFeatureLogger } from '../../../shared/logger';
-import { generateParticipantId } from '../../../shared/utils/ulid';
-import { isValidULID } from '../../../shared/utils/ulid';
-import { EventEntity } from '../../events/models/event.model';
-import { CreateParticipantData, ParticipantEntity } from '../models/participant.model';
-import { CreateRegistrationData, RegistrationEntity } from '../models/registration.model';
+import { BadRequestError, ConflictError, NotFoundError, ValidationError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { generateParticipantId } from '@/shared/utils/ulid';
+import { isValidULID } from '@/shared/utils/ulid';
+import { EventEntity } from '@/features/events/models/event.model';
+import { CreateParticipantData, ParticipantEntity } from '@/features/registrations/models/participant.model';
+import { CreateRegistrationData, RegistrationEntity } from '@/features/registrations/models/registration.model';
 import { reservationIdService } from './reservation-id.service';
 
 const logger = createFeatureLogger('registrations');

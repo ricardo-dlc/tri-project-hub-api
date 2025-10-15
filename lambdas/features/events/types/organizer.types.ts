@@ -1,4 +1,4 @@
-import { ValidationError } from '../../../shared/errors';
+import { ValidationError } from '@/shared/errors';
 
 export interface OrganizerItem {
   organizerId: string;

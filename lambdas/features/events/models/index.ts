@@ -29,4 +29,4 @@ export {
   isValidEventId,
   generateOrganizerId,
   isValidOrganizerId
-} from '../../../shared/utils/ulid';
+} from '@/shared/utils/ulid';

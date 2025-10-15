@@ -2,7 +2,7 @@
 process.env.EVENTS_TABLE_NAME = 'test-events-table';
 
 import type { APIGatewayProxyEventV2, Context } from 'aws-lambda';
-import { EventEntity } from '../../models/event.model';
+import { EventEntity } from '@/features/events/models/event.model';
 import { handler as getEventsByCreatorIdHandler } from '../getEventsByCreatorId';
 
 // Mock the EventEntity
@@ -63,12 +63,12 @@ jest.mock('../../../../shared', () => ({
 }));
 
 // Mock the pagination utility
-jest.mock('../../../../shared/utils/pagination', () => ({
+jest.mock('@/shared/utils/pagination', () => ({
   executeWithPagination: jest.fn(),
 }));
 
 // Mock the logger
-jest.mock('../../../../shared/logger', () => ({
+jest.mock('@/shared/logger', () => ({
   createFeatureLogger: () => ({
     debug: jest.fn(),
     info: jest.fn(),
@@ -77,7 +77,7 @@ jest.mock('../../../../shared/logger', () => ({
   }),
 }));
 
-import { executeWithPagination } from '../../../../shared/utils/pagination';
+import { executeWithPagination } from '@/shared/utils/pagination';
 const mockExecuteWithPagination = executeWithPagination as jest.MockedFunction<typeof executeWithPagination>;
 
 // Type for API Gateway v2 response

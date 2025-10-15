@@ -1,11 +1,11 @@
-import { ClerkUser } from '../../../shared/auth/clerk';
-import { BadRequestError, ConflictError, NotFoundError } from '../../../shared/errors';
-import { logger } from '../../../shared/logger';
-import { PaginationOptions } from '../../../shared/types/common.types';
-import { executeWithPagination } from '../../../shared/utils/pagination';
-import { generateULID } from '../../../shared/utils/ulid';
-import { participantQueryService } from '../../registrations/services/participant-query.service';
-import { EventEntity } from '../models/event.model';
+import { ClerkUser } from '@/shared/auth/clerk';
+import { BadRequestError, ConflictError, NotFoundError } from '@/shared/errors';
+import { logger } from '@/shared/logger';
+import { PaginationOptions } from '@/shared/types/common.types';
+import { executeWithPagination } from '@/shared/utils/pagination';
+import { generateULID } from '@/shared/utils/ulid';
+import { participantQueryService } from '@/features/registrations/services/participant-query.service';
+import { EventEntity } from '@/features/events/models/event.model';
 import { CreateEventData, EventItem, UpdateEventData } from '../types/event.types';
 import {
   validateAndSanitizeAdminOnlyFields,

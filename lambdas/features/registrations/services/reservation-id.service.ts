@@ -1,4 +1,4 @@
-import { generateReservationId as generateReservationULID, isValidReservationId, generateULID } from '../../../shared/utils/ulid';
+import { generateReservationId as generateReservationULID, isValidReservationId, generateULID } from '@/shared/utils/ulid';
 
 export interface ReservationIdResult {
   reservationId: string;
