@@ -7,3 +7,6 @@ export { handler as createTeamRegistration } from './createTeamRegistration';
 
 // Export participant query handler
 export { handler as getParticipantsByEvent } from './getParticipantsByEvent';
+
+// Export payment status update handler
+export { handler as updatePaymentStatus } from './updatePaymentStatus';

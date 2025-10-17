@@ -37,4 +37,23 @@ export const registrationsApiLambdaConfigs: Record<string, LambdaCreationConfig>
       CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || '',
     }
   },
+  updatePaymentStatus: {
+    functionName: 'updatePaymentStatus',
+    handlerPath: 'updatePaymentStatus.ts',
+    route: {
+      path: '/registrations/{reservationId}/payment',
+      method: HttpMethod.PATCH,
+      integrationName: 'EventsPaymentIntegration',
+    },
+    tables: [
+      {
+        tableName: 'events',
+        environmentVariable: 'EVENTS_TABLE_NAME',
+        permission: 'readWrite',
+      },
+    ],
+    environment: {
+      CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || '',
+    }
+  },
 };

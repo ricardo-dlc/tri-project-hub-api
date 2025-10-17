@@ -94,7 +94,7 @@
   - Write integration tests for organizer access control and data retrieval
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 7. Implement payment status management
+- [x] 7. Implement payment status management
 - [x] 7.1 Create payment status update service with ULID support
 
   - Implement service to update payment status for entire registrations using ULID-based reservation IDs
@@ -103,7 +103,7 @@
   - Write unit tests for payment status updates and ULID validation
   - _Requirements: 4.1, 4.2, 4.4, 4.5, 8.4, 8.5_
 
-- [ ] 7.2 Create payment status API handler with ULID support
+- [x] 7.2 Create payment status API handler with ULID support
 
   - Implement Lambda handler for PATCH /registrations/{reservationId}/payment with ULID validation
   - Validate payment status transitions (unpaid to paid) and ULID format for reservationId
