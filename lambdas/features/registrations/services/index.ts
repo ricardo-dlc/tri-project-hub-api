@@ -17,3 +17,6 @@ export type { TeamParticipantData, TeamRegistrationData, TeamRegistrationResult 
 
 export { ParticipantQueryService, participantQueryService } from './participant-query.service';
 export type { ParticipantWithRegistration, ParticipantQueryResult } from './participant-query.service';
+
+export { PaymentStatusService, paymentStatusService } from './payment-status.service';
+export type { PaymentStatusUpdateData, PaymentStatusUpdateResult } from './payment-status.service';
