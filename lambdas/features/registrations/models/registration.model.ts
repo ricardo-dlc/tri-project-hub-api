@@ -95,6 +95,7 @@ export interface RegistrationItem {
   registrationFee: number;
   createdAt: string;
   updatedAt: string;
+  paymentDate?: string;
 }
 
 export interface CreateRegistrationData {
