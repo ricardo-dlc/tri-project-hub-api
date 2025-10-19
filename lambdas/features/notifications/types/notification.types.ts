@@ -87,19 +87,7 @@ export interface SQSNotificationMessage {
   attributes?: Record<string, string>;
 }
 
-/**
- * Email processing result interface
- */
-export interface EmailProcessingResult {
-  success: boolean;
-  referenceId?: string;
-  error?: {
-    code: string;
-    message: string;
-    details?: any;
-  };
-  retryable: boolean;
-}
+
 
 /**
  * Error handling result for failed email processing
