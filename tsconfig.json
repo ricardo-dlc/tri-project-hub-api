@@ -29,6 +29,7 @@
       "@/*": ["lambdas/*"]
     }
   },
+
   "exclude": [
     "node_modules",
     "cdk.out"
