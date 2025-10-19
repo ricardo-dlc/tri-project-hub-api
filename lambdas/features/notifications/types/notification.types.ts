@@ -97,3 +97,22 @@ export interface ErrorHandlingResult {
   delay?: number;
   reason: string;
 }
+
+/**
+ * Validation result for message parsing
+ */
+export interface ValidationResult<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+/**
+ * Message validation error
+ */
+export class MessageValidationError extends Error {
+  constructor(message: string, public readonly field?: string) {
+    super(message);
+    this.name = 'MessageValidationError';
+  }
+}
