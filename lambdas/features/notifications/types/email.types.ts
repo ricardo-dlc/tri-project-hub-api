@@ -86,6 +86,20 @@ export interface ConfirmationTemplateData {
 export type TemplateData = IndividualTemplateData | TeamTemplateData | ConfirmationTemplateData;
 
 /**
+ * Email processing result interface
+ */
+export interface EmailProcessingResult {
+  success: boolean;
+  referenceId?: string;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  retryable: boolean;
+}
+
+/**
  * Email log entry interface for logging email operations
  */
 export interface EmailLogEntry {

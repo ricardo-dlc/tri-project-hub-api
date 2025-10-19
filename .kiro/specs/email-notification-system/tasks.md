@@ -13,7 +13,7 @@
     - Add error handling for client initialization
     - _Requirements: 5.1, 8.1, 8.4_
 
-  - [ ] 2.2 Implement sendTemplatedEmail method wrapper
+  - [x] 2.2 Implement sendTemplatedEmail method wrapper
     - Create method to call Maileroo sendTemplatedEmail with proper parameters
     - Handle template data mapping and validation
     - Implement error handling and logging for email delivery
