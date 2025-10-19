@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Set up project dependencies and core types
+- [x] 1. Set up project dependencies and core types
   - Install Maileroo SDK dependency in package.json
   - Create core notification types and interfaces for message schemas
   - Define email service configuration interfaces
