@@ -1,12 +1,15 @@
+import { eventService } from '@/features/events/services/event.service';
+import { buildIndividualRegistrationMessage, formatEventDateTime, formatRegistrationFee } from '@/features/notifications/utils';
+import { IndividualRegistrationData, IndividualRegistrationResult, individualRegistrationService } from '@/features/registrations/services/individual-registration.service';
+import { BadRequestError, ValidationError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { sqsService } from '@/shared/services';
+import { isValidULID } from '@/shared/utils/ulid';
+import { withMiddleware } from '@/shared/wrapper';
 import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyHandlerV2,
 } from 'aws-lambda';
-import { BadRequestError, ValidationError } from '@/shared/errors';
-import { createFeatureLogger } from '@/shared/logger';
-import { isValidULID } from '@/shared/utils/ulid';
-import { withMiddleware } from '@/shared/wrapper';
-import { IndividualRegistrationData, individualRegistrationService } from '@/features/registrations/services/individual-registration.service';
 
 const logger = createFeatureLogger('registrations');
 
@@ -158,6 +161,79 @@ const parseRequestBody = (event: APIGatewayProxyEventV2): CreateIndividualRegist
 };
 
 /**
+ * Publishes a registration notification message to SQS
+ * @param eventId - The event ID
+ * @param registrationResult - The registration result from the service
+ * @param registrationData - The original registration data
+ */
+const publishRegistrationNotification = async (
+  eventId: string,
+  registrationResult: IndividualRegistrationResult,
+  registrationData: CreateIndividualRegistrationRequest
+): Promise<void> => {
+  try {
+    // Get the email queue URL from environment variables
+    const queueUrl = process.env.EMAIL_QUEUE_URL;
+    if (!queueUrl) {
+      logger.warn({ eventId, reservationId: registrationResult.reservationId }, 'EMAIL_QUEUE_URL not configured, skipping notification');
+      return;
+    }
+
+    // Fetch event details for the notification
+    const event = await eventService.getEvent(eventId);
+
+    // Format event date and time
+    const { date, time } = formatEventDateTime(event.date);
+
+    // Build the notification message
+    const notificationMessage = buildIndividualRegistrationMessage(
+      eventId,
+      registrationResult.reservationId,
+      {
+        email: registrationResult.email,
+        firstName: registrationData.firstName,
+        lastName: registrationData.lastName,
+        participantId: registrationResult.participantId,
+      },
+      {
+        name: event.title,
+        date,
+        time,
+        location: event.location,
+        registrationFee: event.registrationFee,
+      },
+      {
+        amount: formatRegistrationFee(registrationResult.registrationFee),
+        bankAccount: 'TBD', // This should come from configuration
+      }
+    );
+
+    // Publish the message to SQS (using safe method to not fail registration)
+    const success = await sqsService.publishMessageSafe(queueUrl, notificationMessage);
+
+    if (success) {
+      logger.info({
+        eventId,
+        reservationId: registrationResult.reservationId,
+        messageType: notificationMessage.type,
+      }, 'Registration notification published to SQS');
+    } else {
+      logger.warn({
+        eventId,
+        reservationId: registrationResult.reservationId,
+      }, 'Failed to publish registration notification to SQS');
+    }
+  } catch (error) {
+    // Log the error but don't fail the registration
+    logger.error({
+      error: error instanceof Error ? error.message : String(error),
+      eventId,
+      reservationId: registrationResult.reservationId,
+    }, 'Error publishing registration notification to SQS');
+  }
+};
+
+/**
  * Lambda handler for creating individual registrations
  * POST /events/{eventId}/registrations
  */
@@ -210,6 +286,9 @@ const createIndividualRegistrationHandler = async (event: APIGatewayProxyEventV2
   const result = await individualRegistrationService.registerIndividual(eventId, participantData);
 
   logger.info({ eventId, reservationId: result.reservationId, participantId: result.participantId }, 'Individual registration created successfully');
+
+  // Publish email notification message to SQS (non-blocking)
+  await publishRegistrationNotification(eventId, result, registrationData);
 
   // Format the response
   const response: CreateIndividualRegistrationResponse = {

@@ -55,7 +55,7 @@
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
 - [ ] 5. Integrate notification publishing with registration handlers
-  - [ ] 5.1 Add SQS publishing to individual registration handler
+  - [x] 5.1 Add SQS publishing to individual registration handler
     - Import SQS client and configure queue URL
     - Publish registration notification message after successful registration
     - Handle SQS publishing errors without failing registration
