@@ -53,3 +53,6 @@ export type { ClerkUser } from './auth/clerk';
 export type { AuthenticatedEvent, AuthenticatedHandler } from './auth/middleware';
 
 export { withAuth } from './auth/middleware';
+
+// Shared services
+export { sqsService, SQSService } from './services';
