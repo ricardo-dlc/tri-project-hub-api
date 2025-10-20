@@ -2,8 +2,8 @@
  * Message validation utilities for SQS notification messages
  */
 
+import { MessageValidationError } from '../errors/notification.errors';
 import {
-  MessageValidationError,
   NotificationMessage,
   PaymentConfirmationMessage,
   RegistrationNotificationMessage,

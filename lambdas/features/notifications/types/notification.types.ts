@@ -107,12 +107,4 @@ export interface ValidationResult<T> {
   error?: string;
 }
 
-/**
- * Message validation error
- */
-export class MessageValidationError extends Error {
-  constructor(message: string, public readonly field?: string) {
-    super(message);
-    this.name = 'MessageValidationError';
-  }
-}
+
