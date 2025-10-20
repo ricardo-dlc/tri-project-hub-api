@@ -40,14 +40,14 @@
     - Implement logging for processing attempts and results
     - _Requirements: 3.3, 3.4, 7.1, 7.2, 7.3, 7.4_
 
-- [ ] 4. Create SQS infrastructure with CDK
+- [x] 4. Create SQS infrastructure with CDK
   - [x] 4.1 Implement SQS queue construct
     - Create email notification queue with proper naming convention
     - Create dead letter queue for failed messages
     - Configure queue properties (visibility timeout, retention, retry policy)
     - _Requirements: 3.4, 3.5, 4.1, 7.5_
 
-  - [ ] 4.2 Create Lambda infrastructure for email processor
+  - [x] 4.2 Create Lambda infrastructure for email processor
     - Implement Lambda function using existing factory pattern
     - Configure environment variables for Maileroo and template IDs
     - Set up SQS trigger and IAM permissions

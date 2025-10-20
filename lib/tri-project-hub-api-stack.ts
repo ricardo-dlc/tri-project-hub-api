@@ -3,15 +3,26 @@ import { Construct } from 'constructs';
 import { HttpApiConstruct } from './constructs/api/http-api';
 import { StageConfiguration } from './constructs/config/stage-config';
 import { EventsTable } from './constructs/database/events-table';
+import { EmailProcessor } from './constructs/lambda/email-processor';
 import { EventsApi } from './constructs/lambda/events-api';
 import { LambdaFactory } from './constructs/lambda/lambda-factory';
 import { RegistrationsApi } from './constructs/lambda/registrations-api';
 import { SharedDependenciesLayer } from './constructs/layer/shared-dependencies-layer';
+import { EmailNotificationQueue } from './constructs/queue/email-notification-queue';
 import { StackConfiguration } from './types/infrastructure';
 
 export interface TriProjectHubApiStackProps extends StackProps {
   /** Stack configuration including stage and project settings */
   config?: StackConfiguration;
+  /** Email service configuration for notifications */
+  emailConfig?: {
+    mailerooApiKey: string;
+    fromEmail: string;
+    fromName: string;
+    individualTemplateId: string;
+    teamTemplateId: string;
+    confirmationTemplateId: string;
+  };
 }
 
 export class TriProjectHubApiStack extends Stack {
@@ -65,7 +76,23 @@ export class TriProjectHubApiStack extends Stack {
       stageConfig: stageConfig.config, // Pass the StageConfig, not the StageConfiguration construct
     });
 
-    // 6. Create HttpApiConstruct with routes from EventsApi and stage config
+    // 6. Create email notification infrastructure (if email config is provided)
+    if (props?.emailConfig) {
+      // Create email notification queue
+      const emailQueue = new EmailNotificationQueue(this, 'EmailNotificationQueue', {
+        stageConfig,
+      });
+
+      // Create email processor Lambda
+      new EmailProcessor(this, 'EmailProcessor', {
+        lambdaFactory,
+        stageConfig: stageConfig.config,
+        emailQueue,
+        environment: props.emailConfig,
+      });
+    }
+
+    // 7. Create HttpApiConstruct with routes from EventsApi and stage config
     new HttpApiConstruct(this, 'HttpApi', {
       stageConfig: stageConfig.config,
       apiName: config.apiName || 'api',
