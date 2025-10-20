@@ -61,7 +61,7 @@
     - Handle SQS publishing errors without failing registration
     - _Requirements: 3.1, 9.1, 9.3, 9.4_
 
-  - [ ] 5.2 Add SQS publishing to team registration handler
+  - [x] 5.2 Add SQS publishing to team registration handler
     - Import SQS client and configure queue URL
     - Publish team registration notification message after successful registration
     - Handle SQS publishing errors without failing registration
