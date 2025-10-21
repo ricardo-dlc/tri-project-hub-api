@@ -1,8 +1,12 @@
 import { EventEntity } from '@/features/events/models/event.model';
+import { eventService } from '@/features/events/services/event.service';
+import { buildPaymentConfirmationMessage, formatEventDateTime, formatRegistrationFee } from '@/features/notifications/utils';
+import { ParticipantEntity } from '@/features/registrations/models/participant.model';
 import { paymentStatusService, PaymentStatusUpdateResult } from '@/features/registrations/services/payment-status.service';
 import { AuthenticatedEvent, withAuth } from '@/shared/auth/middleware';
 import { BadRequestError, ForbiddenError, NotFoundError, ValidationError } from '@/shared/errors';
 import { createFeatureLogger } from '@/shared/logger';
+import { sqsService } from '@/shared/services';
 import { isValidReservationId } from '@/shared/utils/ulid';
 import { withMiddleware } from '@/shared/wrapper';
 import type {
@@ -175,6 +179,104 @@ const validatePaymentUpdatePermission = async (
 };
 
 /**
+ * Publishes payment confirmation message to SQS when payment status changes to paid
+ * @param result - The payment status update result
+ * @param currentRegistration - The current registration data
+ */
+const publishPaymentConfirmationMessage = async (
+  result: PaymentStatusUpdateResult,
+  currentRegistration: any
+): Promise<void> => {
+  // Only publish when payment status changes to paid
+  if (!result.paymentStatus) {
+    return;
+  }
+
+  try {
+    // Get the email queue URL from environment variables
+    const queueUrl = process.env.EMAIL_QUEUE_URL;
+
+    if (!queueUrl) {
+      logger.warn({ reservationId: result.reservationId }, 'EMAIL_QUEUE_URL not configured, skipping payment confirmation notification');
+      return;
+    }
+
+    // Get participants for this reservation (we need the first participant for the email)
+    const participantsResult = await ParticipantEntity.query
+      .ReservationParticipantIndex({ reservationParticipantId: result.reservationId })
+      .go();
+
+    const participants = participantsResult.data || [];
+
+    if (participants.length === 0) {
+      logger.warn({ reservationId: result.reservationId }, 'No participants found for reservation, skipping payment confirmation notification');
+      return;
+    }
+
+    // For payment confirmation, we send to the first participant (team captain for teams, individual for individual)
+    const primaryParticipant = participants[0];
+
+    // Fetch event details for the notification
+    const event = await eventService.getEvent(currentRegistration.eventId);
+
+    // Format event date and time
+    const { date, time } = formatEventDateTime(event.date);
+
+    // Generate confirmation number and transfer reference
+    const confirmationNumber = `PAY-${result.reservationId.slice(-8).toUpperCase()}`;
+    const transferReference = `TXN-${Date.now()}-${result.reservationId.slice(-6).toUpperCase()}`;
+
+    // Build the payment confirmation message
+    const notificationMessage = buildPaymentConfirmationMessage(
+      result.reservationId,
+      {
+        email: primaryParticipant.email,
+        firstName: primaryParticipant.firstName,
+        lastName: primaryParticipant.lastName,
+        participantId: primaryParticipant.participantId,
+      },
+      {
+        name: event.title,
+        date,
+        time,
+        location: event.location,
+        registrationFee: event.registrationFee,
+      },
+      {
+        amount: formatRegistrationFee(result.totalParticipants * event.registrationFee),
+        bankAccount: 'TBD', // This should come from configuration
+        confirmationNumber,
+        transferReference,
+        paymentDate: result.paymentDate,
+      }
+    );
+
+    // Publish the message to SQS (using safe method to not fail payment update)
+    const success = await sqsService.publishMessageSafe(queueUrl, notificationMessage);
+
+    if (success) {
+      logger.info({
+        reservationId: result.reservationId,
+        messageType: notificationMessage.type,
+        recipient: primaryParticipant.email,
+        confirmationNumber,
+      }, 'Payment confirmation notification published to SQS');
+    } else {
+      logger.warn({
+        reservationId: result.reservationId,
+        recipient: primaryParticipant.email,
+      }, 'Failed to publish payment confirmation notification to SQS');
+    }
+  } catch (error) {
+    // Log the error but don't fail the payment update
+    logger.error({
+      error: error instanceof Error ? error.message : String(error),
+      reservationId: result.reservationId,
+    }, 'Error publishing payment confirmation notification');
+  }
+};
+
+/**
  * Lambda handler for updating payment status
  * PATCH /registrations/{reservationId}/payment
  */
@@ -227,6 +329,9 @@ const updatePaymentStatusHandler = async (event: AuthenticatedEvent) => {
     paymentStatus: result.paymentStatus,
     totalParticipants: result.totalParticipants
   }, 'Payment status updated successfully');
+
+  // Publish payment confirmation message if payment status changed to paid
+  await publishPaymentConfirmationMessage(result, currentRegistration);
 
   // Format the response
   const response: UpdatePaymentStatusResponse = {
