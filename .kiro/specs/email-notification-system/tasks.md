@@ -73,14 +73,14 @@
     - Handle SQS publishing errors without failing payment update
     - _Requirements: 3.2, 9.2, 9.3, 9.4_
 
-- [ ] 6. Configure email templates and environment variables
+- [x] 6. Configure email templates and environment variables
   - [x] 6.1 Set up stage-specific template ID configuration
     - Configure individual registration template ID per stage
     - Configure team registration template ID per stage
     - Configure payment confirmation template ID per stage
     - _Requirements: 4.4, 6.1, 6.2, 6.3, 8.2_
 
-  - [ ] 6.2 Configure sender email settings
+  - [x] 6.2 Configure sender email settings
     - Set up noreply email address configuration
     - Configure sender display name
     - Ensure stage-appropriate email configuration

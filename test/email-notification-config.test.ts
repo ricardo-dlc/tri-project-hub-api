@@ -1,4 +1,4 @@
-import { getEmailNotificationConfig, validateEmailNotificationConfig, getAllStageConfigurations } from '../lib/constructs/lambda/configs/email-notification-config';
+import { getEmailNotificationConfig, validateEmailNotificationConfig, getAllStageConfigurations, getSenderConfig } from '../lib/constructs/lambda/configs/email-notification-config';
 import { EnvLoader } from '../lib/constructs/lambda/configs/env-loader';
 import type { StageConfig } from '../lib/types/infrastructure';
 
@@ -34,7 +34,7 @@ describe('Email Notification Configuration', () => {
       expect(config.teamTemplateId).toBe('1002');
       expect(config.confirmationTemplateId).toBe('1003');
       expect(config.fromEmail).toBe('noreply-dev@triprojecthub.com');
-      expect(config.fromName).toBe('Tri Project Hub (Dev)');
+      expect(config.fromName).toBe('Tri Project Hub (Development)');
     });
 
     it('should return prod configuration for prod stage', () => {
@@ -135,7 +135,10 @@ describe('Email Notification Configuration', () => {
       const allConfigs = getAllStageConfigurations();
 
       expect(allConfigs).toHaveProperty('dev');
+      expect(allConfigs).toHaveProperty('test');
+      expect(allConfigs).toHaveProperty('staging');
       expect(allConfigs).toHaveProperty('prod');
+      expect(allConfigs).toHaveProperty('production');
 
       // Verify each config has required properties
       Object.values(allConfigs).forEach(config => {
@@ -154,8 +157,105 @@ describe('Email Notification Configuration', () => {
       // Dev should use 1000 range (fallback values)
       expect(allConfigs.dev.individualTemplateId).toBe('1001');
 
+      // Test should use 1100 range
+      expect(allConfigs.test.individualTemplateId).toBe('1101');
+
+      // Staging should use 1200 range
+      expect(allConfigs.staging.individualTemplateId).toBe('1201');
+
       // Prod should use 2000 range (fallback values)
       expect(allConfigs.prod.individualTemplateId).toBe('2001');
+      expect(allConfigs.production.individualTemplateId).toBe('2001');
+    });
+
+    it('should use noreply email addresses for all stages', () => {
+      const allConfigs = getAllStageConfigurations();
+
+      Object.entries(allConfigs).forEach(([stage, config]) => {
+        expect(config.fromEmail).toMatch(/^noreply/);
+        
+        // Non-production stages should have stage identifier
+        if (stage !== 'prod' && stage !== 'production') {
+          expect(config.fromEmail).toContain(`-${stage}@`);
+        } else {
+          // Production stages should use clean noreply address
+          expect(config.fromEmail).toBe('noreply@triprojecthub.com');
+        }
+      });
+    });
+  });
+
+  describe('getSenderConfig', () => {
+    it('should return correct sender config for each stage', () => {
+      const devSender = getSenderConfig('dev');
+      expect(devSender.fromEmail).toBe('noreply-dev@triprojecthub.com');
+      expect(devSender.fromName).toBe('Tri Project Hub (Development)');
+
+      const testSender = getSenderConfig('test');
+      expect(testSender.fromEmail).toBe('noreply-test@triprojecthub.com');
+      expect(testSender.fromName).toBe('Tri Project Hub (Test)');
+
+      const stagingSender = getSenderConfig('staging');
+      expect(stagingSender.fromEmail).toBe('noreply-staging@triprojecthub.com');
+      expect(stagingSender.fromName).toBe('Tri Project Hub (Staging)');
+
+      const prodSender = getSenderConfig('prod');
+      expect(prodSender.fromEmail).toBe('noreply@triprojecthub.com');
+      expect(prodSender.fromName).toBe('Tri Project Hub');
+    });
+
+    it('should fallback to dev config for unknown stage', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      
+      const unknownSender = getSenderConfig('unknown');
+      expect(unknownSender.fromEmail).toBe('noreply-dev@triprojecthub.com');
+      expect(unknownSender.fromName).toBe('Tri Project Hub (Development)');
+      
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("No sender configuration found for stage 'unknown'")
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle case-insensitive stage names', () => {
+      const upperCaseSender = getSenderConfig('PROD');
+      expect(upperCaseSender.fromEmail).toBe('noreply@triprojecthub.com');
+      expect(upperCaseSender.fromName).toBe('Tri Project Hub');
+    });
+  });
+
+  describe('validateEmailNotificationConfig', () => {
+    const validConfig = {
+      mailerooApiKey: 'test-api-key',
+      fromEmail: 'noreply@example.com',
+      fromName: 'Test Sender',
+      individualTemplateId: '1001',
+      teamTemplateId: '1002',
+      confirmationTemplateId: '1003',
+    };
+
+    it('should warn for non-noreply email addresses', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const configWithRegularEmail = { ...validConfig, fromEmail: 'support@example.com' };
+
+      validateEmailNotificationConfig(configWithRegularEmail);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("does not follow noreply pattern")
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should not warn for noreply email addresses', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+      validateEmailNotificationConfig(validConfig);
+
+      expect(consoleSpy).not.toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
     });
   });
 });
