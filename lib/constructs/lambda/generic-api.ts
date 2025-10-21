@@ -8,6 +8,7 @@ import type {
   LambdaFactory,
   StageConfig,
 } from '../../types/infrastructure';
+import type { EmailNotificationQueue } from '../queue/email-notification-queue';
 
 /**
  * Properties for domain-specific API constructs (Events, Analytics, Users, etc.)
@@ -29,6 +30,8 @@ export interface GenericApiProps extends DomainApiProps {
   domain: string;
   /** Lambda configurations for this API domain */
   lambdaConfigs: Record<string, LambdaCreationConfig>;
+  /** Email notification queue for sending notifications (required for registrations domain) */
+  emailQueue?: EmailNotificationQueue;
 }
 
 /**
@@ -44,7 +47,7 @@ export class GenericApi extends Construct {
   constructor(scope: Construct, id: string, props: GenericApiProps) {
     super(scope, id);
 
-    const { tables, lambdaFactory, stageConfig, domain, lambdaConfigs } = props;
+    const { tables, lambdaFactory, stageConfig, domain, lambdaConfigs, emailQueue } = props;
 
     // Validate required props with detailed error messages
     if (!tables || Object.keys(tables).length === 0) {
@@ -75,7 +78,8 @@ export class GenericApi extends Construct {
       this.functions = this.createLambdaFunctions(
         tables,
         lambdaFactory,
-        stageConfig
+        stageConfig,
+        emailQueue
       );
     } catch (error) {
       const errorMessage =
@@ -89,12 +93,14 @@ export class GenericApi extends Construct {
    * @param tables Available DynamoDB tables
    * @param lambdaFactory The Lambda factory instance
    * @param stageConfig The stage configuration for naming and environment setup
+   * @param emailQueue Optional email notification queue
    * @returns Record of function names to NodejsFunction instances
    */
   private createLambdaFunctions(
     tables: Record<string, Table>,
     lambdaFactory: LambdaFactory,
-    stageConfig: StageConfig
+    stageConfig: StageConfig,
+    emailQueue?: EmailNotificationQueue
   ): Record<string, NodejsFunction> {
     const functions: Record<string, NodejsFunction> = {};
 
@@ -125,10 +131,17 @@ export class GenericApi extends Construct {
           tableEnvironment[tableAccess.environmentVariable] = table.tableName;
         });
 
+        // Add SQS queue URL if email queue is available (required for registrations domain)
+        const sqsEnvironment: Record<string, string> = {};
+        if (emailQueue) {
+          sqsEnvironment.EMAIL_QUEUE_URL = emailQueue.getQueueUrl();
+        }
+
         // Merge all environment variables
         const functionEnvironment = {
           ...baseEnvironment,
           ...tableEnvironment,
+          ...sqsEnvironment,
           ...config.environment,
         };
 
