@@ -54,7 +54,7 @@
     - Configure stage-aware resource naming
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 5. Integrate notification publishing with registration handlers
+- [x] 5. Integrate notification publishing with registration handlers
   - [x] 5.1 Add SQS publishing to individual registration handler
     - Import SQS client and configure queue URL
     - Publish registration notification message after successful registration
@@ -67,7 +67,7 @@
     - Handle SQS publishing errors without failing registration
     - _Requirements: 3.1, 9.1, 9.3, 9.4_
 
-  - [ ] 5.3 Add SQS publishing to payment status handler
+  - [x] 5.3 Add SQS publishing to payment status handler
     - Import SQS client and configure queue URL
     - Publish payment confirmation message when status changes to paid
     - Handle SQS publishing errors without failing payment update
