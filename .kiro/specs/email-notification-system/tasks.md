@@ -106,7 +106,7 @@
     - _Requirements: 1.1, 1.2, 2.1, 3.5, 7.5_
 
 - [ ] 8. Deploy and configure infrastructure
-  - [ ] 8.1 Update CDK stack to include email notification resources
+  - [x] 8.1 Update CDK stack to include email notification resources
     - Add SQS queues to main stack
     - Add email processor Lambda to stack
     - Configure all IAM permissions and environment variables

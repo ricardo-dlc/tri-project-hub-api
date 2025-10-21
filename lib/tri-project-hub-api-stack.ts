@@ -14,15 +14,6 @@ import { StackConfiguration } from './types/infrastructure';
 export interface TriProjectHubApiStackProps extends StackProps {
   /** Stack configuration including stage and project settings */
   config?: StackConfiguration;
-  /** Email service configuration for notifications */
-  emailConfig?: {
-    mailerooApiKey: string;
-    fromEmail: string;
-    fromName: string;
-    individualTemplateId: string;
-    teamTemplateId: string;
-    confirmationTemplateId: string;
-  };
 }
 
 export class TriProjectHubApiStack extends Stack {
@@ -68,29 +59,27 @@ export class TriProjectHubApiStack extends Stack {
       stageConfig: stageConfig.config, // Pass the StageConfig, not the StageConfiguration construct
     });
 
+    // 6. Create email notification infrastructure
+    // Create email notification queue
+    const emailQueue = new EmailNotificationQueue(this, 'EmailNotificationQueue', {
+      stageConfig,
+    });
+
+    // Create email processor Lambda (uses stage-specific config from environment variables)
+    new EmailProcessor(this, 'EmailProcessor', {
+      lambdaFactory,
+      stageConfig: stageConfig.config,
+      emailQueue,
+    });
+
     const registrationsApi = new RegistrationsApi(this, 'RegistrationsApi', {
       tables: {
         events: eventsTable.table, // Pass the actual Table instance, not the construct
       },
       lambdaFactory,
       stageConfig: stageConfig.config, // Pass the StageConfig, not the StageConfiguration construct
+      emailQueue, // Pass the email queue for SQS message publishing (required)
     });
-
-    // 6. Create email notification infrastructure (if email config is provided)
-    if (props?.emailConfig) {
-      // Create email notification queue
-      const emailQueue = new EmailNotificationQueue(this, 'EmailNotificationQueue', {
-        stageConfig,
-      });
-
-      // Create email processor Lambda
-      new EmailProcessor(this, 'EmailProcessor', {
-        lambdaFactory,
-        stageConfig: stageConfig.config,
-        emailQueue,
-        environment: props.emailConfig,
-      });
-    }
 
     // 7. Create HttpApiConstruct with routes from EventsApi and stage config
     new HttpApiConstruct(this, 'HttpApi', {
