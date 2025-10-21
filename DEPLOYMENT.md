@@ -18,12 +18,12 @@ There are multiple ways to specify the deployment stage:
 #### 1. Using CDK Context (Recommended)
 ```bash
 # Deploy to dev (default)
-npm run deploy:dev
+pnpm run deploy:dev
 # or
 cdk deploy -c stage=dev
 
 # Deploy to production
-npm run deploy:prod
+pnpm run deploy:prod
 # or
 cdk deploy -c stage=prod
 
@@ -35,10 +35,10 @@ cdk deploy -c stage=staging
 ```bash
 # Set environment variable
 export STAGE=prod
-npm run deploy
+pnpm run deploy
 
 # Or inline
-STAGE=prod npm run deploy
+STAGE=prod pnpm run deploy
 ```
 
 #### 3. Using Project Name Override
@@ -47,22 +47,22 @@ STAGE=prod npm run deploy
 cdk deploy -c stage=prod -c projectName=my-custom-project
 ```
 
-## Available NPM Scripts
+## Available PNPM Scripts
 
 ### Deployment
-- `npm run deploy` - Deploy with default stage (dev)
-- `npm run deploy:dev` - Deploy to dev stage
-- `npm run deploy:prod` - Deploy to prod stage
+- `pnpm run deploy` - Deploy with default stage (dev)
+- `pnpm run deploy:dev` - Deploy to dev stage
+- `pnpm run deploy:prod` - Deploy to prod stage
 
 ### Synthesis (Generate CloudFormation)
-- `npm run synth` - Synthesize with default stage
-- `npm run synth:dev` - Synthesize dev stage
-- `npm run synth:prod` - Synthesize prod stage
+- `pnpm run synth` - Synthesize with default stage
+- `pnpm run synth:dev` - Synthesize dev stage
+- `pnpm run synth:prod` - Synthesize prod stage
 
 ### Diff (Compare changes)
-- `npm run diff` - Show diff with default stage
-- `npm run diff:dev` - Show diff for dev stage
-- `npm run diff:prod` - Show diff for prod stage
+- `pnpm run diff` - Show diff with default stage
+- `pnpm run diff:dev` - Show diff for dev stage
+- `pnpm run diff:prod` - Show diff for prod stage
 
 ## Resource Naming Convention
 
@@ -98,8 +98,8 @@ Resources are named using the pattern: `{projectName}-{stage}-{resourceType}`
 
 ### Deploy to Development
 ```bash
-# Using npm script (recommended)
-npm run deploy:dev
+# Using pnpm script (recommended)
+pnpm run deploy:dev
 
 # Using CDK directly
 cdk deploy -c stage=dev
@@ -110,8 +110,8 @@ STAGE=dev cdk deploy
 
 ### Deploy to Production
 ```bash
-# Using npm script (recommended)
-npm run deploy:prod
+# Using pnpm script (recommended)
+pnpm run deploy:prod
 
 # Using CDK directly
 cdk deploy -c stage=prod
@@ -125,10 +125,10 @@ You can deploy multiple stages to the same AWS account:
 
 ```bash
 # Deploy dev
-npm run deploy:dev
+pnpm run deploy:dev
 
 # Deploy prod (will create separate resources)
-npm run deploy:prod
+pnpm run deploy:prod
 
 # Both stages will coexist with isolated resources
 ```
@@ -145,6 +145,78 @@ process.env.EVENTS_TABLE_NAME  // Stage-aware table name
 process.env.FUNCTION_TYPE      // 'API'
 process.env.API_TIMEOUT        // '15'
 ```
+
+## Email Notification Configuration
+
+The email notification system uses stage-specific configuration files with consistent environment variable names across all stages.
+
+### Environment File Structure
+
+Create stage-specific environment files:
+
+- `.env.dev` - Development environment variables
+- `.env.prod` - Production environment variables
+
+### Required Environment Variables
+
+Each stage-specific `.env` file should contain:
+
+```bash
+# Maileroo Configuration
+MAILEROO_API_KEY=your-maileroo-api-key
+
+# Sender Email Configuration
+FROM_EMAIL=noreply@triprojecthub.com
+FROM_NAME=Tri Project Hub
+
+# Email Template IDs
+INDIVIDUAL_TEMPLATE_ID=1001
+TEAM_TEMPLATE_ID=1002
+CONFIRMATION_TEMPLATE_ID=1003
+
+# Other environment variables
+CLERK_SECRET_KEY=your-clerk-secret-key
+```
+
+### Example Configuration Files
+
+**`.env.dev` (Development):**
+```bash
+MAILEROO_API_KEY=your-dev-maileroo-api-key
+FROM_EMAIL=noreply-dev@triprojecthub.com
+FROM_NAME=Tri Project Hub (Dev)
+INDIVIDUAL_TEMPLATE_ID=1001
+TEAM_TEMPLATE_ID=1002
+CONFIRMATION_TEMPLATE_ID=1003
+```
+
+**`.env.prod` (Production):**
+```bash
+MAILEROO_API_KEY=your-production-maileroo-api-key
+FROM_EMAIL=noreply@triprojecthub.com
+FROM_NAME=Tri Project Hub
+INDIVIDUAL_TEMPLATE_ID=2001
+TEAM_TEMPLATE_ID=2002
+CONFIRMATION_TEMPLATE_ID=2003
+```
+
+### Stage-Specific Template Configuration
+
+Each deployment stage uses different Maileroo template IDs to allow for:
+- Testing email templates in development
+- Production-ready templates
+
+**Default Template ID Ranges:**
+- **Dev**: 1001-1999
+- **Production**: 2001-2999
+
+### Email Configuration Validation
+
+The system validates:
+- All required environment variables are present
+- Email addresses are in valid format
+- Template IDs are numeric values
+- Maileroo API keys are configured per stage
 
 ## Cleanup
 
@@ -175,5 +247,5 @@ cdk deploy -c stage=dev -c projectName=my-unique-project
 cdk list
 
 # Show diff for specific stage
-npm run diff:prod
+pnpm run diff:prod
 ```

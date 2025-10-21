@@ -4,6 +4,7 @@ import type { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import type { LambdaFactory, StageConfig } from '../../types/infrastructure';
 import type { EmailNotificationQueue } from '../queue/email-notification-queue';
+import { getEmailNotificationConfig, validateEmailNotificationConfig, type EmailNotificationConfig } from './configs/email-notification-config';
 
 /**
  * Properties for EmailProcessor construct
@@ -15,21 +16,8 @@ export interface EmailProcessorProps {
   stageConfig: StageConfig;
   /** Email notification queue to process messages from */
   emailQueue: EmailNotificationQueue;
-  /** Environment variables for Maileroo configuration */
-  environment: {
-    /** Maileroo API key for sending emails */
-    mailerooApiKey: string;
-    /** Sender email address */
-    fromEmail: string;
-    /** Sender display name */
-    fromName: string;
-    /** Template ID for individual registration emails */
-    individualTemplateId: string;
-    /** Template ID for team registration emails */
-    teamTemplateId: string;
-    /** Template ID for payment confirmation emails */
-    confirmationTemplateId: string;
-  };
+  /** Optional environment configuration override (uses stage-specific config if not provided) */
+  environment?: EmailNotificationConfig;
 }
 
 /**
@@ -64,20 +52,19 @@ export class EmailProcessor extends Construct {
       throw new Error('EmailNotificationQueue is required for EmailProcessor construct');
     }
 
-    if (!environment) {
-      throw new Error('Environment configuration is required for EmailProcessor construct');
-    }
-
-    // Validate environment variables
-    this.validateEnvironment(environment);
-
     try {
+      // Get stage-specific email configuration or use provided override
+      const emailConfig = environment || getEmailNotificationConfig(stageConfig);
+
+      // Validate email configuration
+      validateEmailNotificationConfig(emailConfig);
+
       // Create the email processor Lambda function
       this.function = this.createEmailProcessorFunction(
         lambdaFactory,
         stageConfig,
         emailQueue,
-        environment
+        emailConfig
       );
 
       // Configure SQS event source
@@ -97,14 +84,14 @@ export class EmailProcessor extends Construct {
    * @param lambdaFactory Lambda factory instance
    * @param stageConfig Stage configuration
    * @param emailQueue Email notification queue
-   * @param environment Environment variables
+   * @param emailConfig Email notification configuration
    * @returns NodejsFunction instance
    */
   private createEmailProcessorFunction(
     lambdaFactory: LambdaFactory,
     stageConfig: StageConfig,
     emailQueue: EmailNotificationQueue,
-    environment: EmailProcessorProps['environment']
+    emailConfig: EmailNotificationConfig
   ): NodejsFunction {
     // Build entry path for the email processor handler
     const entryPath = 'lambdas/features/notifications/handlers/emailProcessor.ts';
@@ -114,12 +101,12 @@ export class EmailProcessor extends Construct {
       STAGE: stageConfig.stageName,
       IS_PRODUCTION: stageConfig.isProduction.toString(),
       EMAIL_QUEUE_URL: emailQueue.getQueueUrl(),
-      MAILEROO_API_KEY: environment.mailerooApiKey,
-      FROM_EMAIL: environment.fromEmail,
-      FROM_NAME: environment.fromName,
-      INDIVIDUAL_TEMPLATE_ID: environment.individualTemplateId,
-      TEAM_TEMPLATE_ID: environment.teamTemplateId,
-      CONFIRMATION_TEMPLATE_ID: environment.confirmationTemplateId,
+      MAILEROO_API_KEY: emailConfig.mailerooApiKey,
+      FROM_EMAIL: emailConfig.fromEmail,
+      FROM_NAME: emailConfig.fromName,
+      INDIVIDUAL_TEMPLATE_ID: emailConfig.individualTemplateId,
+      TEAM_TEMPLATE_ID: emailConfig.teamTemplateId,
+      CONFIRMATION_TEMPLATE_ID: emailConfig.confirmationTemplateId,
     };
 
     // Create the Lambda function with email processor specific configuration
@@ -161,53 +148,6 @@ export class EmailProcessor extends Construct {
   private grantSqsPermissions(emailQueue: EmailNotificationQueue): void {
     // Grant consume messages permission (includes ReceiveMessage, DeleteMessage, GetQueueAttributes)
     emailQueue.grantConsumeMessages(this.function);
-  }
-
-  /**
-   * Validate environment configuration
-   * @param environment Environment configuration to validate
-   * @throws Error if environment configuration is invalid
-   */
-  private validateEnvironment(environment: EmailProcessorProps['environment']): void {
-    const requiredFields = [
-      'mailerooApiKey',
-      'fromEmail',
-      'fromName',
-      'individualTemplateId',
-      'teamTemplateId',
-      'confirmationTemplateId'
-    ];
-
-    const missingFields = requiredFields.filter(field =>
-      !environment[field as keyof typeof environment] ||
-      environment[field as keyof typeof environment].trim() === ''
-    );
-
-    if (missingFields.length > 0) {
-      throw new Error(
-        `Missing required environment fields: ${missingFields.join(', ')}`
-      );
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(environment.fromEmail)) {
-      throw new Error(`Invalid email format for fromEmail: ${environment.fromEmail}`);
-    }
-
-    // Validate template IDs are numeric strings
-    const templateIds = [
-      environment.individualTemplateId,
-      environment.teamTemplateId,
-      environment.confirmationTemplateId
-    ];
-
-    templateIds.forEach((templateId, index) => {
-      const templateNames = ['individualTemplateId', 'teamTemplateId', 'confirmationTemplateId'];
-      if (isNaN(parseInt(templateId, 10))) {
-        throw new Error(`${templateNames[index]} must be a valid number: ${templateId}`);
-      }
-    });
   }
 
   /**

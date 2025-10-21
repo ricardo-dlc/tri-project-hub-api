@@ -74,7 +74,7 @@
     - _Requirements: 3.2, 9.2, 9.3, 9.4_
 
 - [ ] 6. Configure email templates and environment variables
-  - [ ] 6.1 Set up stage-specific template ID configuration
+  - [x] 6.1 Set up stage-specific template ID configuration
     - Configure individual registration template ID per stage
     - Configure team registration template ID per stage
     - Configure payment confirmation template ID per stage
