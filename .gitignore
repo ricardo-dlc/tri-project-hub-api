@@ -6,3 +6,11 @@ node_modules
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+# Environment files (keep .env.example)
+.env
+.env.local
+.env.dev
+.env.prod
+.env.staging
+.env.test
