@@ -49,7 +49,7 @@ export class RegistrationsApi extends Construct {
   private grantSqsPermissions(emailQueue: EmailNotificationQueue): void {
     // Grant send message permissions to handlers that need to publish notifications
     const handlersNeedingSqs = [
-      'createIndividualRegistration',
+      'createRegistration',
       'updatePaymentStatus'
     ];
 

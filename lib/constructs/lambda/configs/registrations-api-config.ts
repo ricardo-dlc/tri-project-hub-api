@@ -2,7 +2,7 @@ import { HttpMethod } from 'aws-cdk-lib/aws-apigatewayv2';
 import type { LambdaCreationConfig } from '../../../types/infrastructure';
 
 export const registrationsApiLambdaConfigs: Record<string, LambdaCreationConfig> = {
-  createIndividualRegistration: {
+  createRegistration: {
     functionName: 'createRegistration',
     handlerPath: 'createRegistration.ts',
     route: {
