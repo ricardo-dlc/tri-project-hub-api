@@ -43,6 +43,7 @@ export interface RegistrationNotificationMessage extends BaseNotificationMessage
   payment: {
     amount: string;
     bankAccount: string;
+    payment_reference: string;
   };
 }
 

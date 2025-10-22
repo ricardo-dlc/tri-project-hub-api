@@ -44,6 +44,7 @@ export interface TeamData {
 export interface PaymentData {
   amount: string;
   bankAccount: string;
+  payment_reference?: string;
   confirmationNumber?: string;
   transferReference?: string;
   paymentDate?: string;
@@ -85,6 +86,7 @@ export function buildIndividualRegistrationMessage(
     payment: {
       amount: payment.amount,
       bankAccount: payment.bankAccount,
+      payment_reference: payment.payment_reference || `PAY-${reservationId.slice(-10).toUpperCase()}`,
     },
     timestamp: new Date().toISOString(),
   };
@@ -131,6 +133,7 @@ export function buildTeamRegistrationMessage(
     payment: {
       amount: payment.amount,
       bankAccount: payment.bankAccount,
+      payment_reference: payment.payment_reference || `PAY-${reservationId.slice(-10).toUpperCase()}`,
     },
     timestamp: new Date().toISOString(),
   };

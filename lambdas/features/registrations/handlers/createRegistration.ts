@@ -467,6 +467,7 @@ const publishIndividualRegistrationNotification = async (
       {
         amount: formatRegistrationFee(registrationResult.registrationFee),
         bankAccount: 'TBD', // This should come from configuration
+        payment_reference: `PAY-${registrationResult.reservationId.slice(-10).toUpperCase()}`,
       }
     );
 
@@ -563,6 +564,7 @@ const publishTeamRegistrationNotification = async (
       {
         amount: formatRegistrationFee(registrationResult.registrationFee),
         bankAccount: 'TBD', // This should come from configuration
+        payment_reference: `PAY-${registrationResult.reservationId.slice(-10).toUpperCase()}`,
       }
     );
 
