@@ -1,11 +1,5 @@
-import type {
-  APIGatewayProxyEventV2,
-  APIGatewayProxyHandlerV2,
-} from 'aws-lambda';
-import { BadRequestError, ValidationError } from '@/shared/errors';
-import { createFeatureLogger } from '@/shared/logger';
-import { isValidULID } from '@/shared/utils/ulid';
-import { withMiddleware } from '@/shared/wrapper';
+import { eventService } from '@/features/events/services/event.service';
+import { buildIndividualRegistrationMessage, buildTeamRegistrationMessage, formatEventDateTime, formatRegistrationFee } from '@/features/notifications/utils';
 import {
   IndividualRegistrationData,
   individualRegistrationService
@@ -13,8 +7,18 @@ import {
 import {
   TeamParticipantData,
   TeamRegistrationData,
+  TeamRegistrationResult,
   teamRegistrationService
 } from '@/features/registrations/services/team-registration.service';
+import { BadRequestError, ValidationError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { sqsService } from '@/shared/services';
+import { isValidULID } from '@/shared/utils/ulid';
+import { withMiddleware } from '@/shared/wrapper';
+import type {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyHandlerV2,
+} from 'aws-lambda';
 
 const logger = createFeatureLogger('registrations');
 
@@ -419,6 +423,176 @@ const validateIndividualRegistrationBody = (body: IndividualRegistrationRequest)
 };
 
 /**
+ * Publishes a registration notification message to SQS for individual registrations
+ * @param eventId - The event ID
+ * @param registrationResult - The registration result from the service
+ * @param registrationData - The original registration data
+ */
+const publishIndividualRegistrationNotification = async (
+  eventId: string,
+  registrationResult: { reservationId: string; participantId: string; email: string; registrationFee: number },
+  registrationData: IndividualRegistrationRequest
+): Promise<void> => {
+  try {
+    // Get the email queue URL from environment variables
+    const queueUrl = process.env.EMAIL_QUEUE_URL;
+    if (!queueUrl) {
+      logger.warn({ eventId, reservationId: registrationResult.reservationId }, 'EMAIL_QUEUE_URL not configured, skipping notification');
+      return;
+    }
+
+    // Fetch event details for the notification
+    const event = await eventService.getEvent(eventId);
+
+    // Format event date and time
+    const { date, time } = formatEventDateTime(event.date);
+
+    // Build the notification message
+    const notificationMessage = buildIndividualRegistrationMessage(
+      eventId,
+      registrationResult.reservationId,
+      {
+        email: registrationResult.email,
+        firstName: registrationData.firstName,
+        lastName: registrationData.lastName,
+        participantId: registrationResult.participantId,
+      },
+      {
+        name: event.title,
+        date,
+        time,
+        location: event.location,
+        registrationFee: event.registrationFee,
+      },
+      {
+        amount: formatRegistrationFee(registrationResult.registrationFee),
+        bankAccount: 'TBD', // This should come from configuration
+      }
+    );
+
+    // Publish the message to SQS (using safe method to not fail registration)
+    const success = await sqsService.publishMessageSafe(queueUrl, notificationMessage);
+
+    if (success) {
+      logger.info({
+        eventId,
+        reservationId: registrationResult.reservationId,
+        messageType: notificationMessage.type,
+      }, 'Registration notification published to SQS');
+    } else {
+      logger.warn({
+        eventId,
+        reservationId: registrationResult.reservationId,
+      }, 'Failed to publish registration notification to SQS');
+    }
+  } catch (error) {
+    // Log the error but don't fail the registration
+    logger.error({
+      error: error instanceof Error ? error.message : String(error),
+      eventId,
+      reservationId: registrationResult.reservationId,
+    }, 'Error publishing registration notification to SQS');
+  }
+};
+
+/**
+ * Publishes a registration notification message to SQS for team registrations
+ * @param eventId - The event ID
+ * @param registrationResult - The registration result from the service
+ * @param registrationData - The original registration data
+ */
+const publishTeamRegistrationNotification = async (
+  eventId: string,
+  registrationResult: TeamRegistrationResult,
+  registrationData: TeamRegistrationRequest
+): Promise<void> => {
+  try {
+    // Get the email queue URL from environment variables
+    const queueUrl = process.env.EMAIL_QUEUE_URL;
+    if (!queueUrl) {
+      logger.warn({ eventId, reservationId: registrationResult.reservationId }, 'EMAIL_QUEUE_URL not configured, skipping notification');
+      return;
+    }
+
+    // Fetch event details for the notification
+    const event = await eventService.getEvent(eventId);
+
+    // Format event date and time
+    const { date, time } = formatEventDateTime(event.date);
+
+    // Find the team captain (first participant or one with captain role)
+    const captain = registrationResult.participants[0]; // Use first participant as captain
+    const captainData = registrationData.participants.find(p => p.email === captain.email);
+
+    if (!captainData) {
+      logger.warn({ eventId, reservationId: registrationResult.reservationId }, 'Could not find captain data for team registration notification');
+      return;
+    }
+
+    // Build team data for the notification
+    const teamData = {
+      name: `Team ${captainData.firstName} ${captainData.lastName}`, // Generate team name from captain
+      members: registrationResult.participants.map((participant, index) => {
+        const participantData = registrationData.participants.find(p => p.email === participant.email);
+        return {
+          name: `${participant.firstName} ${participant.lastName}`,
+          email: participant.email,
+          role: participant.role || participantData?.role || 'Member',
+          isCaptain: index === 0, // First participant is captain
+        };
+      }),
+    };
+
+    // Build the notification message
+    const notificationMessage = buildTeamRegistrationMessage(
+      eventId,
+      registrationResult.reservationId,
+      {
+        email: captain.email,
+        firstName: captainData.firstName,
+        lastName: captainData.lastName,
+      },
+      teamData,
+      {
+        name: event.title,
+        date,
+        time,
+        location: event.location,
+        registrationFee: event.registrationFee,
+      },
+      {
+        amount: formatRegistrationFee(registrationResult.registrationFee),
+        bankAccount: 'TBD', // This should come from configuration
+      }
+    );
+
+    // Publish the message to SQS (using safe method to not fail registration)
+    const success = await sqsService.publishMessageSafe(queueUrl, notificationMessage);
+
+    if (success) {
+      logger.info({
+        eventId,
+        reservationId: registrationResult.reservationId,
+        messageType: notificationMessage.type,
+        teamSize: registrationResult.totalParticipants,
+      }, 'Team registration notification published to SQS');
+    } else {
+      logger.warn({
+        eventId,
+        reservationId: registrationResult.reservationId,
+      }, 'Failed to publish team registration notification to SQS');
+    }
+  } catch (error) {
+    // Log the error but don't fail the registration
+    logger.error({
+      error: error instanceof Error ? error.message : String(error),
+      eventId,
+      reservationId: registrationResult.reservationId,
+    }, 'Error publishing team registration notification to SQS');
+  }
+};
+
+/**
  * Parses and validates the request body, determining registration type automatically
  * @param event - The API Gateway event
  * @returns Parsed and validated request body with registration type
@@ -493,6 +667,9 @@ const processIndividualRegistration = async (
   // Process the registration using the service
   const result = await individualRegistrationService.registerIndividual(eventId, participantData);
 
+  // Publish email notification message to SQS (non-blocking)
+  await publishIndividualRegistrationNotification(eventId, result, registrationData);
+
   // Format the response
   return {
     reservationId: result.reservationId,
@@ -524,6 +701,9 @@ const processTeamRegistration = async (
 
   // Process the registration using the service
   const result = await teamRegistrationService.registerTeam(eventId, teamData);
+
+  // Publish email notification message to SQS (non-blocking)
+  await publishTeamRegistrationNotification(eventId, result, registrationData);
 
   // Format the response
   return {
