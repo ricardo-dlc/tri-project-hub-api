@@ -221,6 +221,7 @@ const publishPaymentConfirmationMessage = async (
 
     // Format event date and time
     const { date, time } = formatEventDateTime(event.date);
+    const { date: paymentDate } = formatEventDateTime(result.paymentDate);
 
     // Generate confirmation number and transfer reference
     const confirmationNumber = `PAY-${result.reservationId.slice(-8).toUpperCase()}`;
@@ -247,7 +248,7 @@ const publishPaymentConfirmationMessage = async (
         bankAccount: 'TBD', // This should come from configuration
         confirmationNumber,
         transferReference,
-        paymentDate: result.paymentDate,
+        paymentDate,
       }
     );
 
