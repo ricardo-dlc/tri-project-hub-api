@@ -66,15 +66,21 @@ export class PaymentStatusService {
         ...(paymentStatus && { paymentDate: updateDate })
       };
 
-      // Update the registration entity
+      // Update the registration entity and return all attributes
       const updatedRegistration = await RegistrationEntity.update({
         reservationId
-      }).set(updateData).go();
+      }).set(updateData).go({ response: 'all_new' });
+
+      // Get totalParticipants from updated data, fallback to existing registration if needed
+      let totalParticipants = updatedRegistration.data?.totalParticipants;
+      if (!totalParticipants) {
+        totalParticipants = existingRegistration.totalParticipants;
+      }
 
       logger.info({
         reservationId,
         paymentStatus,
-        totalParticipants: updatedRegistration.data?.totalParticipants,
+        totalParticipants,
         paymentDate: updateDate
       }, 'Payment status updated successfully');
 
@@ -83,7 +89,7 @@ export class PaymentStatusService {
         reservationId,
         paymentStatus,
         paymentDate: updateDate,
-        totalParticipants: updatedRegistration.data?.totalParticipants || 0
+        totalParticipants
       };
 
     } catch (error) {
