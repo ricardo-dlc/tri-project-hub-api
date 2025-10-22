@@ -224,7 +224,7 @@ const publishPaymentConfirmationMessage = async (
     const { date: paymentDate } = formatEventDateTime(result.paymentDate);
 
     // Generate confirmation number and transfer reference
-    const confirmationNumber = `PAY-${result.reservationId.slice(-8).toUpperCase()}`;
+    const confirmationNumber = `PAY-${result.reservationId.slice(-10).toUpperCase()}`;
     const transferReference = `TXN-${Date.now()}-${result.reservationId.slice(-6).toUpperCase()}`;
 
     // Build the payment confirmation message

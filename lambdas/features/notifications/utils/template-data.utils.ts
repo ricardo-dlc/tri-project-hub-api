@@ -65,8 +65,8 @@ export function transformToIndividualTemplateData(message: RegistrationNotificat
 
     // Extract payment information
     const payment = message.payment;
-    if (!payment.amount || !payment.bankAccount) {
-      throw new TemplateDataError('Payment amount and bank account are required');
+    if (!payment.amount || !payment.bankAccount || !payment.payment_reference) {
+      throw new TemplateDataError('Payment amount, bank account, and payment reference are required');
     }
 
     // Transform to template data format
@@ -79,6 +79,7 @@ export function transformToIndividualTemplateData(message: RegistrationNotificat
       participant_name: `${participant.firstName} ${participant.lastName}`,
       payment_amount: payment.amount,
       bank_account: payment.bankAccount,
+      payment_reference: payment.payment_reference,
       reservation_id: message.reservationId
     };
 
@@ -175,8 +176,8 @@ export function transformToTeamTemplateData(message: RegistrationNotificationMes
 
     // Extract payment information
     const payment = message.payment;
-    if (!payment.amount || !payment.bankAccount) {
-      throw new TemplateDataError('Payment amount and bank account are required');
+    if (!payment.amount || !payment.bankAccount || !payment.payment_reference) {
+      throw new TemplateDataError('Payment amount, bank account, and payment reference are required');
     }
 
     // Transform team members to template format
@@ -201,6 +202,7 @@ export function transformToTeamTemplateData(message: RegistrationNotificationMes
       team_members: teamMembers,
       payment_amount: payment.amount,
       bank_account: payment.bankAccount,
+      payment_reference: payment.payment_reference,
       reservation_id: message.reservationId
     };
 
@@ -358,6 +360,7 @@ export function applyTemplateDataDefaults(
         participant_id: processedData.participant_id || 'N/A',
         participant_name: processedData.participant_name || 'Participant',
         bank_account: processedData.bank_account || 'TBD',
+        payment_reference: processedData.payment_reference || 'N/A',
         reservation_id: processedData.reservation_id || 'N/A'
       };
     } else if (templateType === 'team') {
@@ -367,6 +370,7 @@ export function applyTemplateDataDefaults(
         team_members_count: processedData.team_members_count || 0,
         team_members: processedData.team_members || [],
         bank_account: processedData.bank_account || 'TBD',
+        payment_reference: processedData.payment_reference || 'N/A',
         reservation_id: processedData.reservation_id || 'N/A'
       };
 
@@ -436,12 +440,12 @@ export function validateTemplateData(
       individual: [
         'event_name', 'event_date', 'event_time', 'event_location',
         'participant_id', 'participant_name', 'payment_amount',
-        'bank_account', 'reservation_id'
+        'bank_account', 'payment_reference', 'reservation_id'
       ],
       team: [
         'event_name', 'event_date', 'event_time', 'event_location',
         'team_name', 'team_id', 'team_members_count', 'team_members',
-        'payment_amount', 'bank_account', 'reservation_id'
+        'payment_amount', 'bank_account', 'payment_reference', 'reservation_id'
       ],
       confirmation: [
         'event_name', 'event_date', 'event_time', 'event_location',

@@ -121,7 +121,8 @@ function validateRegistrationPayment(payment: any, fieldName: string): Registrat
 
   return {
     amount: validateString(payment.amount, `${fieldName}.amount`),
-    bankAccount: validateString(payment.bankAccount, `${fieldName}.bankAccount`)
+    bankAccount: validateString(payment.bankAccount, `${fieldName}.bankAccount`),
+    payment_reference: validateString(payment.payment_reference, `${fieldName}.payment_reference`)
   };
 }
 

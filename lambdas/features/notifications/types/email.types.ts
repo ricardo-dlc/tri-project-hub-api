@@ -41,6 +41,7 @@ export interface IndividualTemplateData {
   participant_name: string;
   payment_amount: string;
   bank_account: string;
+  payment_reference: string;
   reservation_id: string;
 }
 
@@ -62,6 +63,7 @@ export interface TeamTemplateData {
   }>;
   payment_amount: string;
   bank_account: string;
+  payment_reference: string;
   reservation_id: string;
 }
 
