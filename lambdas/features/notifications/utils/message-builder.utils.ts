@@ -190,14 +190,39 @@ export function formatRegistrationFee(fee: number): string {
 
 /**
  * Format event date and time for display
- * @param date - Event date string
- * @param time - Event time string (optional)
- * @returns Formatted date and time
+ * @param date - Event date string (ISO format)
+ * @returns Formatted date and time for America/Cancun timezone
  */
-export function formatEventDateTime(date: string, time?: string): { date: string; time: string } {
-  // For now, return as-is, but this could be enhanced with proper date formatting
-  return {
-    date,
-    time: time || 'TBD',
-  };
+export function formatEventDateTime(date: string): { date: string; time: string } {
+  try {
+    const eventDate = new Date(date);
+
+    // Format date for America/Cancun timezone in Spanish
+    const formattedDate = eventDate.toLocaleDateString('es-MX', {
+      timeZone: 'America/Cancun',
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+
+    // Format time for America/Cancun timezone in Spanish
+    const formattedTime = eventDate.toLocaleTimeString('es-MX', {
+      timeZone: 'America/Cancun',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    return {
+      date: formattedDate,
+      time: formattedTime,
+    };
+  } catch (error) {
+    // Fallback to original behavior if date parsing fails
+    return {
+      date,
+      time: 'TBD',
+    };
+  }
 }
