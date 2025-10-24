@@ -99,13 +99,13 @@ describe('EmailValidationService', () => {
       });
     });
 
-    it('should detect internal duplicates within team emails', async () => {
+    it('should detect internal duplicates within team emails when allowInternalDuplicates is false', async () => {
       // Arrange
       const eventId = 'event-123';
       const emails = ['test1@example.com', 'test2@example.com', 'test1@example.com'];
 
       // Act
-      const result = await emailValidationService.validateMultipleEmails(eventId, emails);
+      const result = await emailValidationService.validateMultipleEmails(eventId, emails, false);
 
       // Assert
       expect(result).toEqual({
@@ -116,13 +116,13 @@ describe('EmailValidationService', () => {
       expect(mockParticipantEntity.query.EventParticipantIndex).not.toHaveBeenCalled();
     });
 
-    it('should handle case-insensitive email comparison for internal duplicates', async () => {
+    it('should handle case-insensitive email comparison for internal duplicates when disabled', async () => {
       // Arrange
       const eventId = 'event-123';
       const emails = ['Test@Example.com', 'test@example.com'];
 
       // Act
-      const result = await emailValidationService.validateMultipleEmails(eventId, emails);
+      const result = await emailValidationService.validateMultipleEmails(eventId, emails, false);
 
       // Assert
       expect(result).toEqual({
@@ -246,17 +246,17 @@ describe('EmailValidationService', () => {
         .resolves.not.toThrow();
     });
 
-    it('should throw ConflictError for internal team duplicates', async () => {
+    it('should throw ConflictError for internal team duplicates when explicitly disabled', async () => {
       // Arrange
       const eventId = 'event-123';
       const emails = ['test1@example.com', 'test1@example.com'];
 
       // Act & Assert
-      await expect(emailValidationService.validateTeamRegistration(eventId, emails))
+      await expect(emailValidationService.validateTeamRegistration(eventId, emails, false))
         .rejects.toThrow(ConflictError);
 
       try {
-        await emailValidationService.validateTeamRegistration(eventId, emails);
+        await emailValidationService.validateTeamRegistration(eventId, emails, false);
       } catch (error) {
         expect(error).toBeInstanceOf(ConflictError);
         expect((error as ConflictError).message).toBe('Duplicate emails found within team registration: test1@example.com');
@@ -319,13 +319,13 @@ describe('EmailValidationService', () => {
       });
     });
 
-    it('should handle whitespace in emails for internal duplicate detection', async () => {
+    it('should handle whitespace in emails for internal duplicate detection when disabled', async () => {
       // Arrange
       const eventId = 'event-123';
       const emails = ['  test@example.com  ', 'test@example.com'];
 
       // Act
-      const result = await emailValidationService.validateMultipleEmails(eventId, emails);
+      const result = await emailValidationService.validateMultipleEmails(eventId, emails, false);
 
       // Assert
       expect(result.isValid).toBe(false);
