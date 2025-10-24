@@ -54,9 +54,10 @@ export class EmailValidationService {
    * Handles both team registration validation and internal team duplicate checking
    * @param eventId - The event ID to check against
    * @param emails - Array of email addresses to validate
+   * @param allowInternalDuplicates - If true, allows same email multiple times within the team (for different roles)
    * @returns Promise<EmailValidationResult>
    */
-  async validateMultipleEmails(eventId: string, emails: string[]): Promise<EmailValidationResult> {
+  async validateMultipleEmails(eventId: string, emails: string[], allowInternalDuplicates: boolean = true): Promise<EmailValidationResult> {
     if (emails.length === 0) {
       return {
         isValid: true,
@@ -64,58 +65,96 @@ export class EmailValidationService {
       };
     }
 
-    // First, check for duplicates within the provided email list (team internal duplicates)
-    const emailSet = new Set<string>();
-    const internalDuplicates: string[] = [];
+    // Step 1: Handle internal duplicates based on the flag
+    if (allowInternalDuplicates) {
+      // When internal duplicates are allowed, we only check unique emails against the database
+      const uniqueEmails = [...new Set(emails.map(email => email.toLowerCase().trim()))];
 
-    for (const email of emails) {
-      const normalizedEmail = email.toLowerCase().trim();
-      if (emailSet.has(normalizedEmail)) {
-        internalDuplicates.push(email);
-      } else {
-        emailSet.add(normalizedEmail);
-      }
-    }
+      try {
+        const validationPromises = uniqueEmails.map(email => this.validateSingleEmail(eventId, email));
+        const validationResults = await Promise.all(validationPromises);
 
-    // If there are internal duplicates, return immediately
-    if (internalDuplicates.length > 0) {
-      return {
-        isValid: false,
-        duplicateEmails: internalDuplicates,
-      };
-    }
+        // Collect database conflicts only
+        const allDuplicateEmails: string[] = [];
+        const allConflictingParticipants: Array<{
+          email: string;
+          participantId: string;
+          reservationId: string;
+        }> = [];
 
-    try {
-      // Check each email against existing event participants
-      const validationPromises = emails.map(email => this.validateSingleEmail(eventId, email));
-      const validationResults = await Promise.all(validationPromises);
-
-      // Collect all duplicate emails and conflicting participants
-      const allDuplicateEmails: string[] = [];
-      const allConflictingParticipants: Array<{
-        email: string;
-        participantId: string;
-        reservationId: string;
-      }> = [];
-
-      validationResults.forEach(result => {
-        if (!result.isValid) {
-          allDuplicateEmails.push(...result.duplicateEmails);
-          if (result.conflictingParticipants) {
-            allConflictingParticipants.push(...result.conflictingParticipants);
+        validationResults.forEach(result => {
+          if (!result.isValid) {
+            allDuplicateEmails.push(...result.duplicateEmails);
+            if (result.conflictingParticipants) {
+              allConflictingParticipants.push(...result.conflictingParticipants);
+            }
           }
+        });
+
+        const isValid = allDuplicateEmails.length === 0;
+
+        return {
+          isValid,
+          duplicateEmails: allDuplicateEmails,
+          conflictingParticipants: isValid ? undefined : allConflictingParticipants,
+        };
+      } catch (error) {
+        throw new Error(`Failed to validate multiple emails: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } else {
+      // When internal duplicates are NOT allowed, check for internal duplicates first
+      const emailSet = new Set<string>();
+      const internalDuplicates: string[] = [];
+
+      for (const email of emails) {
+        const normalizedEmail = email.toLowerCase().trim();
+        if (emailSet.has(normalizedEmail)) {
+          internalDuplicates.push(email);
+        } else {
+          emailSet.add(normalizedEmail);
         }
-      });
+      }
 
-      const isValid = allDuplicateEmails.length === 0;
+      // If there are internal duplicates, return immediately
+      if (internalDuplicates.length > 0) {
+        return {
+          isValid: false,
+          duplicateEmails: internalDuplicates,
+        };
+      }
 
-      return {
-        isValid,
-        duplicateEmails: allDuplicateEmails,
-        conflictingParticipants: isValid ? undefined : allConflictingParticipants,
-      };
-    } catch (error) {
-      throw new Error(`Failed to validate multiple emails: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // No internal duplicates, proceed with database validation
+      try {
+        const validationPromises = emails.map(email => this.validateSingleEmail(eventId, email));
+        const validationResults = await Promise.all(validationPromises);
+
+        // Collect database conflicts
+        const allDuplicateEmails: string[] = [];
+        const allConflictingParticipants: Array<{
+          email: string;
+          participantId: string;
+          reservationId: string;
+        }> = [];
+
+        validationResults.forEach(result => {
+          if (!result.isValid) {
+            allDuplicateEmails.push(...result.duplicateEmails);
+            if (result.conflictingParticipants) {
+              allConflictingParticipants.push(...result.conflictingParticipants);
+            }
+          }
+        });
+
+        const isValid = allDuplicateEmails.length === 0;
+
+        return {
+          isValid,
+          duplicateEmails: allDuplicateEmails,
+          conflictingParticipants: isValid ? undefined : allConflictingParticipants,
+        };
+      } catch (error) {
+        throw new Error(`Failed to validate multiple emails: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
@@ -147,11 +186,12 @@ export class EmailValidationService {
    * Validates email uniqueness for team registration
    * @param eventId - The event ID to check against
    * @param emails - Array of team member email addresses to validate
+   * @param allowInternalDuplicates - If true, allows same email multiple times within the team (for different roles)
    * @throws ConflictError if any email conflicts are found
    */
-  async validateTeamRegistration(eventId: string, emails: string[]): Promise<void> {
-    logger.debug({ eventId, emailCount: emails.length }, 'Validating team emails');
-    const result = await this.validateMultipleEmails(eventId, emails);
+  async validateTeamRegistration(eventId: string, emails: string[], allowInternalDuplicates: boolean = true): Promise<void> {
+    logger.debug({ eventId, emailCount: emails.length, allowInternalDuplicates }, 'Validating team emails');
+    const result = await this.validateMultipleEmails(eventId, emails, allowInternalDuplicates);
 
     if (!result.isValid) {
       const isInternalDuplicate = !result.conflictingParticipants;
@@ -159,7 +199,8 @@ export class EmailValidationService {
         eventId,
         duplicateEmails: result.duplicateEmails,
         isInternalDuplicate,
-        conflictingCount: result.conflictingParticipants?.length
+        conflictingCount: result.conflictingParticipants?.length,
+        allowInternalDuplicates
       }, 'Team email validation failed');
 
       const errorMessage = result.conflictingParticipants
@@ -173,7 +214,7 @@ export class EmailValidationService {
       });
     }
 
-    logger.debug({ eventId, emailCount: emails.length }, 'Team email validation passed - all emails unique');
+    logger.debug({ eventId, emailCount: emails.length, allowInternalDuplicates }, 'Team email validation passed');
   }
 }
 
