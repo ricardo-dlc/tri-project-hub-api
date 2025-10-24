@@ -35,7 +35,8 @@ describe('Template Data Transformation Utilities', () => {
         },
         payment: {
           amount: '100.00',
-          bankAccount: 'BANK123456'
+          bankAccount: 'BANK123456',
+          payment_reference: 'REF123456'
         }
       };
 
@@ -50,6 +51,7 @@ describe('Template Data Transformation Utilities', () => {
         participant_name: 'John Doe',
         payment_amount: '100.00',
         bank_account: 'BANK123456',
+        payment_reference: 'REF123456',
         reservation_id: 'res-456'
       });
     });
@@ -73,7 +75,8 @@ describe('Template Data Transformation Utilities', () => {
         },
         payment: {
           amount: '100.00',
-          bankAccount: 'BANK123456'
+          bankAccount: 'BANK123456',
+          payment_reference: 'REF123456'
         }
       };
 
@@ -130,7 +133,8 @@ describe('Template Data Transformation Utilities', () => {
         },
         payment: {
           amount: '200.00',
-          bankAccount: 'BANK123456'
+          bankAccount: 'BANK123456',
+          payment_reference: 'TEAMREF123'
         }
       };
 
@@ -153,7 +157,7 @@ describe('Template Data Transformation Utilities', () => {
         registrationType: 'team',
         participant: { email: 'test@example.com', firstName: 'Test', lastName: 'User' },
         event: { name: 'Event', date: '2024-12-01', time: '10:00', location: 'Location' },
-        payment: { amount: '100', bankAccount: 'BANK123' },
+        payment: { amount: '100', bankAccount: 'BANK123', payment_reference: 'REF123' },
         reservationId: 'res-123'
       } as any;
 
@@ -242,6 +246,7 @@ describe('Template Data Transformation Utilities', () => {
         participant_name: 'John Doe',
         payment_amount: '100.00',
         bank_account: 'BANK123',
+        payment_reference: 'REF123',
         reservation_id: 'res-456'
       };
 
@@ -274,6 +279,7 @@ describe('Template Data Transformation Utilities', () => {
         ],
         payment_amount: '100.00',
         bank_account: 'BANK123',
+        payment_reference: 'TEAMREF123',
         reservation_id: 'res-456'
       };
 
@@ -302,7 +308,8 @@ describe('Template Data Transformation Utilities', () => {
         },
         payment: {
           amount: '100.00',
-          bankAccount: 'BANK123456'
+          bankAccount: 'BANK123456',
+          payment_reference: 'REF123456'
         }
       };
 
