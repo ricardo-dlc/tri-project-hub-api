@@ -326,17 +326,6 @@ const validateTeamRegistrationBody = (body: any): TeamRegistrationRequest => {
     validatedParticipants.push(validatedParticipant);
   }
 
-  // Check for duplicate emails within the team
-  const emails = validatedParticipants.map(p => p.email.toLowerCase());
-  const duplicateEmails = emails.filter((email, index) => emails.indexOf(email) !== index);
-
-  if (duplicateEmails.length > 0) {
-    throw new ValidationError(
-      'Team registration contains duplicate email addresses',
-      { duplicateEmails: [...new Set(duplicateEmails)] }
-    );
-  }
-
   return {
     participants: validatedParticipants,
     waiver: body.waiver,
