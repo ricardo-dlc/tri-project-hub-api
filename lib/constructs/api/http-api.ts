@@ -37,9 +37,7 @@ export class HttpApiConstruct extends Construct {
       description: `HTTP API for ${this.stageConfig.stageName} stage`,
       // Enable CORS for browser-based applications
       corsPreflight: {
-        allowOrigins: this.stageConfig.isProduction
-          ? ['https://your-production-domain.com'] // Configure production domains
-          : ['*'], // Allow all origins in non-production
+        allowOrigins: this.stageConfig.corsOrigins,
         allowMethods: [
           CorsHttpMethod.GET,
           CorsHttpMethod.POST,
