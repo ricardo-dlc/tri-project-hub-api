@@ -66,6 +66,8 @@ export interface StageConfig {
   tableName: string;
   /** Stage-aware API name */
   apiName: string;
+  /** Allowed CORS origins for API Gateway */
+  corsOrigins: string[];
 }
 
 /**

@@ -46,6 +46,12 @@ export class StageConfiguration {
     // Create resource prefix for consistent naming
     const resourcePrefix = `${projectName}-${stage}`;
 
+    // Load CORS origins from environment variable
+    const corsOriginsEnv = process.env.CORS_ALLOWED_ORIGINS;
+    const corsOrigins = corsOriginsEnv
+      ? corsOriginsEnv.split(',').map((origin) => origin.trim())
+      : ['*']; // Default to allow all if not specified
+
     // Initialize config first
     this.config = {
       stageName: stage,
@@ -53,6 +59,7 @@ export class StageConfiguration {
       resourcePrefix,
       tableName: '', // Will be set below
       apiName: '', // Will be set below
+      corsOrigins,
     };
 
     // Now set the table and API names using the initialized config
