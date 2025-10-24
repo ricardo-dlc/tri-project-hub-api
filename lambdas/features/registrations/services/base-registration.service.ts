@@ -1,10 +1,9 @@
-import { BadRequestError, ConflictError, NotFoundError, ValidationError } from '@/shared/errors';
-import { createFeatureLogger } from '@/shared/logger';
-import { generateParticipantId } from '@/shared/utils/ulid';
-import { isValidULID } from '@/shared/utils/ulid';
 import { EventEntity } from '@/features/events/models/event.model';
 import { CreateParticipantData, ParticipantEntity } from '@/features/registrations/models/participant.model';
 import { CreateRegistrationData, RegistrationEntity } from '@/features/registrations/models/registration.model';
+import { BadRequestError, ConflictError, NotFoundError, ValidationError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { generateParticipantId, isValidULID } from '@/shared/utils/ulid';
 import { reservationIdService } from './reservation-id.service';
 
 const logger = createFeatureLogger('registrations');
@@ -199,13 +198,13 @@ export abstract class BaseRegistrationService {
     }
 
     // Validate optional emergency email if provided
-    if (participantData.emergencyEmail) {
-      try {
-        this.validateEmailFormat(participantData.emergencyEmail, 'emergencyEmail');
-      } catch (error) {
-        errors.push(`${prefix}Invalid emergency contact email format`);
-      }
-    }
+    // if (participantData.emergencyEmail) {
+    //   try {
+    //     this.validateEmailFormat(participantData.emergencyEmail, 'emergencyEmail');
+    //   } catch (error) {
+    //     errors.push(`${prefix}Invalid emergency contact email format`);
+    //   }
+    // }
 
     return errors;
   }
@@ -246,12 +245,12 @@ export abstract class BaseRegistrationService {
     this.validateWaiverAcceptance(participantData.waiver);
 
     // Validate optional emergency email if provided
-    if (participantData.emergencyEmail) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(participantData.emergencyEmail)) {
-        throw new ValidationError('Invalid emergency contact email format', { emergencyEmail: participantData.emergencyEmail });
-      }
-    }
+    // if (participantData.emergencyEmail) {
+    //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    //   if (!emailRegex.test(participantData.emergencyEmail)) {
+    //     throw new ValidationError('Invalid emergency contact email format', { emergencyEmail: participantData.emergencyEmail });
+    //   }
+    // }
   }
 
   /**
@@ -287,12 +286,12 @@ export abstract class BaseRegistrationService {
       city: participantData.city,
       state: participantData.state,
       zipCode: participantData.zipCode,
-      country: participantData.country,
+      // country: participantData.country,
       emergencyName: participantData.emergencyName,
       emergencyRelationship: participantData.emergencyRelationship,
       emergencyPhone: participantData.emergencyPhone,
-      emergencyEmail: participantData.emergencyEmail,
-      shirtSize: participantData.shirtSize,
+      // emergencyEmail: participantData.emergencyEmail,
+      // shirtSize: participantData.shirtSize,
       dietaryRestrictions: participantData.dietaryRestrictions,
       medicalConditions: participantData.medicalConditions,
       medications: participantData.medications,

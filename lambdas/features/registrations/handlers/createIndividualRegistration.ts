@@ -34,16 +34,16 @@ interface CreateIndividualRegistrationRequest {
   city?: string;
   state?: string;
   zipCode?: string;
-  country?: string;
+  // country?: string;
 
   // Optional emergency contact
   emergencyName?: string;
   emergencyRelationship?: string;
   emergencyPhone?: string;
-  emergencyEmail?: string;
+  // emergencyEmail?: string;
 
   // Optional preferences and medical
-  shirtSize?: string;
+  // shirtSize?: string;
   dietaryRestrictions?: string;
   medicalConditions?: string;
   medications?: string;
@@ -124,8 +124,8 @@ const validateRequestBody = (body: any): CreateIndividualRegistrationRequest => 
   // Validate optional string fields if provided
   const optionalStringFields = [
     'phone', 'dateOfBirth', 'gender', 'address', 'city', 'state',
-    'zipCode', 'country', 'emergencyName', 'emergencyRelationship',
-    'emergencyPhone', 'emergencyEmail', 'shirtSize', 'dietaryRestrictions',
+    'zipCode', /* 'country', */ 'emergencyName', 'emergencyRelationship',
+    'emergencyPhone', /* 'emergencyEmail', 'shirtSize', */ 'dietaryRestrictions',
     'medicalConditions', 'medications', 'allergies'
   ];
 
@@ -270,12 +270,12 @@ const createIndividualRegistrationHandler = async (event: APIGatewayProxyEventV2
     city: registrationData.city,
     state: registrationData.state,
     zipCode: registrationData.zipCode,
-    country: registrationData.country,
+    // country: registrationData.country,
     emergencyName: registrationData.emergencyName,
     emergencyRelationship: registrationData.emergencyRelationship,
     emergencyPhone: registrationData.emergencyPhone,
-    emergencyEmail: registrationData.emergencyEmail,
-    shirtSize: registrationData.shirtSize,
+    // emergencyEmail: registrationData.emergencyEmail,
+    // shirtSize: registrationData.shirtSize,
     dietaryRestrictions: registrationData.dietaryRestrictions,
     medicalConditions: registrationData.medicalConditions,
     medications: registrationData.medications,

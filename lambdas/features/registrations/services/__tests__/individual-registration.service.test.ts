@@ -46,12 +46,12 @@ describe('IndividualRegistrationService', () => {
     city: 'Anytown',
     state: 'CA',
     zipCode: '12345',
-    country: 'USA',
+    // country: 'USA',
     emergencyName: 'Jane Doe',
     emergencyRelationship: 'spouse',
     emergencyPhone: '+1234567891',
-    emergencyEmail: 'jane@example.com',
-    shirtSize: 'M',
+    // emergencyEmail: 'jane@example.com',
+    // shirtSize: 'M',
     dietaryRestrictions: 'None',
     medicalConditions: 'None',
     medications: 'None',
@@ -247,17 +247,18 @@ describe('IndividualRegistrationService', () => {
           .rejects.toThrow('Waiver must be accepted to complete registration');
       });
 
-      it('should throw ValidationError for invalid emergency email format', async () => {
-        const invalidEmergencyEmailData = {
-          ...validParticipantData,
-          emergencyEmail: 'invalid-emergency-email',
-        };
+      // Emergency email validation is now commented out
+      // it('should throw ValidationError for invalid emergency email format', async () => {
+      //   const invalidEmergencyEmailData = {
+      //     ...validParticipantData,
+      //     emergencyEmail: 'invalid-emergency-email',
+      //   };
 
-        await expect(service.registerIndividual(validEventId, invalidEmergencyEmailData))
-          .rejects.toThrow(ValidationError);
-        await expect(service.registerIndividual(validEventId, invalidEmergencyEmailData))
-          .rejects.toThrow('Invalid emergency contact email format');
-      });
+      //   await expect(service.registerIndividual(validEventId, invalidEmergencyEmailData))
+      //     .rejects.toThrow(ValidationError);
+      //   await expect(service.registerIndividual(validEventId, invalidEmergencyEmailData))
+      //     .rejects.toThrow('Invalid emergency contact email format');
+      // });
     });
 
     describe('Event Validation', () => {

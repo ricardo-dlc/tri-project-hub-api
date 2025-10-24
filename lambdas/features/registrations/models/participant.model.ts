@@ -1,6 +1,6 @@
-import { Entity } from 'electrodb';
 import { ddbDocClient } from '@/shared/utils/dynamo';
 import { isValidULID } from '@/shared/utils/ulid';
+import { Entity } from 'electrodb';
 
 export const ParticipantEntity = new Entity(
   {
@@ -60,16 +60,16 @@ export const ParticipantEntity = new Entity(
       city: { type: 'string' },
       state: { type: 'string' },
       zipCode: { type: 'string' },
-      country: { type: 'string' },
+      // country: { type: 'string' },
 
       // Emergency contact (optional)
       emergencyName: { type: 'string' },
       emergencyRelationship: { type: 'string' },
       emergencyPhone: { type: 'string' },
-      emergencyEmail: { type: 'string' },
+      // emergencyEmail: { type: 'string' },
 
       // Preferences and medical (optional)
-      shirtSize: { type: 'string' },
+      // shirtSize: { type: 'string' },
       dietaryRestrictions: { type: 'string' },
       medicalConditions: { type: 'string' },
       medications: { type: 'string' },
@@ -145,12 +145,12 @@ export interface ParticipantItem {
   city?: string;
   state?: string;
   zipCode?: string;
-  country?: string;
+  // country?: string;
   emergencyName?: string;
   emergencyRelationship?: string;
   emergencyPhone?: string;
-  emergencyEmail?: string;
-  shirtSize?: string;
+  // emergencyEmail?: string;
+  // shirtSize?: string;
   dietaryRestrictions?: string;
   medicalConditions?: string;
   medications?: string;
@@ -179,12 +179,12 @@ export interface CreateParticipantData {
   city?: string;
   state?: string;
   zipCode?: string;
-  country?: string;
+  // country?: string;
   emergencyName?: string;
   emergencyRelationship?: string;
   emergencyPhone?: string;
-  emergencyEmail?: string;
-  shirtSize?: string;
+  // emergencyEmail?: string;
+  // shirtSize?: string;
   dietaryRestrictions?: string;
   medicalConditions?: string;
   medications?: string;

@@ -1,5 +1,5 @@
-import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { isValidULID } from '@/shared/utils/ulid';
+import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { individualRegistrationService } from '../../services/individual-registration.service';
 import { handler } from '../createIndividualRegistration';
 
@@ -111,12 +111,12 @@ const validRegistrationData = {
   city: 'Anytown',
   state: 'CA',
   zipCode: '12345',
-  country: 'USA',
+  // country: 'USA',
   emergencyName: 'Jane Doe',
   emergencyRelationship: 'spouse',
   emergencyPhone: '+1234567891',
-  emergencyEmail: 'jane@example.com',
-  shirtSize: 'M',
+  // emergencyEmail: 'jane@example.com',
+  // shirtSize: 'M',
   dietaryRestrictions: 'None',
   medicalConditions: 'None',
   medications: 'None',

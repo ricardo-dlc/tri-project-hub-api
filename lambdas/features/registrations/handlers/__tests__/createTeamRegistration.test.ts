@@ -1,5 +1,5 @@
-import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { isValidULID } from '@/shared/utils/ulid';
+import { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { teamRegistrationService } from '../../services/team-registration.service';
 import { handler } from '../createTeamRegistration';
 
@@ -553,7 +553,7 @@ describe('Create Team Registration Handler', () => {
       expect(parsedBody.error.message).toBe('Participant at index 0: phone must be a string if provided');
     });
 
-    it('should return 422 for duplicate emails within team', async () => {
+    it('should allow duplicate emails within team (same person, different roles)', async () => {
       const duplicateEmailData = {
         participants: [
           {
@@ -562,16 +562,45 @@ describe('Create Team Registration Handler', () => {
             lastName: 'Doe',
             waiver: true,
             newsletter: false,
+            role: 'swimmer',
           },
           {
-            email: 'duplicate@example.com', // Same email
-            firstName: 'Jane',
-            lastName: 'Smith',
+            email: 'duplicate@example.com', // Same email - same person, different role
+            firstName: 'John',
+            lastName: 'Doe',
             waiver: true,
             newsletter: true,
+            role: 'cyclist',
           },
         ],
       };
+
+      const mockResult = {
+        reservationId: '01ARZ3NDEKTSV4RRFFQ69G5FBW',
+        eventId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+        participants: [
+          {
+            participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBX',
+            email: 'duplicate@example.com',
+            firstName: 'John',
+            lastName: 'Doe',
+            role: 'swimmer',
+          },
+          {
+            participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBY',
+            email: 'duplicate@example.com',
+            firstName: 'John',
+            lastName: 'Doe',
+            role: 'cyclist',
+          },
+        ],
+        paymentStatus: false,
+        registrationFee: 100.00,
+        totalParticipants: 2,
+        createdAt: '2023-01-01T00:00:00.000Z',
+      };
+
+      mockTeamRegistrationService.registerTeam.mockResolvedValue(mockResult);
 
       const event = createMockEvent({
         body: JSON.stringify(duplicateEmailData),
@@ -580,13 +609,13 @@ describe('Create Team Registration Handler', () => {
 
       const result = await callWrappedHandler(event, context);
 
-      expect(result.statusCode).toBe(422);
+      expect(result.statusCode).toBe(201);
       const parsedBody = JSON.parse(result.body);
-      expect(parsedBody.error.message).toBe('Team registration contains duplicate email addresses');
-      expect(parsedBody.error.details.duplicateEmails).toEqual(['duplicate@example.com']);
+      expect(parsedBody.success).toBe(true);
+      expect(parsedBody.data.totalParticipants).toBe(2);
     });
 
-    it('should handle case-insensitive duplicate email detection', async () => {
+    it('should handle case-insensitive duplicate emails within team', async () => {
       const duplicateEmailData = {
         participants: [
           {
@@ -595,16 +624,45 @@ describe('Create Team Registration Handler', () => {
             lastName: 'Doe',
             waiver: true,
             newsletter: false,
+            role: 'swimmer',
           },
           {
             email: 'test@example.com', // Same email, different case
-            firstName: 'Jane',
-            lastName: 'Smith',
+            firstName: 'John',
+            lastName: 'Doe',
             waiver: true,
             newsletter: true,
+            role: 'cyclist',
           },
         ],
       };
+
+      const mockResult = {
+        reservationId: '01ARZ3NDEKTSV4RRFFQ69G5FBW',
+        eventId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+        participants: [
+          {
+            participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBX',
+            email: 'Test@Example.com',
+            firstName: 'John',
+            lastName: 'Doe',
+            role: 'swimmer',
+          },
+          {
+            participantId: '01ARZ3NDEKTSV4RRFFQ69G5FBY',
+            email: 'test@example.com',
+            firstName: 'John',
+            lastName: 'Doe',
+            role: 'cyclist',
+          },
+        ],
+        paymentStatus: false,
+        registrationFee: 100.00,
+        totalParticipants: 2,
+        createdAt: '2023-01-01T00:00:00.000Z',
+      };
+
+      mockTeamRegistrationService.registerTeam.mockResolvedValue(mockResult);
 
       const event = createMockEvent({
         body: JSON.stringify(duplicateEmailData),
@@ -613,10 +671,10 @@ describe('Create Team Registration Handler', () => {
 
       const result = await callWrappedHandler(event, context);
 
-      expect(result.statusCode).toBe(422);
+      expect(result.statusCode).toBe(201);
       const parsedBody = JSON.parse(result.body);
-      expect(parsedBody.error.message).toBe('Team registration contains duplicate email addresses');
-      expect(parsedBody.error.details.duplicateEmails).toEqual(['test@example.com']);
+      expect(parsedBody.success).toBe(true);
+      expect(parsedBody.data.totalParticipants).toBe(2);
     });
 
     it('should validate multiple participants with different errors', async () => {
