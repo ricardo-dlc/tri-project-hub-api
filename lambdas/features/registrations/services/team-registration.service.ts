@@ -24,16 +24,16 @@ export interface TeamParticipantData {
   city?: string;
   state?: string;
   zipCode?: string;
-  country?: string;
+  // country?: string;
 
   // Optional emergency contact
   emergencyName?: string;
   emergencyRelationship?: string;
   emergencyPhone?: string;
-  emergencyEmail?: string;
+  // emergencyEmail?: string;
 
   // Optional preferences and medical
-  shirtSize?: string;
+  // shirtSize?: string;
   dietaryRestrictions?: string;
   medicalConditions?: string;
   medications?: string;

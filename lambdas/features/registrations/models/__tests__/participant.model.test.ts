@@ -87,9 +87,9 @@ describe('ParticipantEntity', () => {
 
   describe('Optional Field Validation', () => {
     const optionalStringFields = [
-      'phone', 'dateOfBirth', 'gender', 'address', 'city', 'state', 'zipCode', 'country',
-      'emergencyName', 'emergencyRelationship', 'emergencyPhone', 'emergencyEmail',
-      'shirtSize', 'dietaryRestrictions', 'medicalConditions', 'medications', 'allergies', 'role'
+      'phone', 'dateOfBirth', 'gender', 'address', 'city', 'state', 'zipCode', /* 'country', */
+      'emergencyName', 'emergencyRelationship', 'emergencyPhone', /* 'emergencyEmail', */
+      /* 'shirtSize', */ 'dietaryRestrictions', 'medicalConditions', 'medications', 'allergies', 'role'
     ] as const;
 
     optionalStringFields.forEach(field => {

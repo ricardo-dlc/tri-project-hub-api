@@ -43,16 +43,16 @@ interface IndividualRegistrationRequest {
   city?: string;
   state?: string;
   zipCode?: string;
-  country?: string;
+  // country?: string;
 
   // Optional emergency contact
   emergencyName?: string;
   emergencyRelationship?: string;
   emergencyPhone?: string;
-  emergencyEmail?: string;
+  // emergencyEmail?: string;
 
   // Optional preferences and medical
-  shirtSize?: string;
+  // shirtSize?: string;
   dietaryRestrictions?: string;
   medicalConditions?: string;
   medications?: string;
@@ -72,7 +72,7 @@ interface TeamRegistrationRequest {
   city?: string;
   state?: string;
   zipCode?: string;
-  country?: string;
+  // country?: string;
   medicalConditions?: string;
   medications?: string;
   allergies?: string;
@@ -229,8 +229,8 @@ const validateParticipant = (
   // Validate optional string fields if provided
   const optionalStringFields = [
     'phone', 'dateOfBirth', 'gender', 'address', 'city', 'state',
-    'zipCode', 'country', 'emergencyName', 'emergencyRelationship',
-    'emergencyPhone', 'emergencyEmail', 'shirtSize', 'dietaryRestrictions',
+    'zipCode', /* 'country', */ 'emergencyName', 'emergencyRelationship',
+    'emergencyPhone', /* 'emergencyEmail', 'shirtSize', */ 'dietaryRestrictions',
     'medicalConditions', 'medications', 'allergies', 'role'
   ];
 
@@ -273,7 +273,7 @@ const validateTeamRegistrationBody = (body: any): TeamRegistrationRequest => {
 
   // Validate optional team-level fields (that will be applied to first participant)
   const teamLevelFields = [
-    'address', 'city', 'state', 'zipCode', 'country',
+    'address', 'city', 'state', 'zipCode', /* 'country', */
     'medicalConditions', 'medications', 'allergies'
   ];
 
@@ -300,9 +300,9 @@ const validateTeamRegistrationBody = (body: any): TeamRegistrationRequest => {
     if (body.zipCode !== undefined && !firstParticipant.zipCode) {
       firstParticipant.zipCode = body.zipCode;
     }
-    if (body.country !== undefined && !firstParticipant.country) {
-      firstParticipant.country = body.country;
-    }
+    // if (body.country !== undefined && !firstParticipant.country) {
+    //   firstParticipant.country = body.country;
+    // }
     if (body.medicalConditions !== undefined && !firstParticipant.medicalConditions) {
       firstParticipant.medicalConditions = body.medicalConditions;
     }
@@ -334,7 +334,7 @@ const validateTeamRegistrationBody = (body: any): TeamRegistrationRequest => {
     city: body.city,
     state: body.state,
     zipCode: body.zipCode,
-    country: body.country,
+    // country: body.country,
     medicalConditions: body.medicalConditions,
     medications: body.medications,
     allergies: body.allergies,
@@ -397,8 +397,8 @@ const validateIndividualRegistrationBody = (body: IndividualRegistrationRequest)
   // Validate optional string fields if provided
   const optionalStringFields = [
     'phone', 'dateOfBirth', 'gender', 'address', 'city', 'state',
-    'zipCode', 'country', 'emergencyName', 'emergencyRelationship',
-    'emergencyPhone', 'emergencyEmail', 'shirtSize', 'dietaryRestrictions',
+    'zipCode', /* 'country', */ 'emergencyName', 'emergencyRelationship',
+    'emergencyPhone', /* 'emergencyEmail', 'shirtSize', */ 'dietaryRestrictions',
     'medicalConditions', 'medications', 'allergies'
   ];
 
@@ -643,12 +643,12 @@ const processIndividualRegistration = async (
     city: registrationData.city,
     state: registrationData.state,
     zipCode: registrationData.zipCode,
-    country: registrationData.country,
+    // country: registrationData.country,
     emergencyName: registrationData.emergencyName,
     emergencyRelationship: registrationData.emergencyRelationship,
     emergencyPhone: registrationData.emergencyPhone,
-    emergencyEmail: registrationData.emergencyEmail,
-    shirtSize: registrationData.shirtSize,
+    // emergencyEmail: registrationData.emergencyEmail,
+    // shirtSize: registrationData.shirtSize,
     dietaryRestrictions: registrationData.dietaryRestrictions,
     medicalConditions: registrationData.medicalConditions,
     medications: registrationData.medications,
