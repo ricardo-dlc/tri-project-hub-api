@@ -1,4 +1,4 @@
-import { BadRequestError, NotFoundError } from '@/shared/errors';
+import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/errors';
 import { ParticipantQueryService } from '../participant-query.service';
 
 // Mock the entities and utilities
@@ -27,9 +27,9 @@ jest.mock('@/shared/utils/ulid', () => ({
 }));
 
 // Import after mocking
+import { EventEntity } from '@/features/events/models/event.model';
 import { ParticipantEntity } from '@/features/registrations/models/participant.model';
 import { RegistrationEntity } from '@/features/registrations/models/registration.model';
-import { EventEntity } from '@/features/events/models/event.model';
 import { isValidULID } from '@/shared/utils/ulid';
 
 const mockParticipantEntity = ParticipantEntity as jest.Mocked<typeof ParticipantEntity>;
@@ -49,6 +49,9 @@ describe('ParticipantQueryService', () => {
 
     // Setup the mock chains
     (mockParticipantEntity.query.EventParticipantIndex as jest.Mock).mockReturnValue({
+      go: mockGo,
+    });
+    (mockParticipantEntity.query as any).ReservationParticipantIndex = jest.fn().mockReturnValue({
       go: mockGo,
     });
     (mockEventEntity.get as jest.Mock).mockReturnValue({
@@ -243,7 +246,7 @@ describe('ParticipantQueryService', () => {
         individualRegistrations: 0,
         teamRegistrations: 1,
       });
-      
+
       // Both participants should have the same registration data
       expect(result.participants[0].registrationType).toBe('team');
       expect(result.participants[1].registrationType).toBe('team');
@@ -518,11 +521,11 @@ describe('ParticipantQueryService', () => {
       expect(result.size).toBe(2);
       expect(result.get('reservation-1')).toHaveLength(2);
       expect(result.get('reservation-2')).toHaveLength(1);
-      
+
       const teamParticipants = result.get('reservation-1')!;
       expect(teamParticipants[0].email).toBe('team1@example.com');
       expect(teamParticipants[1].email).toBe('team2@example.com');
-      
+
       const individualParticipant = result.get('reservation-2')!;
       expect(individualParticipant[0].email).toBe('individual@example.com');
     });
@@ -699,6 +702,312 @@ describe('ParticipantQueryService', () => {
         individualRegistrations: 1,
         teamRegistrations: 1,
       });
+    });
+  });
+
+  describe('getRegistrationWithParticipants', () => {
+    const validReservationId = 'reservation-123';
+    const validOrganizerId = 'organizer-456';
+    const validEventId = 'event-789';
+
+    beforeEach(() => {
+      mockIsValidULID.mockReturnValue(true);
+    });
+
+    it('should return registration with participants for valid reservation ID', async () => {
+      // Arrange
+      const mockRegistration = {
+        reservationId: validReservationId,
+        eventId: validEventId,
+        registrationType: 'team',
+        paymentStatus: true,
+        totalParticipants: 2,
+        registrationFee: 100,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z',
+      };
+
+      const mockEvent = {
+        eventId: validEventId,
+        title: 'Test Event',
+        creatorId: validOrganizerId,
+      };
+
+      const mockParticipants = [
+        {
+          participantId: 'participant-1',
+          reservationId: validReservationId,
+          eventId: validEventId,
+          email: 'team1@example.com',
+          firstName: 'Team',
+          lastName: 'Member1',
+          waiver: true,
+          newsletter: false,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z',
+        },
+        {
+          participantId: 'participant-2',
+          reservationId: validReservationId,
+          eventId: validEventId,
+          email: 'team2@example.com',
+          firstName: 'Team',
+          lastName: 'Member2',
+          waiver: true,
+          newsletter: true,
+          createdAt: '2023-01-01T00:01:00Z',
+          updatedAt: '2023-01-01T00:01:00Z',
+        },
+      ];
+
+      mockRegistrationGo.mockResolvedValue({ data: mockRegistration });
+      mockEventGo.mockResolvedValue({ data: mockEvent });
+      mockGo.mockResolvedValue({ data: mockParticipants });
+
+      // Act
+      const result = await participantQueryService.getRegistrationWithParticipants(validReservationId, validOrganizerId);
+
+      // Assert
+      expect(result).toEqual({
+        registration: {
+          reservationId: validReservationId,
+          eventId: validEventId,
+          registrationType: 'team',
+          paymentStatus: true,
+          totalParticipants: 2,
+          registrationFee: 100,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z',
+        },
+        participants: mockParticipants,
+        event: {
+          eventId: validEventId,
+          title: 'Test Event',
+          creatorId: validOrganizerId,
+        },
+      });
+
+      expect(mockRegistrationEntity.get).toHaveBeenCalledWith({ reservationId: validReservationId });
+      expect(mockEventEntity.get).toHaveBeenCalledWith({ eventId: validEventId });
+      expect(mockParticipantEntity.query.ReservationParticipantIndex).toHaveBeenCalledWith({
+        reservationParticipantId: validReservationId,
+      });
+    });
+
+    it('should return registration with empty participants array when no participants exist', async () => {
+      // Arrange
+      const mockRegistration = {
+        reservationId: validReservationId,
+        eventId: validEventId,
+        registrationType: 'individual',
+        paymentStatus: false,
+        totalParticipants: 1,
+        registrationFee: 50,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z',
+      };
+
+      const mockEvent = {
+        eventId: validEventId,
+        title: 'Test Event',
+        creatorId: validOrganizerId,
+      };
+
+      mockRegistrationGo.mockResolvedValue({ data: mockRegistration });
+      mockEventGo.mockResolvedValue({ data: mockEvent });
+      mockGo.mockResolvedValue({ data: [] });
+
+      // Act
+      const result = await participantQueryService.getRegistrationWithParticipants(validReservationId, validOrganizerId);
+
+      // Assert
+      expect(result.participants).toEqual([]);
+      expect(result.registration.reservationId).toBe(validReservationId);
+      expect(result.event.eventId).toBe(validEventId);
+    });
+
+    it('should throw BadRequestError for invalid reservation ID format', async () => {
+      // Arrange
+      mockIsValidULID.mockReturnValue(false);
+
+      // Act & Assert
+      await expect(
+        participantQueryService.getRegistrationWithParticipants('invalid-id', validOrganizerId)
+      ).rejects.toThrow(BadRequestError);
+      expect(mockIsValidULID).toHaveBeenCalledWith('invalid-id');
+    });
+
+    it('should throw NotFoundError when registration does not exist', async () => {
+      // Arrange
+      mockRegistrationGo.mockResolvedValue({ data: null });
+
+      // Act & Assert
+      await expect(
+        participantQueryService.getRegistrationWithParticipants(validReservationId, validOrganizerId)
+      ).rejects.toThrow(NotFoundError);
+      expect(mockRegistrationEntity.get).toHaveBeenCalledWith({ reservationId: validReservationId });
+    });
+
+    it('should throw NotFoundError when associated event does not exist', async () => {
+      // Arrange
+      const mockRegistration = {
+        reservationId: validReservationId,
+        eventId: validEventId,
+        registrationType: 'individual',
+        paymentStatus: true,
+        totalParticipants: 1,
+        registrationFee: 50,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z',
+      };
+
+      mockRegistrationGo.mockResolvedValue({ data: mockRegistration });
+      mockEventGo.mockResolvedValue({ data: null });
+
+      // Act & Assert
+      await expect(
+        participantQueryService.getRegistrationWithParticipants(validReservationId, validOrganizerId)
+      ).rejects.toThrow(NotFoundError);
+      expect(mockEventEntity.get).toHaveBeenCalledWith({ eventId: validEventId });
+    });
+
+    it('should throw ForbiddenError when organizer does not own the event', async () => {
+      // Arrange
+      const mockRegistration = {
+        reservationId: validReservationId,
+        eventId: validEventId,
+        registrationType: 'individual',
+        paymentStatus: true,
+        totalParticipants: 1,
+        registrationFee: 50,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z',
+      };
+
+      const mockEvent = {
+        eventId: validEventId,
+        title: 'Test Event',
+        creatorId: 'different-organizer',
+      };
+
+      mockRegistrationGo.mockResolvedValue({ data: mockRegistration });
+      mockEventGo.mockResolvedValue({ data: mockEvent });
+
+      // Act & Assert
+      await expect(
+        participantQueryService.getRegistrationWithParticipants(validReservationId, validOrganizerId)
+      ).rejects.toThrow(ForbiddenError);
+    });
+
+    it('should handle individual registration correctly', async () => {
+      // Arrange
+      const mockRegistration = {
+        reservationId: validReservationId,
+        eventId: validEventId,
+        registrationType: 'individual',
+        paymentStatus: false,
+        totalParticipants: 1,
+        registrationFee: 75,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z',
+      };
+
+      const mockEvent = {
+        eventId: validEventId,
+        title: 'Individual Event',
+        creatorId: validOrganizerId,
+      };
+
+      const mockParticipants = [
+        {
+          participantId: 'participant-1',
+          reservationId: validReservationId,
+          eventId: validEventId,
+          email: 'individual@example.com',
+          firstName: 'Individual',
+          lastName: 'Participant',
+          waiver: true,
+          newsletter: false,
+          createdAt: '2023-01-01T00:00:00Z',
+          updatedAt: '2023-01-01T00:00:00Z',
+        },
+      ];
+
+      mockRegistrationGo.mockResolvedValue({ data: mockRegistration });
+      mockEventGo.mockResolvedValue({ data: mockEvent });
+      mockGo.mockResolvedValue({ data: mockParticipants });
+
+      // Act
+      const result = await participantQueryService.getRegistrationWithParticipants(validReservationId, validOrganizerId);
+
+      // Assert
+      expect(result.registration.registrationType).toBe('individual');
+      expect(result.registration.paymentStatus).toBe(false);
+      expect(result.registration.totalParticipants).toBe(1);
+      expect(result.registration.registrationFee).toBe(75);
+      expect(result.participants).toHaveLength(1);
+      expect(result.participants[0].email).toBe('individual@example.com');
+    });
+
+    it('should handle database errors during registration retrieval', async () => {
+      // Arrange
+      mockRegistrationGo.mockRejectedValue(new Error('Database connection failed'));
+
+      // Act & Assert
+      await expect(
+        participantQueryService.getRegistrationWithParticipants(validReservationId, validOrganizerId)
+      ).rejects.toThrow('Database connection failed');
+    });
+
+    it('should handle database errors during event retrieval', async () => {
+      // Arrange
+      const mockRegistration = {
+        reservationId: validReservationId,
+        eventId: validEventId,
+        registrationType: 'individual',
+        paymentStatus: true,
+        totalParticipants: 1,
+        registrationFee: 50,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z',
+      };
+
+      mockRegistrationGo.mockResolvedValue({ data: mockRegistration });
+      mockEventGo.mockRejectedValue(new Error('Event database error'));
+
+      // Act & Assert
+      await expect(
+        participantQueryService.getRegistrationWithParticipants(validReservationId, validOrganizerId)
+      ).rejects.toThrow('Event database error');
+    });
+
+    it('should handle database errors during participants retrieval', async () => {
+      // Arrange
+      const mockRegistration = {
+        reservationId: validReservationId,
+        eventId: validEventId,
+        registrationType: 'individual',
+        paymentStatus: true,
+        totalParticipants: 1,
+        registrationFee: 50,
+        createdAt: '2023-01-01T00:00:00Z',
+        updatedAt: '2023-01-01T00:00:00Z',
+      };
+
+      const mockEvent = {
+        eventId: validEventId,
+        title: 'Test Event',
+        creatorId: validOrganizerId,
+      };
+
+      mockRegistrationGo.mockResolvedValue({ data: mockRegistration });
+      mockEventGo.mockResolvedValue({ data: mockEvent });
+      mockGo.mockRejectedValue(new Error('Participants query failed'));
+
+      // Act & Assert
+      await expect(
+        participantQueryService.getRegistrationWithParticipants(validReservationId, validOrganizerId)
+      ).rejects.toThrow('Participants query failed');
     });
   });
 });
