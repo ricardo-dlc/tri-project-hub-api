@@ -1,7 +1,7 @@
 # Implementation Plan
 
 - [ ] 1. Extend existing participant service with RSVP retrieval functionality
-- [ ] 1.1 Add getRegistrationWithParticipants method to ParticipantService
+- [x] 1.1 Add getRegistrationWithParticipants method to ParticipantService
 
   - Implement method to retrieve registration and participants by reservation ID using ElectroDB
   - Add authorization validation to ensure organizer owns the associated event

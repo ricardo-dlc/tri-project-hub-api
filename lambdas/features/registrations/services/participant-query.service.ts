@@ -1,9 +1,9 @@
-import { BadRequestError, NotFoundError } from '@/shared/errors';
-import { createFeatureLogger } from '@/shared/logger';
-import { isValidULID } from '@/shared/utils/ulid';
 import { EventEntity } from '@/features/events/models/event.model';
 import { ParticipantEntity, ParticipantItem } from '@/features/registrations/models/participant.model';
 import { RegistrationEntity } from '@/features/registrations/models/registration.model';
+import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/errors';
+import { createFeatureLogger } from '@/shared/logger';
+import { isValidULID } from '@/shared/utils/ulid';
 
 const logger = createFeatureLogger('registrations');
 
@@ -53,6 +53,25 @@ export interface ParticipantQueryResult {
     unpaidRegistrations: number;
     individualRegistrations: number;
     teamRegistrations: number;
+  };
+}
+
+export interface RegistrationWithParticipants {
+  registration: {
+    reservationId: string;
+    eventId: string;
+    registrationType: 'individual' | 'team';
+    paymentStatus: boolean;
+    totalParticipants: number;
+    registrationFee: number;
+    createdAt: string;
+    updatedAt: string;
+  };
+  participants: ParticipantItem[];
+  event: {
+    eventId: string;
+    title: string;
+    creatorId: string;
   };
 }
 
@@ -305,6 +324,130 @@ export class ParticipantQueryService {
     });
 
     return groupedParticipants;
+  }
+
+  /**
+   * Validates that the reservation ID is in valid ULID format
+   * @param reservationId - The reservation ID to validate
+   * @throws BadRequestError if ULID format is invalid
+   */
+  private validateReservationIdFormat(reservationId: string): void {
+    if (!isValidULID(reservationId)) {
+      throw new BadRequestError('Invalid reservation ID format. Must be a valid ULID.', { reservationId });
+    }
+  }
+
+  /**
+   * Retrieves a specific registration with all its participants by reservation ID
+   * Includes authorization validation to ensure organizer owns the associated event
+   * @param reservationId - The reservation ID to retrieve
+   * @param organizerId - The organizer ID requesting the data (for access control)
+   * @returns Promise<RegistrationWithParticipants> - Registration with participants and event data
+   * @throws NotFoundError if registration or event doesn't exist
+   * @throws ForbiddenError if organizer doesn't have access to the registration
+   * @throws BadRequestError if reservation ID format is invalid
+   */
+  async getRegistrationWithParticipants(reservationId: string, organizerId: string): Promise<RegistrationWithParticipants> {
+    logger.info({
+      reservationId,
+      organizerId,
+      operation: 'getRegistrationWithParticipants'
+    }, 'Retrieving registration with participants');
+
+    try {
+      // Validate reservation ID format
+      this.validateReservationIdFormat(reservationId);
+
+      logger.debug({ reservationId }, 'Reservation ID format validated');
+
+      // Get registration using ElectroDB entity
+      const registrationResult = await RegistrationEntity.get({ reservationId }).go();
+      if (!registrationResult.data) {
+        logger.warn({ reservationId, organizerId }, 'Registration not found');
+        throw new NotFoundError('Registration not found');
+      }
+      const registration = registrationResult.data;
+
+      logger.debug({
+        reservationId,
+        eventId: registration.eventId,
+        registrationType: registration.registrationType,
+        totalParticipants: registration.totalParticipants,
+        paymentStatus: registration.paymentStatus
+      }, 'Registration found');
+
+      // Get event using ElectroDB entity to check creator
+      const eventResult = await EventEntity.get({ eventId: registration.eventId }).go();
+      if (!eventResult.data) {
+        logger.error({
+          reservationId,
+          eventId: registration.eventId,
+          organizerId
+        }, 'Associated event not found');
+        throw new NotFoundError('Associated event not found');
+      }
+
+      if (eventResult.data.creatorId !== organizerId) {
+        logger.warn({
+          reservationId,
+          eventId: registration.eventId,
+          organizerId,
+          eventCreatorId: eventResult.data.creatorId
+        }, 'Unauthorized access attempt to registration');
+        throw new ForbiddenError('Unauthorized access to registration');
+      }
+
+      const event = eventResult.data;
+
+      logger.debug({
+        reservationId,
+        eventId: registration.eventId,
+        organizerId,
+        eventCreatorId: event.creatorId
+      }, 'Authorization validated');
+
+      // Get participants using ElectroDB ReservationParticipantIndex
+      const participantsResult = await ParticipantEntity.query
+        .ReservationParticipantIndex({ reservationParticipantId: reservationId })
+        .go();
+      const participants = participantsResult.data || [];
+
+      logger.info({
+        reservationId,
+        eventId: registration.eventId,
+        participantCount: participants.length,
+        organizerId,
+        registrationType: registration.registrationType,
+        paymentStatus: registration.paymentStatus
+      }, 'Successfully retrieved registration with participants');
+
+      return {
+        registration: {
+          reservationId: registration.reservationId,
+          eventId: registration.eventId,
+          registrationType: registration.registrationType as 'individual' | 'team',
+          paymentStatus: registration.paymentStatus,
+          totalParticipants: registration.totalParticipants,
+          registrationFee: registration.registrationFee,
+          createdAt: registration.createdAt,
+          updatedAt: registration.updatedAt,
+        },
+        participants,
+        event: {
+          eventId: event.eventId,
+          title: event.title,
+          creatorId: event.creatorId,
+        },
+      };
+    } catch (error) {
+      logger.error({
+        reservationId,
+        organizerId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }, 'Error retrieving registration with participants');
+      throw error;
+    }
   }
 }
 
