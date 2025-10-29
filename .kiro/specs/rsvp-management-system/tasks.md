@@ -17,7 +17,7 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 3.1, 3.2, 3.3, 3.4, 3.5_
 
 - [ ] 2. Extend existing registration service with RSVP deletion functionality
-- [ ] 2.1 Add deleteRegistrationByReservationId method to RegistrationService
+- [x] 2.1 Add deleteRegistrationByReservationId method to RegistrationService
 
   - Implement method to delete registration and all participants atomically using ElectroDB
   - Add authorization validation to ensure organizer owns the associated event

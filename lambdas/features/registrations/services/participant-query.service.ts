@@ -3,7 +3,9 @@ import { ParticipantEntity, ParticipantItem } from '@/features/registrations/mod
 import { RegistrationEntity } from '@/features/registrations/models/registration.model';
 import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/errors';
 import { createFeatureLogger } from '@/shared/logger';
+import { ddbDocClient } from '@/shared/utils/dynamo';
 import { isValidULID } from '@/shared/utils/ulid';
+import { TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 
 const logger = createFeatureLogger('registrations');
 
@@ -73,6 +75,14 @@ export interface RegistrationWithParticipants {
     title: string;
     creatorId: string;
   };
+}
+
+export interface DeletionResult {
+  success: boolean;
+  reservationId: string;
+  deletedParticipantCount: number;
+  eventId: string;
+  message: string;
 }
 
 export class ParticipantQueryService {
@@ -446,6 +456,179 @@ export class ParticipantQueryService {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
       }, 'Error retrieving registration with participants');
+      throw error;
+    }
+  }
+
+  /**
+   * Deletes a registration and all associated participants atomically using ElectroDB
+   * Includes authorization validation to ensure organizer owns the associated event
+   * Updates event participant count using atomic transaction operations
+   * @param reservationId - The reservation ID to delete
+   * @param organizerId - The organizer ID requesting the deletion (for access control)
+   * @returns Promise<DeletionResult> - Result of the deletion operation
+   * @throws ValidationError if reservation ID format is invalid
+   * @throws NotFoundError if registration or event doesn't exist
+   * @throws ForbiddenError if organizer doesn't have access to the registration
+   */
+  async deleteRegistrationByReservationId(reservationId: string, organizerId: string): Promise<DeletionResult> {
+    logger.info({
+      reservationId,
+      organizerId,
+      operation: 'deleteRegistrationByReservationId'
+    }, 'Starting registration deletion process');
+
+    try {
+      // Step 1: Validate reservation ID format
+      this.validateReservationIdFormat(reservationId);
+
+      logger.debug({ reservationId }, 'Reservation ID format validated');
+
+      // Step 2: Get registration using ElectroDB entity
+      const registrationResult = await RegistrationEntity.get({ reservationId }).go();
+      if (!registrationResult.data) {
+        logger.warn({ reservationId, organizerId }, 'Registration not found for deletion');
+        throw new NotFoundError('Registration not found');
+      }
+      const registration = registrationResult.data;
+
+      logger.debug({
+        reservationId,
+        eventId: registration.eventId,
+        registrationType: registration.registrationType,
+        totalParticipants: registration.totalParticipants,
+        paymentStatus: registration.paymentStatus
+      }, 'Registration found for deletion');
+
+      // Step 3: Get event using ElectroDB entity to check creator authorization
+      const eventResult = await EventEntity.get({ eventId: registration.eventId }).go();
+      if (!eventResult.data) {
+        logger.error({
+          reservationId,
+          eventId: registration.eventId,
+          organizerId
+        }, 'Associated event not found for deletion');
+        throw new NotFoundError('Associated event not found');
+      }
+
+      if (eventResult.data.creatorId !== organizerId) {
+        logger.warn({
+          reservationId,
+          eventId: registration.eventId,
+          organizerId,
+          eventCreatorId: eventResult.data.creatorId
+        }, 'Unauthorized deletion attempt');
+        throw new ForbiddenError('Unauthorized access to registration');
+      }
+
+      const event = eventResult.data;
+
+      logger.debug({
+        reservationId,
+        eventId: registration.eventId,
+        organizerId,
+        eventCreatorId: event.creatorId
+      }, 'Authorization validated for deletion');
+
+      // Step 4: Get all participants using ElectroDB ReservationParticipantIndex
+      const participantsResult = await ParticipantEntity.query
+        .ReservationParticipantIndex({ reservationParticipantId: reservationId })
+        .go();
+      const participants = participantsResult.data || [];
+
+      logger.info({
+        reservationId,
+        eventId: registration.eventId,
+        participantCount: participants.length,
+        participantIds: participants.map(p => p.participantId)
+      }, 'Preparing atomic deletion transaction');
+
+      // Step 5: Perform atomic deletion using DynamoDB transaction
+      const transactionItems = [];
+
+      // Add participant deletions using ElectroDB delete operations
+      for (const participant of participants) {
+        const deleteParams = ParticipantEntity.delete({ participantId: participant.participantId }).params();
+        transactionItems.push({
+          Delete: {
+            TableName: deleteParams.TableName,
+            Key: deleteParams.Key,
+            ...(deleteParams.ConditionExpression && {
+              ConditionExpression: deleteParams.ConditionExpression,
+              ExpressionAttributeNames: deleteParams.ExpressionAttributeNames,
+              ExpressionAttributeValues: deleteParams.ExpressionAttributeValues
+            })
+          }
+        });
+      }
+
+      // Add registration deletion using ElectroDB delete operation
+      const registrationDeleteParams = RegistrationEntity.delete({ reservationId }).params();
+      transactionItems.push({
+        Delete: {
+          TableName: registrationDeleteParams.TableName,
+          Key: registrationDeleteParams.Key,
+          ...(registrationDeleteParams.ConditionExpression && {
+            ConditionExpression: registrationDeleteParams.ConditionExpression,
+            ExpressionAttributeNames: registrationDeleteParams.ExpressionAttributeNames,
+            ExpressionAttributeValues: registrationDeleteParams.ExpressionAttributeValues
+          })
+        }
+      });
+
+      // Add event count update using ElectroDB update operation
+      const eventUpdateParams = EventEntity.update({ eventId: registration.eventId })
+        .add({ currentParticipants: -participants.length })
+        .set({ updatedAt: new Date().toISOString() })
+        .params();
+      transactionItems.push({
+        Update: {
+          TableName: eventUpdateParams.TableName,
+          Key: eventUpdateParams.Key,
+          UpdateExpression: eventUpdateParams.UpdateExpression,
+          ...(eventUpdateParams.ExpressionAttributeNames && {
+            ExpressionAttributeNames: eventUpdateParams.ExpressionAttributeNames
+          }),
+          ...(eventUpdateParams.ExpressionAttributeValues && {
+            ExpressionAttributeValues: eventUpdateParams.ExpressionAttributeValues
+          }),
+          ...(eventUpdateParams.ConditionExpression && {
+            ConditionExpression: eventUpdateParams.ConditionExpression
+          })
+        }
+      });
+
+      logger.debug({
+        reservationId,
+        transactionItemCount: transactionItems.length,
+        participantCountDecrement: -participants.length
+      }, 'Executing atomic deletion transaction');
+
+      // Execute transaction using DynamoDB client
+      await ddbDocClient.send(new TransactWriteCommand({ TransactItems: transactionItems }));
+
+      logger.info({
+        reservationId,
+        eventId: registration.eventId,
+        deletedParticipantCount: participants.length,
+        organizerId
+      }, 'Registration deletion completed successfully');
+
+      return {
+        success: true,
+        reservationId,
+        deletedParticipantCount: participants.length,
+        eventId: registration.eventId,
+        message: 'Registration and all participants deleted successfully'
+      };
+
+    } catch (error) {
+      logger.error({
+        reservationId,
+        organizerId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }, 'Error during registration deletion');
       throw error;
     }
   }
