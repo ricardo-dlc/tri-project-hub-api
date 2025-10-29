@@ -13,3 +13,4 @@ export { handler as updatePaymentStatus } from './updatePaymentStatus';
 
 // Export RSVP management handlers
 export { handler as getRegistrationByReservationId } from './getRegistrationByReservationId';
+export { handler as deleteRegistrationByReservationId } from './deleteRegistrationByReservationId';
