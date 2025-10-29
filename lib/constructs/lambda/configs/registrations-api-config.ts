@@ -56,4 +56,42 @@ export const registrationsApiLambdaConfigs: Record<string, LambdaCreationConfig>
       CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || '',
     }
   },
+  getRegistrationByReservationId: {
+    functionName: 'getRegistrationByReservationId',
+    handlerPath: 'getRegistrationByReservationId.ts',
+    route: {
+      path: '/registrations/{reservationId}',
+      method: HttpMethod.GET,
+      integrationName: 'RegistrationRetrievalIntegration',
+    },
+    tables: [
+      {
+        tableName: 'events',
+        environmentVariable: 'EVENTS_TABLE_NAME',
+        permission: 'read',
+      },
+    ],
+    environment: {
+      CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || '',
+    }
+  },
+  deleteRegistrationByReservationId: {
+    functionName: 'deleteRegistrationByReservationId',
+    handlerPath: 'deleteRegistrationByReservationId.ts',
+    route: {
+      path: '/registrations/{reservationId}',
+      method: HttpMethod.DELETE,
+      integrationName: 'RegistrationDeletionIntegration',
+    },
+    tables: [
+      {
+        tableName: 'events',
+        environmentVariable: 'EVENTS_TABLE_NAME',
+        permission: 'readWrite',
+      },
+    ],
+    environment: {
+      CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || '',
+    }
+  },
 };
