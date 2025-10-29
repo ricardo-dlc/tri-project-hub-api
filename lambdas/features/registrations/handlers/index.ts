@@ -10,3 +10,6 @@ export { handler as getParticipantsByEvent } from './getParticipantsByEvent';
 
 // Export payment status update handler
 export { handler as updatePaymentStatus } from './updatePaymentStatus';
+
+// Export RSVP management handlers
+export { handler as getRegistrationByReservationId } from './getRegistrationByReservationId';
