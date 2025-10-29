@@ -69,8 +69,8 @@
   - Test atomic transaction behavior and rollback scenarios
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 4.1, 4.2, 4.3, 4.4, 4.5, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 5. Add API routes and infrastructure integration
-- [ ] 5.1 Add RSVP management routes to existing registration API
+- [x] 5. Add API routes and infrastructure integration
+- [x] 5.1 Add RSVP management routes to existing registration API
 
   - Add GET /registrations/{reservationId} route to existing API Gateway configuration
   - Add DELETE /registrations/{reservationId} route to existing API Gateway configuration
@@ -78,7 +78,7 @@
   - Update existing Lambda function permissions for new route access
   - _Requirements: All API-related requirements_
 
-- [ ] 5.2 Update CDK infrastructure for RSVP endpoints
+- [x] 5.2 Update CDK infrastructure for RSVP endpoints
 
   - Modify existing registration API construct to include new routes
   - Ensure proper IAM permissions for DynamoDB access patterns
@@ -87,7 +87,7 @@
   - _Requirements: All infrastructure requirements_
 
 - [ ] 6. Implement comprehensive error handling
-- [ ] 6.1 Enhance existing error classes for RSVP operations
+- [x] 6.1 Enhance existing error classes for RSVP operations
 
   - Ensure NotFoundError, AuthorizationError, and ValidationError support RSVP contexts
   - Add specific error messages for reservation ID scenarios
